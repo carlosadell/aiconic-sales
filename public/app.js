@@ -211,21 +211,21 @@ function channelBlocks(l){
   l.channels.forEach(ch=>{
     if(ch==="sms"){
       out.push('<div class="channel"><div class="top"><span class="tag sms">SMS</span><b>Personal SMS through GoHighLevel</b></div>'+
-        '<div class="box">'+esc(m.sms)+'</div>'+
+        '<textarea class="box editable msg-sms" rows="4">'+esc(m.sms)+'</textarea>'+
         '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via GoHighLevel</button>'+
-        '<button class="btn" data-act="copy" data-text="'+esc(m.sms)+'">Copy text</button></div>'+
-        '<div class="hint">Sends to '+esc(l.phone)+' through GoHighLevel.</div></div>');
+        '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div>'+
+        '<div class="hint">Edit the message if you like, then send. Goes to '+esc(l.phone)+' through GoHighLevel.</div></div>');
     }else if(ch==="linkedin"){
       out.push('<div class="channel"><div class="top"><span class="tag also">LinkedIn</span><b>Message or connection request</b></div>'+
-        '<div class="box">'+esc(m.note)+'</div>'+
-        '<div class="btnrow"><button class="btn" data-act="copy" data-text="'+esc(m.note)+'">Copy note</button>'+
+        '<textarea class="box editable msg-note" rows="3">'+esc(m.note)+'</textarea>'+
+        '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
         '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
     }else if(ch==="email"){
       out.push('<div class="channel"><div class="top"><span class="tag mail">Email</span><b>Personal email from our business inbox</b></div>'+
-        '<div class="subjrow"><div class="subj">'+esc(m.email.subject)+'</div><button class="btn tiny" data-act="copy" data-text="'+esc(m.email.subject)+'">Copy subject</button></div>'+
-        '<div class="box">'+esc(m.email.body)+'</div>'+
-        '<div class="btnrow"><button class="btn" data-act="copy" data-text="'+esc(m.email.body)+'">Copy email body</button></div>'+
-        '<div class="hint">Send from our business inbox, not the GoHighLevel email.</div></div>');
+        '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
+        '<textarea class="box editable msg-body" rows="7">'+esc(m.email.body)+'</textarea>'+
+        '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div>'+
+        '<div class="hint">Edit anything you like, then copy. Send from our business inbox, not the GoHighLevel email.</div></div>');
     }
   });
   return out.join("");
@@ -254,6 +254,12 @@ function openSheet(l){
       stageMover(l)+
       prepBlock(l)+
     '</div>';
+  // Make the editable message boxes grow to fit their text, and keep growing as the rep types.
+  sheet.querySelectorAll("textarea.editable").forEach(t=>{
+    const fit = ()=>{ t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px"; };
+    fit();
+    t.addEventListener("input", fit);
+  });
   el("scrim").classList.add("open");
 }
 function closeSheet(){ el("scrim").classList.remove("open"); }
@@ -280,14 +286,19 @@ el("sheet").addEventListener("click", async (e)=>{
   const act = b.dataset.act;
   if(act==="close"){ closeSheet(); return; }
   if(act==="copy"){
-    if(navigator.clipboard) navigator.clipboard.writeText(b.dataset.text||"");
+    const field=b.dataset.field;
+    const node=field ? b.closest(".channel").querySelector("."+field) : null;
+    const text=node ? node.value : (b.dataset.text||"");
+    if(navigator.clipboard) navigator.clipboard.writeText(text);
     const old=b.textContent; b.textContent="Copied"; b.classList.add("done");
     setTimeout(()=>{ b.textContent=old; b.classList.remove("done"); },1500);
     return;
   }
   if(act==="sms"){
     const contactId=b.dataset.id;
-    const message=b.closest(".channel").querySelector(".box").textContent;
+    const ta=b.closest(".channel").querySelector(".msg-sms");
+    const message=ta ? ta.value : "";
+    if(!message.trim()){ b.textContent="Type a message first"; setTimeout(()=>{b.textContent="Send SMS via GoHighLevel";},1600); return; }
     b.textContent="Sending..."; b.disabled=true;
     try{
       const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});

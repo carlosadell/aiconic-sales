@@ -141,6 +141,10 @@ a.btn{display:inline-block;text-decoration:none;line-height:1.1}
 .stagemsg{font-size:12px;font-weight:700;white-space:nowrap}
 .stagemsg.ok{color:var(--green-ink)} .stagemsg.bad{color:var(--red-ink)}
 .channel .box{font-size:13px;background:#f7f9fc;border:1px solid var(--border);border-radius:10px;padding:11px 13px;line-height:1.55;white-space:pre-wrap}
+textarea.editable{width:100%;display:block;font-family:inherit;color:var(--ink);resize:vertical;overflow:hidden;min-height:44px}
+textarea.editable:focus{outline:none;border-color:var(--blue);background:#fff}
+.subj-input{flex:1;min-width:0;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);background:#f7f9fc;border:1px solid var(--border);border-radius:8px;padding:8px 11px}
+.subj-input:focus{outline:none;border-color:var(--blue);background:#fff}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 .btn{border:1px solid var(--blue);background:#fff;color:var(--blue-ink);font-weight:700;font-size:12.5px;padding:8px 13px;border-radius:9px;cursor:pointer}
 .btn:hover{background:var(--blue-soft)} .btn.done{background:var(--green-soft);border-color:var(--green);color:var(--green-ink)}
