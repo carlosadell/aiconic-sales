@@ -32,6 +32,11 @@ h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:7px 0 6px}
 .rule .col.flag .lbl{color:var(--amber-ink)} .rule .col.ok .lbl{color:var(--green-ink)}
 .rule ul{margin:0;padding-left:18px} .rule li{font-size:13px;color:var(--ink-2);margin-bottom:4px}
 .rule .okbox{font-size:13px;color:var(--ink-2);background:var(--green-soft);border:1px solid #bfe6c9;border-radius:10px;padding:11px 13px}
+.howto{margin:2px 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.howto li{font-size:13px;color:var(--ink-2);line-height:1.5}
+.howto li::marker{color:var(--blue);font-weight:800}
+.flagline{font-size:12.5px;color:var(--ink-2);background:#fff8ec;border:1px solid #f5e2b8;border-radius:10px;padding:10px 12px;line-height:1.5}
+.flagline b{color:var(--amber-ink)}
 
 .summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 26px}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;flex:1;min-width:140px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
@@ -126,6 +131,7 @@ a.btn{display:inline-block;text-decoration:none;line-height:1.1}
 .channel .subj{font-size:13px;font-weight:700}
 .subjrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .btn.tiny{font-size:11px;padding:4px 9px}
+
 .stagerow{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .stagesel{flex:1;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer}
 .stagesel:hover{border-color:#c8d5ec}

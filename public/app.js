@@ -95,13 +95,14 @@ async function load(){
 
 function render(d){
   el("rule").innerHTML =
-    '<h3>'+esc(d.rule.title)+'</h3>'+
-    '<p class="intro">'+esc(d.rule.intro)+'</p>'+
-    '<div class="cols">'+
-      '<div class="col flag"><div class="lbl">'+esc(d.rule.flagsTitle)+'</div>'+
-        '<ul>'+d.rule.flags.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>'+
-      '<div class="col ok"><div class="lbl">Remember</div><div class="okbox">'+esc(d.rule.note)+'</div></div>'+
-    '</div>';
+    '<h3>How to use this</h3>'+
+    '<ol class="howto">'+
+      '<li>Tap any name to open their card.</li>'+
+      '<li>Reach out on every channel you can. The SMS, LinkedIn, and email messages are written for you, ready to send or copy.</li>'+
+      '<li>If someone did not show up, open the No-shows tab and send them the rebook message.</li>'+
+      '<li>When a call moves or a deal changes, change the stage on the card and GoHighLevel updates on its own.</li>'+
+    '</ol>'+
+    '<div class="flagline"><b>We flag what matters:</b> no phone so no SMS, an SMS that failed, or a bounced email. A flag never means skip someone. We reach out to everyone.</div>';
 
   el("summary").innerHTML =
     '<div class="stat blue"><div class="n">'+d.totals.booked+'</div><div class="l">Booked, reach out before the call</div></div>'+
@@ -231,11 +232,11 @@ function openSheet(l){
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
-      stageMover(l)+
-      prepBlock(l)+
       sentBlock(l)+
       '<div class="dohead">'+doHead+'</div>'+
       channelBlocks(l)+
+      stageMover(l)+
+      prepBlock(l)+
     '</div>';
   el("scrim").classList.add("open");
 }
