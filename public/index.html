@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Reach-Out List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sales team &middot; Aiconic</div>
+    <h1>Daily Reach-Out List</h1>
+    <p class="sub">Your booked pipeline, live from GoHighLevel. Everyone our automatic confirmation could not reach is flagged, with the reason shown on every lead.</p>
+    <div class="meta-row">
+      <span id="status" class="status-pill">Loading live data...</span>
+      <button id="refresh" class="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <section class="rule" id="rule"></section>
+
+  <div class="summary" id="summary"></div>
+
+  <div id="groups"></div>
+
+  <div class="foot">
+    Reads the Free Trial Funnels pipeline in GoHighLevel every time this page loads. As more bookings come from LinkedIn links with the phone number set to mandatory, the reach-out count should get smaller.
+  </div>
+</div>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<script src="/app.js"></script>
+</body>
+</html>
