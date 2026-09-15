@@ -64,7 +64,16 @@ h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:7px 0 6px}
 .dotmark.red{background:var(--red)} .dotmark.green{background:var(--green)} .dotmark.amber{background:var(--amber)}
 .row .who{flex:1;min-width:0}
 .row .nm{font-size:15px;font-weight:700}
-.row .co{font-size:12.5px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .co{font-size:12.5px;color:var(--ink-2);margin-top:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.row .co .mdot{color:var(--line)}
+.row .co .day{font-weight:600;color:var(--ink)}
+.row .co .src{color:var(--muted)}
+.ctype{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.ctype.t-intro{background:#e6f6f1;color:#0f766e}
+.ctype.t-interview{background:#e7edff;color:#1e40af}
+.ctype.t-review{background:#efe9ff;color:#6d28d9}
+.ctype.t-noshow{background:#fde7d6;color:#b45309}
+.ctype.t-cancel{background:#eef2f8;color:#46526a}
 .badge{font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#fff;padding:5px 10px;border-radius:8px;white-space:nowrap}
 .badge.red{background:var(--red)} .badge.green{background:#e7efe9;color:var(--green-ink)}
 .badge.soft{background:#eef2f8;color:var(--ink-2);border:1px solid var(--border)}
@@ -114,7 +123,14 @@ h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:7px 0 6px}
 .channel .tag.req{background:var(--red)} .channel .tag.also{background:var(--amber)} .channel .tag.sms{background:var(--green)} .channel .tag.mail{background:var(--blue)}
 a.btn{display:inline-block;text-decoration:none;line-height:1.1}
 .channel .top b{font-size:14px;font-weight:700}
-.channel .subj{font-size:13px;font-weight:700;margin-bottom:5px}
+.channel .subj{font-size:13px;font-weight:700}
+.subjrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.btn.tiny{font-size:11px;padding:4px 9px}
+.stagerow{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.stagesel{flex:1;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer}
+.stagesel:hover{border-color:#c8d5ec}
+.stagemsg{font-size:12px;font-weight:700;white-space:nowrap}
+.stagemsg.ok{color:var(--green-ink)} .stagemsg.bad{color:var(--red-ink)}
 .channel .box{font-size:13px;background:#f7f9fc;border:1px solid var(--border);border-radius:10px;padding:11px 13px;line-height:1.55;white-space:pre-wrap}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 .btn{border:1px solid var(--blue);background:#fff;color:var(--blue-ink);font-weight:700;font-size:12.5px;padding:8px 13px;border-radius:9px;cursor:pointer}

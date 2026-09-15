@@ -11,7 +11,7 @@ const {
   mapLimit,
   LOCATION_ID,
 } = require("../lib/ghl");
-const { RULE, stageStatus, stageName, evaluate } = require("../lib/evaluate");
+const { RULE, ALL_STAGES, stageStatus, stageName, callType, evaluate } = require("../lib/evaluate");
 
 // Fixed links, same as the GoHighLevel call-prep email. Change here if they move.
 const LINKS = {
@@ -93,6 +93,8 @@ module.exports = async (req, res) => {
         phone,
         timezone,
         stage: stageName(o.pipelineStageId),
+        stageId: o.pipelineStageId,
+        callType: callType(stageName(o.pipelineStageId)),
         repId,
         repName,
         source: src.label,
@@ -141,6 +143,7 @@ module.exports = async (req, res) => {
     res.status(200).json({
       generatedAt: new Date().toISOString(),
       rule: RULE,
+      stages: ALL_STAGES,
       totals: { booked: booked.length, noshow: noshow.length, flagged: leads.filter((l) => l.flagged).length },
       booked: group(booked),
       noshow: group(noshow),
