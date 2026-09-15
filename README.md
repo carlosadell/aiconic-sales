@@ -4,15 +4,17 @@ A small live web app. It reads the Free Trial Funnels pipeline from GoHighLevel 
 
 The link is meant to live in the portal for now. Later the same logic moves inside the portal itself.
 
-## What decides who needs reaching
+## How the list works
 
-The rule is in one file, `lib/evaluate.js`, and it is also shown at the top of the page so nobody thinks names are chosen by hand. A booked lead is flagged when:
+Every person who books a call needs a personal message from their salesperson. That is what lifts the show-up rate. So every booked lead appears in the list, under the rep who owns them. Nobody is left off because an automatic message happened to go out.
+
+On top of that, each lead shows what GoHighLevel already sent (the last email and the last SMS, with its delivery status) so the personal message never repeats the automated one. Anything the rep should know is flagged:
 
 1. There is no phone number on file, so the automatic SMS could not be sent.
 2. The SMS failed to deliver, usually a carrier or country block.
 3. The confirmation email bounced, so the address is invalid.
 
-Everyone else already received their confirmation, so they are not flagged. They still appear in the pipeline, marked as reached, with the reason shown.
+A flag does not decide whether we contact someone. We contact everyone. The flag just says what is going on and which channel to use. The logic lives in `lib/evaluate.js` and is also shown at the top of the page.
 
 ## How it is put together
 

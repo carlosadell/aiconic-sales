@@ -1,29 +1,54 @@
 // Front-end for the Daily Reach-Out List.
-// Fetches /api/leads (live from GoHighLevel) and renders the pipeline per
-// salesperson, with the reason on every lead and a send-SMS action.
+// Fetches /api/leads (live from GoHighLevel) and renders booked leads and
+// no-shows per salesperson, each with call-prep links, what we already sent,
+// and personal messages across every channel.
 
 const el = (id) => document.getElementById(id);
 let DATA = null;
+let TAB = "booked";
 
 function initials(n){ return (n||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function ago(iso){
+  if(!iso) return "";
+  const h=Math.round((Date.now()-new Date(iso))/3.6e6);
+  if(h<1) return "just now";
+  if(h<24) return h+"h ago";
+  return Math.round(h/24)+"d ago";
+}
+function when(iso){
+  if(!iso) return "";
+  try{ return new Date(iso).toLocaleString([], {weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); }
+  catch(_){ return ""; }
+}
 
-// Build the messages for a lead from its own facts. Plain sentences, no dashes.
+// Personal message drafts. Context is "booked" (before the call) or "noshow".
 function messages(l){
   const first = (l.name||"there").split(" ")[0];
-  const isInterview = /interview/i.test(l.stage);
-  const rep = l.repName && l.repName!=="Unassigned" ? l.repName.split(" ")[0] : "the Aiconic team";
-  if(isInterview){
+  const rep = l.repName && l.repName!=="Unassigned" ? l.repName.split(" ")[0] : "";
+  const from = rep ? `${rep} from Aiconic` : "the Aiconic team";
+  const link = l.rebookLink || "";
+  if(l.status==="noshow"){
     return {
-      emailSubject: `Before your Aiconic interview`,
-      emailBody: `Hi ${first}, a quick note before your interview with us. We sent your prep questions over, so have a look before we talk. We did not have a working number for you, so reply here if anything is unclear. Talk soon.`,
-      note: `Hi ${first}, a quick note before your Aiconic interview. We sent your prep questions by email, so have a look before we talk. We did not have a working number for you, so reply here if anything is unclear.`,
+      sms: `Hi ${first}, ${from} here. We were on the call today but did not see you come through. Everything ok? If you want, you can grab another time here: ${link}`,
+      email: {
+        subject: "Sorry we missed you",
+        body: `Hi ${first}, ${from} here. We were on the call today but did not see you come through, so I wanted to check in. Everything ok? No problem at all if the timing slipped. If you would still like to talk, you can pick a new time here: ${link}. Looking forward to it.`,
+      },
+      note: `Hi ${first}, we were on the call today but did not see you come through. Everything ok? If you want to find another time, here is the link: ${link}`,
     };
   }
+  const isInterview = /interview/i.test(l.stage);
+  const line = isInterview
+    ? "Saw you booked your interview with us and wanted to say hello before we talk."
+    : "Saw you booked a call with us and wanted to reach out personally before we speak.";
   return {
-    emailSubject: `Your Aiconic intro call`,
-    emailBody: `Hi ${first}, you are booked in for a quick intro call with us. Here is the link: [paste link]. We did not have a working number for you, so I wanted to reach out and make sure you have everything you need. Looking forward to the conversation.`,
-    note: `Hi ${first}, ${rep} from Aiconic here. You booked an intro call with us. We did not have a working number for you, so I wanted to connect and make sure you have the link. Looking forward to it.`,
+    sms: `Hi ${first}, ${from} here. ${line} Looking forward to it, and if anything comes up before then just reply here.`,
+    email: {
+      subject: isInterview ? "Looking forward to your Aiconic interview" : "Looking forward to our call",
+      body: `Hi ${first}, ${from} here. ${line} No pitch, just a real conversation about your business and how we can help. If anything comes up before then, message me here. Looking forward to it.`,
+    },
+    note: `Hi ${first}, ${from} here. ${line} No pitch, just a real conversation. Looking forward to it.`,
   };
 }
 
@@ -37,9 +62,8 @@ async function load(){
     if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
     DATA = d;
     render(d);
-    const t = new Date(d.generatedAt);
     s.className="status-pill live";
-    s.textContent = "Live from GoHighLevel, "+t.toLocaleString();
+    s.textContent = "Live from GoHighLevel, "+new Date(d.generatedAt).toLocaleString();
   }catch(e){
     s.className="status-pill err";
     s.textContent = "Could not load live data: "+e.message;
@@ -49,46 +73,57 @@ async function load(){
 }
 
 function render(d){
-  // rule panel
   el("rule").innerHTML = `
     <h3>${esc(d.rule.title)}</h3>
     <p class="intro">${esc(d.rule.intro)}</p>
     <div class="cols">
       <div class="col flag">
-        <div class="lbl">Flagged to reach when</div>
-        <ul>${d.rule.needsReach.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+        <div class="lbl">${esc(d.rule.flagsTitle)}</div>
+        <ul>${d.rule.flags.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
       </div>
       <div class="col ok">
-        <div class="lbl">Not flagged</div>
-        <div class="okbox">${esc(d.rule.reached)}</div>
+        <div class="lbl">Remember</div>
+        <div class="okbox">${esc(d.rule.note)}</div>
       </div>
     </div>`;
 
-  // summary
   el("summary").innerHTML = `
-    <div class="stat amber"><div class="n">${d.totalNeedsReach}</div><div class="l">Need a manual reach-out</div></div>
-    <div class="stat blue"><div class="n">${d.totalBooked}</div><div class="l">Total booked and active</div></div>
-    <div class="stat green"><div class="n">${d.totalBooked - d.totalNeedsReach}</div><div class="l">Already reached automatically</div></div>`;
+    <div class="stat blue"><div class="n">${d.totals.booked}</div><div class="l">Booked, reach out before the call</div></div>
+    <div class="stat red"><div class="n">${d.totals.noshow}</div><div class="l">No-shows, nudge them to rebook</div></div>
+    <div class="stat amber"><div class="n">${d.totals.flagged}</div><div class="l">Flagged, check before reaching out</div></div>`;
 
-  // groups
+  el("tabs").innerHTML = `
+    <button class="tab ${TAB==='booked'?'on':''}" data-tab="booked">Booked <span>${d.totals.booked}</span></button>
+    <button class="tab ${TAB==='noshow'?'on':''}" data-tab="noshow">No-shows <span>${d.totals.noshow}</span></button>`;
+  el("tabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{ TAB=b.dataset.tab; renderGroups(); el("tabs").querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.tab===TAB)); }));
+
+  renderGroups();
+}
+
+function renderGroups(){
+  const d = DATA; const reps = TAB==="noshow" ? d.noshow : d.booked;
   const g = el("groups"); g.innerHTML="";
-  d.reps.forEach(rep=>{
+  if(!reps.length){
+    g.innerHTML = `<div class="empty-state">${TAB==="noshow"?"No no-shows right now. Nice.":"No booked calls right now."}</div>`;
+    return;
+  }
+  reps.forEach(rep=>{
     const box = document.createElement("div"); box.className="group";
-    const countCls = rep.needsReach===0 ? "count zero" : "count";
+    const flagPill = rep.flagged>0 ? `<span class="count">${rep.flagged} flagged</span>` : "";
     box.innerHTML = `<div class="grouphead">
       <span class="avatar">${initials(rep.repName)}</span>
       <h2>${esc(rep.repName)}</h2>
-      <span class="${countCls}">${rep.needsReach} to reach</span>
-      <span class="total">${rep.total} booked</span>
+      <span class="total strong">${rep.total} to reach</span>
+      ${flagPill}
     </div>`;
     const rows = document.createElement("div"); rows.className="rows";
     rep.leads.forEach(l=>{
       const row = document.createElement("div");
-      row.className = "row"+(l.needsReach?"":" reached");
-      const badge = l.needsReach
-        ? `<span class="badge red">${l.code==="no_phone"?"No phone":l.code==="sms_failed"?"SMS failed":l.code==="email_bounced"?"Email invalid":"Reach"}</span>`
-        : `<span class="badge green">Reached</span>`;
-      row.innerHTML = `<span class="dotmark ${l.needsReach?"red":"green"}"></span>
+      row.className = "row"+(l.flagged?"":" calm");
+      const badge = l.flagged
+        ? `<span class="badge red">${esc(l.primaryFlag.label)}</span>`
+        : `<span class="badge soft">${esc(l.source)}</span>`;
+      row.innerHTML = `<span class="dotmark ${l.flagged?"red":(l.status==="noshow"?"amber":"green")}"></span>
         <div class="who"><div class="nm">${esc(l.name)}</div><div class="co">${esc(l.company||l.email)} &middot; ${esc(l.stage)}</div></div>
         ${badge}<span class="go">&rsaquo;</span>`;
       row.addEventListener("click",()=>openSheet(l));
@@ -98,70 +133,99 @@ function render(d){
   });
 }
 
+function prepBlock(l){
+  const rows = [
+    ["Contact card in the Hub", l.links.contact, "Open"],
+    ["Free Trials pipeline", l.links.pipeline, "Open"],
+    ["Conversify (LinkedIn chats)", l.links.conversify, "Open"],
+    ["Intro call script", l.links.script, "Open"],
+    ["Interview booking link", l.links.interviewBooking, "Open"],
+  ];
+  const appt = l.appointment && l.appointment.at
+    ? `<div class="appt"><span class="ch">Appointment</span> ${esc(when(l.appointment.at))}${l.timezone?` &middot; ${esc(l.timezone)}`:""}</div>` : "";
+  const src = `<div class="srcnote"><b>${esc(l.source)}.</b> ${esc(l.sourceCheck)}</div>`;
+  return `<div class="dohead">Call prep, everything you need</div>
+    ${appt}${src}
+    <div class="prep">${rows.map(([t,u])=>`<a class="preplink" href="${esc(u)}" target="_blank" rel="noopener"><span>${esc(t)}</span><span class="arr">Open &rsaquo;</span></a>`).join("")}</div>`;
+}
+
+function sentBlock(l){
+  const email = l.lastEmail
+    ? `<div class="sent-item"><div class="sent-h"><span class="ch">Email</span><span class="when">${esc(ago(l.lastEmail.at))}</span></div>
+        <div class="sent-subj">${esc(l.lastEmail.subject)}</div><div class="sent-snip">${esc(l.lastEmail.snippet)}</div></div>`
+    : `<div class="sent-item empty">No email on record</div>`;
+  const st = l.lastSms ? l.lastSms.status : null;
+  const cls = st==="delivered"?"ok":(st==="failed"||st==="undelivered")?"bad":"muted";
+  const sms = l.lastSms
+    ? `<div class="sent-item"><div class="sent-h"><span class="ch">SMS</span><span class="tagstatus ${cls}">${esc(st)}</span><span class="when">${esc(ago(l.lastSms.at))}</span></div>
+        <div class="sent-snip">${esc(l.lastSms.body)}</div></div>`
+    : `<div class="sent-item empty">No SMS ${l.phone?"on record":"(no phone number)"}</div>`;
+  return `<div class="dohead">What we already sent</div><div class="sent">${email}${sms}</div>`;
+}
+
 function channelBlocks(l){
   const m = messages(l);
-  const fullEmail = "Subject: "+m.emailSubject+"\n\n"+m.emailBody;
-  const blocks = [];
+  const out = [];
   l.channels.forEach(ch=>{
     if(ch==="sms"){
-      blocks.push(`<div class="channel">
-        <div class="top"><span class="tag sms">Do first</span><b>Text by SMS through GoHighLevel</b></div>
-        <div class="box">${esc(m.note)}</div>
+      out.push(`<div class="channel">
+        <div class="top"><span class="tag sms">SMS</span><b>Personal SMS through GoHighLevel</b></div>
+        <div class="box">${esc(m.sms)}</div>
         <div class="btnrow">
           <button class="btn solid" data-act="sms" data-id="${esc(l.contactId)}">Send SMS via GoHighLevel</button>
-          <button class="btn" data-act="copy" data-text="${esc(m.note)}">Copy text</button>
+          <button class="btn" data-act="copy" data-text="${esc(m.sms)}">Copy text</button>
         </div>
         <div class="hint">Sends to ${esc(l.phone)} through GoHighLevel.</div>
       </div>`);
-    }else if(ch==="email"){
-      blocks.push(`<div class="channel">
-        <div class="top"><span class="tag req">Minimum</span><b>Email from our business inbox</b></div>
-        <div class="subj">${esc(m.emailSubject)}</div>
-        <div class="box">${esc(m.emailBody)}</div>
-        <div class="btnrow"><button class="btn" data-act="copy" data-text="${esc(fullEmail)}">Copy email</button></div>
-        <div class="hint">Send from our business inbox, not the GoHighLevel email.</div>
-      </div>`);
     }else if(ch==="linkedin"){
-      blocks.push(`<div class="channel">
-        <div class="top"><span class="tag also">Also</span><b>Connection request on LinkedIn</b></div>
+      out.push(`<div class="channel">
+        <div class="top"><span class="tag also">LinkedIn</span><b>Message or connection request</b></div>
         <div class="box">${esc(m.note)}</div>
-        <div class="btnrow"><button class="btn" data-act="copy" data-text="${esc(m.note)}">Copy note</button></div>
-        <div class="hint">Put this in the connection request. Do not wait on the accept.</div>
+        <div class="btnrow"><button class="btn" data-act="copy" data-text="${esc(m.note)}">Copy note</button>
+        <a class="btn" href="${esc(l.links.conversify)}" target="_blank" rel="noopener">Open Conversify</a></div>
+      </div>`);
+    }else if(ch==="email"){
+      const full = "Subject: "+m.email.subject+"\n\n"+m.email.body;
+      out.push(`<div class="channel">
+        <div class="top"><span class="tag mail">Email</span><b>Personal email from our business inbox</b></div>
+        <div class="subj">${esc(m.email.subject)}</div>
+        <div class="box">${esc(m.email.body)}</div>
+        <div class="btnrow"><button class="btn" data-act="copy" data-text="${esc(full)}">Copy email</button></div>
+        <div class="hint">Send from our business inbox, not the GoHighLevel email.</div>
       </div>`);
     }
   });
-  return blocks.join("");
+  return out.join("");
 }
 
 function openSheet(l){
   const sheet = el("sheet");
-  const verdictCls = l.needsReach ? "flag" : "ok";
-  const doSection = l.needsReach
-    ? `<div class="dohead">Reach out now</div>${channelBlocks(l)}`
+  const flagBox = l.flagged
+    ? `<div class="verdict flag"><div class="why">Heads up before you reach out</div>${l.flags.map(f=>esc(f.text)).join("<br>")}</div>`
     : "";
+  const doHead = l.status==="noshow" ? "Nudge them to rebook, everywhere you can" : "Reach out, everywhere you can";
   sheet.innerHTML = `
     <div class="sh">
       <div><h2>${esc(l.name)}</h2><div class="role">${esc(l.company||l.email)} &middot; owned by ${esc(l.repName)}</div></div>
       <button class="x" data-act="close">&times;</button>
     </div>
     <div class="body">
-      <div class="verdict ${verdictCls}">
-        <div class="why">${l.needsReach?"Why this lead is flagged":"Why no action is needed"}</div>
-        ${esc(l.reason)}
-      </div>
+      ${l.status==="noshow"?`<div class="nshead">Did not show up. Give them an easy way back in.</div>`:""}
+      ${flagBox}
       <div class="kv">
-        <div class="k">Booking</div><div class="v">${esc(l.stage)}</div>
+        <div class="k">Stage</div><div class="v">${esc(l.stage)}</div>
         <div class="k">Email</div><div class="v">${esc(l.email||"None on file")}</div>
         <div class="k">Phone</div><div class="v">${esc(l.phone||"None on file")}</div>
-        <div class="k">SMS status</div><div class="v">${esc(l.smsStatus||"Not sent")}</div>
       </div>
-      ${doSection}
+      ${prepBlock(l)}
+      ${sentBlock(l)}
+      <div class="dohead">${doHead}</div>
+      ${channelBlocks(l)}
     </div>`;
   el("scrim").classList.add("open");
 }
 function closeSheet(){ el("scrim").classList.remove("open"); }
 
-// event delegation for modal buttons
 el("sheet").addEventListener("click", async (e)=>{
   const b = e.target.closest("button"); if(!b) return;
   const act = b.dataset.act;
@@ -174,12 +238,10 @@ el("sheet").addEventListener("click", async (e)=>{
   }
   if(act==="sms"){
     const contactId=b.dataset.id;
-    const box=b.closest(".channel").querySelector(".box");
-    const message=box.textContent;
+    const message=b.closest(".channel").querySelector(".box").textContent;
     b.textContent="Sending..."; b.disabled=true;
     try{
-      const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contactId,message})});
+      const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
       const d=await r.json();
       if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
