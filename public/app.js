@@ -6,6 +6,7 @@
 const el = (id) => document.getElementById(id);
 let DATA = null;
 let TAB = "booked";
+let REP = "all";
 
 function initials(n){ return (n||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -109,19 +110,34 @@ function render(d){
     '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows, nudge them to rebook</div></div>'+
     '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged, check before reaching out</div></div>';
 
+  const repNames = [...new Set([...d.booked, ...d.noshow].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
+  const repTotal = (list, rep) => { const r = list.find(x=>x.repName===rep); return r ? r.total : 0; };
+  const bCount = REP==="all" ? d.totals.booked : repTotal(d.booked, REP);
+  const nCount = REP==="all" ? d.totals.noshow : repTotal(d.noshow, REP);
   el("tabs").innerHTML =
-    '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+d.totals.booked+'</span></button>'+
-    '<button class="tab '+(TAB==="noshow"?"on":"")+'" data-tab="noshow">No-shows <span>'+d.totals.noshow+'</span></button>';
-  el("tabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{ TAB=b.dataset.tab; renderGroups(); el("tabs").querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.tab===TAB)); }));
+    '<div class="tabgroup">'+
+      '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+bCount+'</span></button>'+
+      '<button class="tab '+(TAB==="noshow"?"on":"")+'" data-tab="noshow">No-shows <span>'+nCount+'</span></button>'+
+    '</div>'+
+    '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
+      '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
+      repNames.map(n=>'<option value="'+esc(n)+'"'+(n===REP?" selected":"")+'>'+esc(n)+'</option>').join("")+
+    '</select>';
+  el("tabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{ TAB=b.dataset.tab; render(DATA); }));
+  el("repfilter").addEventListener("change",e=>{ REP=e.target.value; render(DATA); });
 
   renderGroups();
 }
 
 function renderGroups(){
-  const d = DATA; const reps = TAB==="noshow" ? d.noshow : d.booked;
+  const d = DATA; let reps = TAB==="noshow" ? d.noshow : d.booked;
+  if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
   const g = el("groups"); g.innerHTML="";
   if(!reps.length){
-    g.innerHTML = '<div class="empty-state">'+(TAB==="noshow"?"No no-shows right now. Nice.":"No booked calls right now.")+'</div>';
+    const msg = REP!=="all"
+      ? esc(REP)+" has no "+(TAB==="noshow"?"no-shows":"booked calls")+" right now."
+      : (TAB==="noshow"?"No no-shows right now. Nice.":"No booked calls right now.");
+    g.innerHTML = '<div class="empty-state">'+msg+'</div>';
     return;
   }
   reps.forEach(rep=>{
