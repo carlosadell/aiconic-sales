@@ -19,7 +19,10 @@ const LINKS = {
   conversify: "https://conversifi.io/dashboard",
   script: "https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit",
   interviewQuestions: "https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit",
-  interviewBooking: "https://app.aiconichub.ai/leads-engine-interview",
+  // Interview calendars by rep. John's leads book on John's calendar, everyone
+  // else books on the Carlos calendar (the original link).
+  interviewCarlos: "https://app.aiconichub.ai/leads-engine-interview",
+  interviewJohn: "https://app.aiconichub.ai/leads-engine-interview-john",
   // Fallback rebooking links by source, used when a lead has no personal reschedule link.
   bookLkdn: "https://app.aiconichub.ai/leads-engine-lkdn",
   bookDefault: "https://app.aiconichub.ai/leads-engine",
@@ -136,7 +139,7 @@ module.exports = async (req, res) => {
           conversify: LINKS.conversify,
           script: LINKS.script,
           interviewQuestions: LINKS.interviewQuestions,
-          interviewBooking: LINKS.interviewBooking,
+          interviewBooking: /john/i.test(repName) ? LINKS.interviewJohn : LINKS.interviewCarlos,
         },
         flagged: v.flagged,
         flags: v.flags,
