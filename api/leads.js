@@ -103,6 +103,7 @@ module.exports = async (req, res) => {
         lastEmail: comms.lastEmail,
         lastSms: comms.lastSms,
         rebookLink: rebook,
+        rebookIsPersonal: Boolean(comms.rescheduleLink),
         links: {
           contact: `${LINKS.hubBase}/${LOCATION_ID}/contacts/detail/${contactId}`,
           pipeline: `${LINKS.hubBase}/${LOCATION_ID}/opportunities`,

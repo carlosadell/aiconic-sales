@@ -231,6 +231,80 @@ function channelBlocks(l){
   return out.join("");
 }
 
+// Reschedule messages. This is NOT a routine option. Rescheduling is only for a
+// real emergency or a genuine reason. When it has to happen, reach the person on
+// every channel you can, with a real reason, so they know you are not standing
+// them up. Each message tells them you are also reaching out on the other
+// channels, so they do not sit waiting on the call.
+function rescheduleText(l){
+  const first = (l.name||"there").split(" ")[0];
+  const link = l.rebookLink || "";
+  const hasPhone = Boolean(l.phone);
+  const verb = { sms: "texting you", linkedin: "reaching out on LinkedIn", email: "sending you an email" };
+  function also(cur){
+    const others = ["sms","linkedin","email"].filter(c=>c!==cur && (c!=="sms"||hasPhone)).map(c=>verb[c]);
+    if(!others.length) return "";
+    const joined = others.length>1 ? others.slice(0,-1).join(", ")+" and "+others[others.length-1] : others[0];
+    return "I am also "+joined+" just in case, I would hate to have you wait on the call for me.";
+  }
+  return {
+    sms:
+      "Hey "+first+", I hope you are doing great. We have our call coming up but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please? I am very sorry to do this last minute. Here is the link to find a better time: "+link+" "+also("sms")+" Thank you for your understanding, "+first+".",
+    note:
+      "Hey "+first+", I hope you are doing great. I am reaching out because we have our call coming up, but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please? I am very sorry to do this last minute. Here is the link to find a better time: "+link+" "+also("linkedin")+" Thank you for your understanding, "+first+". I look forward to connecting.",
+    email: {
+      subject: "I need to reschedule our call",
+      body:
+        "Hey "+first+",\n\n"+
+        "I hope you are doing great.\n\n"+
+        "I am reaching out because we have our call coming up, but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please?\n\n"+
+        "I am very sorry to do this last minute, but life can be unpredictable.\n\n"+
+        "Here is the link for you to find a better time:\n"+link+"\n\n"+
+        also("email")+"\n\n"+
+        "Thank you for your understanding, "+first+". I look forward to connecting with you.",
+    },
+  };
+}
+
+function rescheduleBlock(l){
+  if(l.status==="noshow") return "";
+  const m = rescheduleText(l);
+  const blocks = [];
+  if(l.phone){
+    blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">SMS</span><b>Text them</b></div>'+
+      '<textarea class="box editable msg-sms" rows="5">'+esc(m.sms)+'</textarea>'+
+      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via GoHighLevel</button>'+
+      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
+  }
+  blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
+    '<textarea class="box editable msg-note" rows="5">'+esc(m.note)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
+    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
+  blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">Email</span><b>Email them</b></div>'+
+    '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
+    '<textarea class="box editable msg-body" rows="9">'+esc(m.email.body)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+  return '<div class="dohead">Only if you truly cannot make the call</div>'+
+    '<div class="rwarn"><b>This is not a standard step.</b> Rescheduling is only for a real emergency or a genuine reason, never routine, and never because it feels easier. If you honestly have to move a call, reach the person on every channel you can, SMS, LinkedIn, and email, with a real reason, so they know you are not standing them up and never sit waiting on the call for you. Each message below already tells them you are reaching out on the other channels too.</div>'+
+    blocks.join("");
+}
+
+// The lead's own reschedule link, pulled from their GoHighLevel confirmation
+// email. Shown so a rep can see it, open it, or copy it straight from the card.
+function rebookRow(l){
+  if(!l.rebookLink) return "";
+  const personal = l.rebookIsPersonal;
+  const label = personal ? "Reschedule link (their own)" : "Booking link (general)";
+  const note = personal
+    ? "This is this lead's own link. It reschedules their existing call."
+    : "No personal link found in their confirmation email, so this is the general booking page.";
+  return '<div class="linkrow">'+
+    '<div class="linkrow-top"><span class="linkrow-lbl">'+label+'</span>'+
+    '<button class="btn tiny" data-act="copy" data-text="'+esc(l.rebookLink)+'">Copy link</button></div>'+
+    '<a class="linkrow-url" href="'+esc(l.rebookLink)+'" target="_blank" rel="noopener">'+esc(l.rebookLink)+'</a>'+
+    '<div class="hint">'+note+'</div></div>';
+}
+
 function notesBlock(l){
   return '<div class="dohead">Call notes</div>'+
     '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
@@ -276,9 +350,11 @@ function openSheet(l){
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
+      rebookRow(l)+
       sentBlock(l)+
       '<div class="dohead">'+doHead+'</div>'+
       channelBlocks(l)+
+      rescheduleBlock(l)+
       stageMover(l)+
       notesBlock(l)+
       prepBlock(l)+
