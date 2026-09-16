@@ -231,6 +231,34 @@ function channelBlocks(l){
   return out.join("");
 }
 
+function notesBlock(l){
+  return '<div class="dohead">Call notes</div>'+
+    '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
+    '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to GoHighLevel..."></textarea>'+
+    '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
+    '<div class="hint" style="margin-bottom:16px">Notes save to this contact in GoHighLevel and show for everyone.</div>';
+}
+
+function renderNotes(notes){
+  const box = el("notes"); if(!box) return;
+  if(!notes.length){ box.innerHTML = '<div class="notes-empty">No notes yet. Add the first one below.</div>'; return; }
+  box.innerHTML = notes.map(n=>
+    '<div class="note-item"><div class="note-body">'+esc(n.body)+'</div>'+
+    (n.at?'<div class="note-when">'+esc(ago(n.at))+'</div>':"")+'</div>').join("");
+}
+
+async function loadNotes(contactId){
+  const box = el("notes"); if(!box) return;
+  try{
+    const r = await fetch("/api/notes?contactId="+encodeURIComponent(contactId),{cache:"no-store"});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
+    renderNotes(d.notes||[]);
+  }catch(e){
+    box.innerHTML = '<div class="notes-empty">Could not load notes: '+esc(e.message)+'</div>';
+  }
+}
+
 function openSheet(l){
   const sheet = el("sheet");
   const flagBox = l.flagged
@@ -252,15 +280,21 @@ function openSheet(l){
       '<div class="dohead">'+doHead+'</div>'+
       channelBlocks(l)+
       stageMover(l)+
+      notesBlock(l)+
       prepBlock(l)+
     '</div>';
-  // Make the editable message boxes grow to fit their text, and keep growing as the rep types.
-  sheet.querySelectorAll("textarea.editable").forEach(t=>{
-    const fit = ()=>{ t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px"; };
-    fit();
-    t.addEventListener("input", fit);
-  });
   el("scrim").classList.add("open");
+  // Size the editable boxes after the modal is visible, otherwise the text is
+  // measured while hidden (height 0) and the box shows only a clipped line or two.
+  const autosize = ()=>{
+    sheet.querySelectorAll("textarea.editable").forEach(t=>{
+      const fit = ()=>{ t.style.height="auto"; t.style.height=(t.scrollHeight+2)+"px"; };
+      fit();
+      t.addEventListener("input", fit);
+    });
+  };
+  requestAnimationFrame(autosize);
+  loadNotes(l.contactId);
 }
 function closeSheet(){ el("scrim").classList.remove("open"); }
 
@@ -306,6 +340,26 @@ el("sheet").addEventListener("click", async (e)=>{
       if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
     }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
+    return;
+  }
+  if(act==="savenote"){
+    const contactId=b.dataset.id;
+    const userId=b.dataset.user||"";
+    const ta=el("notenew");
+    const body=ta ? ta.value.trim() : "";
+    if(!body){ b.textContent="Type a note first"; setTimeout(()=>{b.textContent="Save note";},1600); return; }
+    b.textContent="Saving..."; b.disabled=true;
+    try{
+      const r=await fetch("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,body,userId})});
+      const d=await r.json();
+      if(r.ok && d.ok){
+        if(ta) ta.value="";
+        b.textContent="Saved"; b.classList.add("done");
+        loadNotes(contactId);
+        setTimeout(()=>{ b.textContent="Save note"; b.classList.remove("done"); b.disabled=false; },1500);
+      }else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
+    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
+    return;
   }
 });
 

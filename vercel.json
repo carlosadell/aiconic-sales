@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/leads.js": { "maxDuration": 30 },
-    "api/send-sms.js": { "maxDuration": 15 }
+    "api/send-sms.js": { "maxDuration": 15 },
+    "api/notes.js": { "maxDuration": 15 }
   }
 }
