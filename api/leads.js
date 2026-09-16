@@ -25,13 +25,26 @@ const LINKS = {
   bookDefault: "https://app.aiconichub.ai/leads-engine",
 };
 
-// Work out where the lead came from, for the call-prep note and the rebook link.
-function sourceOf(contact, tags) {
-  const hay = ((contact && contact.source) || "" + " " + (tags || []).join(" ")).toLowerCase();
-  const all = (hay + " " + (tags || []).join(" ")).toLowerCase();
-  if (all.includes("lkdn") || all.includes("linkedin")) return { label: "LinkedIn", check: "Check their profile and the Conversify conversations." };
-  if (all.includes("apply") || all.includes("survey") || all.includes("website")) return { label: "Website", check: "They pre-qualified. Read their survey answers before you dial." };
-  return { label: "Email campaign", check: "From our email campaigns. Try to find them on LinkedIn first." };
+// Work out where the lead really came from, from the opportunity's own
+// attribution (the pages and referrers GoHighLevel recorded), not a guess.
+// Web pages and channel signals are read separately so an "email=" query
+// parameter in a booking URL is never mistaken for an email-campaign lead.
+function sourceOf(attributions, contact, tags) {
+  const attrs = attributions || [];
+  const web = attrs.map((a) => (a.pageUrl || "") + " " + (a.url || "") + " " + (a.referrer || "")).join(" ").toLowerCase();
+  const channel = (attrs.map((a) => (a.utmSessionSource || "") + " " + (a.medium || "")).join(" ") + " " + ((contact && contact.source) || "") + " " + (tags || []).join(" ")).toLowerCase();
+  const social = attrs.some((a) => String(a.utmSessionSource || "").toLowerCase() === "social media");
+
+  if (web.includes("linkedin") || web.includes("lkdn") || channel.includes("linkedin") || channel.includes("lkdn") || social) {
+    return { label: "LinkedIn", check: "They came in from LinkedIn. Check their profile and the Conversify conversations." };
+  }
+  if (channel.includes("email") || channel.includes("cold") || channel.includes("stamina")) {
+    return { label: "Email campaign", check: "From our email campaigns. Try to find them on LinkedIn first." };
+  }
+  if (/https?:\/\//.test(web) || web.includes("apply") || web.includes("survey") || web.includes("schedule") || web.includes("leads-engine") || web.includes("iconicbusinesshub") || web.includes("aiconichub") || web.includes("discovery") || web.includes("connect")) {
+    return { label: "Website", check: "They came through our website funnel. Read their survey answers before you dial." };
+  }
+  return { label: "Source unknown", check: "No clear source on file, so open the contact card to check where they came from." };
 }
 
 module.exports = async (req, res) => {
@@ -81,7 +94,17 @@ module.exports = async (req, res) => {
 
       const repId = o.assignedTo || "unassigned";
       const repName = overrides[repId] || users[repId] || "Unassigned";
-      const src = sourceOf(contact, tags);
+      const src = sourceOf(o.attributions, contact, tags);
+
+      // The booked call date comes from the opportunity's own calendar record,
+      // which is reliable, not from scraping the conversation for an activity.
+      const cal = (o.calenders && o.calenders[0]) || null;
+      const apptAt = (cal && cal.startTime) || (comms.appointment && comms.appointment.at) || null;
+      const apptTz = (cal && cal.selectedTimezone) || timezone || "";
+      const appointment = apptAt
+        ? { at: apptAt, title: (comms.appointment && comms.appointment.title) || "" }
+        : comms.appointment;
+
       const generalBooking = src.label === "LinkedIn" ? LINKS.bookLkdn : LINKS.bookDefault;
       const rebook = comms.rescheduleLink || generalBooking;
 
@@ -93,7 +116,7 @@ module.exports = async (req, res) => {
         company: rel.companyName || "",
         email,
         phone,
-        timezone,
+        timezone: apptTz,
         stage: stageName(o.pipelineStageId),
         stageId: o.pipelineStageId,
         callType: callType(stageName(o.pipelineStageId)),
@@ -101,7 +124,7 @@ module.exports = async (req, res) => {
         repName,
         source: src.label,
         sourceCheck: src.check,
-        appointment: comms.appointment,
+        appointment,
         lastEmail: comms.lastEmail,
         lastSms: comms.lastSms,
         rebookLink: rebook,
