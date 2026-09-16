@@ -19,7 +19,7 @@ const LINKS = {
   conversify: "https://conversifi.io/dashboard",
   script: "https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit",
   interviewQuestions: "https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit",
-  interviewBooking: "https://links.aiconichub.ai/widget/bookings/theiconicceocalendar/connect5c4w5xkqhn9olqneshszeydmmzdylhlvn4ar",
+  interviewBooking: "https://app.aiconichub.ai/leads-engine-interview",
   // Fallback rebooking links by source, used when a lead has no personal reschedule link.
   bookLkdn: "https://app.aiconichub.ai/leads-engine-lkdn",
   bookDefault: "https://app.aiconichub.ai/leads-engine",
