@@ -45,8 +45,16 @@ function messages(l){
   const link = l.rebookLink || "";
   if(l.status==="noshow"){
     return {
-      sms: "Hi "+first+", "+from+" here. We were on the call today but did not see you come through. Everything ok? If you want, you can grab another time here: "+link,
-      note: "Hi "+first+", we were on the call today but did not see you come through. Everything ok? If you want to find another time, here is the link: "+link,
+      sms: [
+        "Hi "+first+", "+from+" here.",
+        "We were on the call today but did not see you come through. Everything ok?",
+        "If you want, you can grab another time here:\n"+link,
+      ].join("\n\n"),
+      note: [
+        "Hi "+first+", "+from+" here.",
+        "We were on the call today but did not see you come through. Everything ok?",
+        "If you want to find another time, here is the link:\n"+link,
+      ].join("\n\n"),
       email: {
         subject: "Sorry we missed you",
         body:
@@ -65,8 +73,16 @@ function messages(l){
     ? "We will use the time to really understand your business, so come as you are. If there is anything you want to make sure we cover, just tell me."
     : "No pitch, just a real conversation about your business and how we can help. If anything comes up before then, message me here.";
   return {
-    sms: "Hi "+first+", "+from+" here. "+line+" Looking forward to it, and if anything comes up before then just reply here.",
-    note: "Hi "+first+", "+from+" here. "+line+" No pitch, just a real conversation. Looking forward to it.",
+    sms: [
+      "Hi "+first+", "+from+" here.",
+      line,
+      "Looking forward to it, and if anything comes up before then just reply here.",
+    ].join("\n\n"),
+    note: [
+      "Hi "+first+", "+from+" here.",
+      line,
+      "No pitch, just a real conversation. Looking forward to it.",
+    ].join("\n\n"),
     email: {
       subject: isInterview ? "Looking forward to your Aiconic interview" : "Looking forward to our call",
       body:
@@ -201,9 +217,10 @@ function prepBlock(l){
     ["Contact card in the Hub", l.links.contact],
     ["Conversify (LinkedIn chats)", l.links.conversify],
     ["Intro call script", l.links.script],
+    ["Interview questions", l.links.interviewQuestions],
     ["Interview booking link", l.links.interviewBooking],
     ["Open pipeline in the CRM", l.links.pipeline],
-  ];
+  ].filter(r=>r[1]);
   const appt = l.appointment && l.appointment.at
     ? '<div class="appt"><span class="ch">Call</span> '+esc(l.callType)+' &middot; '+esc(dayLabel(l.appointment.at, l.timezone))+'</div>' : "";
   const src = '<div class="srcnote"><b>'+esc(l.source)+'.</b> '+esc(l.sourceCheck)+'</div>';
@@ -267,22 +284,21 @@ function rescheduleText(l){
     const joined = others.length>1 ? others.slice(0,-1).join(", ")+" and "+others[others.length-1] : others[0];
     return "I am also "+joined+" just in case, I would hate to have you wait on the call for me.";
   }
+  // Same paragraph formatting on every channel, link on its own line.
+  function body(cur){
+    return [
+      "Hey "+first+", I hope you are doing great.",
+      "I am reaching out because we have our call coming up, but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please?",
+      "I am very sorry to do this last minute, but life can be unpredictable.",
+      "Here is the link for you to find a better time:\n"+link,
+      also(cur),
+      "Thank you for your understanding, "+first+". I look forward to connecting with you.",
+    ].filter(Boolean).join("\n\n");
+  }
   return {
-    sms:
-      "Hey "+first+", I hope you are doing great. We have our call coming up but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please? I am very sorry to do this last minute. Here is the link to find a better time: "+link+" "+also("sms")+" Thank you for your understanding, "+first+".",
-    note:
-      "Hey "+first+", I hope you are doing great. I am reaching out because we have our call coming up, but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please? I am very sorry to do this last minute. Here is the link to find a better time: "+link+" "+also("linkedin")+" Thank you for your understanding, "+first+". I look forward to connecting.",
-    email: {
-      subject: "I need to reschedule our call",
-      body:
-        "Hey "+first+",\n\n"+
-        "I hope you are doing great.\n\n"+
-        "I am reaching out because we have our call coming up, but a personal emergency came up and I will not be able to make it. Would it be possible to reschedule please?\n\n"+
-        "I am very sorry to do this last minute, but life can be unpredictable.\n\n"+
-        "Here is the link for you to find a better time:\n"+link+"\n\n"+
-        also("email")+"\n\n"+
-        "Thank you for your understanding, "+first+". I look forward to connecting with you.",
-    },
+    sms: body("sms"),
+    note: body("linkedin"),
+    email: { subject: "I need to reschedule our call", body: body("email") },
   };
 }
 
@@ -316,18 +332,32 @@ function rescheduleBlock(l){
 
 // The lead's own reschedule link, pulled from their GoHighLevel confirmation
 // email. Shown so a rep can see it, open it, or copy it straight from the card.
-function rebookRow(l){
-  if(!l.rebookLink) return "";
-  const personal = l.rebookIsPersonal;
-  const label = personal ? "Reschedule link (their own)" : "Booking link (general)";
-  const note = personal
-    ? "This is this lead's own link. It reschedules their existing call."
-    : "No personal link found in their confirmation email, so this is the general booking page.";
-  return '<div class="linkrow">'+
-    '<div class="linkrow-top"><span class="linkrow-lbl">'+label+'</span>'+
-    '<button class="btn tiny" data-act="copy" data-text="'+esc(l.rebookLink)+'">Copy link</button></div>'+
-    '<a class="linkrow-url" href="'+esc(l.rebookLink)+'" target="_blank" rel="noopener">'+esc(l.rebookLink)+'</a>'+
+function linkCard(cls, lbl, note, url){
+  return '<div class="linkrow '+cls+'">'+
+    '<div class="linkrow-top"><span class="linkrow-lbl">'+lbl+'</span>'+
+    '<button class="btn tiny" data-act="copy" data-text="'+esc(url)+'">Copy link</button></div>'+
+    '<a class="linkrow-url" href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(url)+'</a>'+
     '<div class="hint">'+note+'</div></div>';
+}
+function rebookRow(l){
+  const out = [];
+  if(l.rebookIsPersonal && l.rebookLink){
+    out.push(linkCard(
+      "",
+      "Reschedule this exact call",
+      "This link only moves THIS booked call to a different time, for this one person. It keeps the same call, you just pick a new slot. Do not use it if their call was cancelled, or if they want a brand new call. For those, use the new booking link below.",
+      l.rebookLink
+    ));
+  }
+  if(l.bookingLink){
+    out.push(linkCard(
+      "book",
+      "Book a brand new call",
+      "This is our general booking page. Send this one when their call was cancelled, when there is no reschedule link above, or any time they want a fresh call instead of moving an existing one.",
+      l.bookingLink
+    ));
+  }
+  return out.join("");
 }
 
 function notesBlock(l){
@@ -378,10 +408,9 @@ function openSheet(l){
       '</div>'+
       rebookRow(l)+
       sentBlock(l)+
-      (l.status==="rescheduling" ? "" : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)))+
-      rescheduleBlock(l)+
-      stageMover(l)+
-      notesBlock(l)+
+      (l.status==="rescheduling"
+        ? (rescheduleBlock(l)+stageMover(l)+notesBlock(l))
+        : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
       prepBlock(l)+
     '</div>';
   el("scrim").classList.add("open");

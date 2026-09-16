@@ -18,6 +18,7 @@ const LINKS = {
   hubBase: "https://app.theiconicceo.com/v2/location",
   conversify: "https://conversifi.io/dashboard",
   script: "https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit",
+  interviewQuestions: "https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit",
   interviewBooking: "https://links.aiconichub.ai/widget/bookings/theiconicceocalendar/connect5c4w5xkqhn9olqneshszeydmmzdylhlvn4ar",
   // Fallback rebooking links by source, used when a lead has no personal reschedule link.
   bookLkdn: "https://app.aiconichub.ai/leads-engine-lkdn",
@@ -81,7 +82,8 @@ module.exports = async (req, res) => {
       const repId = o.assignedTo || "unassigned";
       const repName = overrides[repId] || users[repId] || "Unassigned";
       const src = sourceOf(contact, tags);
-      const rebook = comms.rescheduleLink || (src.label === "LinkedIn" ? LINKS.bookLkdn : LINKS.bookDefault);
+      const generalBooking = src.label === "LinkedIn" ? LINKS.bookLkdn : LINKS.bookDefault;
+      const rebook = comms.rescheduleLink || generalBooking;
 
       return {
         id: o.id,
@@ -104,11 +106,13 @@ module.exports = async (req, res) => {
         lastSms: comms.lastSms,
         rebookLink: rebook,
         rebookIsPersonal: Boolean(comms.rescheduleLink),
+        bookingLink: generalBooking,
         links: {
           contact: `${LINKS.hubBase}/${LOCATION_ID}/contacts/detail/${contactId}`,
           pipeline: `${LINKS.hubBase}/${LOCATION_ID}/opportunities`,
           conversify: LINKS.conversify,
           script: LINKS.script,
+          interviewQuestions: LINKS.interviewQuestions,
           interviewBooking: LINKS.interviewBooking,
         },
         flagged: v.flagged,
@@ -126,12 +130,20 @@ module.exports = async (req, res) => {
         byRep[l.repId].leads.push(l);
       }
       const reps = Object.values(byRep).sort((a, b) => a.repName.localeCompare(b.repName));
+      // Chronological by call date, soonest first, so a rep can prepare in order.
+      // Leads with no appointment date on file sort to the bottom.
+      const apptTime = (l) => {
+        const at = l.appointment && l.appointment.at;
+        const t = at ? new Date(at).getTime() : NaN;
+        return Number.isFinite(t) ? t : Infinity;
+      };
       for (const r of reps) {
         r.total = r.leads.length;
         r.flagged = r.leads.filter((l) => l.flagged).length;
         r.leads.sort((a, b) => {
-          if (a.flagged !== b.flagged) return Number(b.flagged) - Number(a.flagged);
-          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+          const ta = apptTime(a), tb = apptTime(b);
+          if (ta !== tb) return ta - tb;
+          return String(a.name || "").localeCompare(String(b.name || ""));
         });
       }
       return reps;
