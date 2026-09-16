@@ -215,7 +215,8 @@ function stageMover(l){
 function prepBlock(l){
   const rows = [
     ["Book an intro call", l.bookingLink],
-    ["Book an interview call", l.links.interviewBooking],
+    ["Book an interview call with Carlos", l.links.interviewCarlos],
+    ["Book an interview call with John", l.links.interviewJohn],
     ["Open the CRM", l.links.pipeline],
     ["Contact card in the Hub", l.links.contact],
     ["Conversify (LinkedIn chats)", l.links.conversify],

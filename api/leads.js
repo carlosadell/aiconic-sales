@@ -140,6 +140,8 @@ module.exports = async (req, res) => {
           script: LINKS.script,
           interviewQuestions: LINKS.interviewQuestions,
           interviewBooking: /john/i.test(repName) ? LINKS.interviewJohn : LINKS.interviewCarlos,
+          interviewCarlos: LINKS.interviewCarlos,
+          interviewJohn: LINKS.interviewJohn,
         },
         flagged: v.flagged,
         flags: v.flags,
