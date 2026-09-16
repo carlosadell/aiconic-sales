@@ -32,6 +32,7 @@ function typeClass(t){
   if(k.includes("review")) return "t-review";
   if(k.includes("intro")) return "t-intro";
   if(k.includes("no show")) return "t-noshow";
+  if(k.includes("reschedul")) return "t-resched";
   if(k.includes("cancel")) return "t-cancel";
   return "t-intro";
 }
@@ -98,9 +99,9 @@ function render(d){
   el("rule").innerHTML =
     '<h3>How to use this</h3>'+
     '<ol class="howto">'+
-      '<li>Tap any name to open their card.</li>'+
+      '<li>Tap any name to open their card. Everything you need for that person is inside.</li>'+
       '<li>Reach out on every channel you can. The SMS, LinkedIn, and email messages are written for you, ready to send or copy.</li>'+
-      '<li>If someone did not show up, open the No-shows tab and send them the rebook message.</li>'+
+      '<li>The tabs sort people by where they are: <b>Booked</b> have a call coming up, <b>No-shows</b> did not show and need a rebook nudge, and <b>Rescheduling</b> are people we are actively getting to book a new time.</li>'+
       '<li>When a call moves or a deal changes, change the stage on the card and GoHighLevel updates on its own.</li>'+
     '</ol>'+
     '<div class="flagline"><b>We flag what matters:</b> no phone so no SMS, an SMS that failed, or a bounced email. A flag never means skip someone. We reach out to everyone.</div>';
@@ -108,16 +109,20 @@ function render(d){
   el("summary").innerHTML =
     '<div class="stat blue"><div class="n">'+d.totals.booked+'</div><div class="l">Booked, reach out before the call</div></div>'+
     '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows, nudge them to rebook</div></div>'+
+    '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Rescheduling, waiting on a new time</div></div>'+
     '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged, check before reaching out</div></div>';
 
-  const repNames = [...new Set([...d.booked, ...d.noshow].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
-  const repTotal = (list, rep) => { const r = list.find(x=>x.repName===rep); return r ? r.total : 0; };
+  const resched = d.rescheduling || [];
+  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
+  const repTotal = (list, rep) => { const r = (list||[]).find(x=>x.repName===rep); return r ? r.total : 0; };
   const bCount = REP==="all" ? d.totals.booked : repTotal(d.booked, REP);
   const nCount = REP==="all" ? d.totals.noshow : repTotal(d.noshow, REP);
+  const rCount = REP==="all" ? (d.totals.rescheduling||0) : repTotal(resched, REP);
   el("tabs").innerHTML =
     '<div class="tabgroup">'+
       '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+bCount+'</span></button>'+
       '<button class="tab '+(TAB==="noshow"?"on":"")+'" data-tab="noshow">No-shows <span>'+nCount+'</span></button>'+
+      '<button class="tab '+(TAB==="rescheduling"?"on":"")+'" data-tab="rescheduling">Rescheduling <span>'+rCount+'</span></button>'+
     '</div>'+
     '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
       '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
@@ -130,14 +135,28 @@ function render(d){
 }
 
 function renderGroups(){
-  const d = DATA; let reps = TAB==="noshow" ? d.noshow : d.booked;
+  const d = DATA;
+  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : d.booked;
   if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
   const g = el("groups"); g.innerHTML="";
+
+  // Plain-language explainer for the Rescheduling tab, so anyone new understands
+  // at a glance why these people are here.
+  if(TAB==="rescheduling"){
+    g.innerHTML =
+      '<div class="explain">'+
+        '<div class="explain-h">What is Rescheduling?</div>'+
+        '<p>These are people we are actively trying to get to book a new time. This is the one part of the process we do by hand, so a person only shows up here because someone moved them here on purpose.</p>'+
+        '<p>Usually that is because their call could not go ahead: they did not show, they cancelled, or the salesperson could not make it. Now we are chasing a new booking.</p>'+
+        '<p>Open the card, reach out on every channel, and send them the booking link. The moment they book a new call, move them back to their call stage. If they go quiet, move them to Not Qualified.</p>'+
+      '</div>';
+  }
+
   if(!reps.length){
-    const msg = REP!=="all"
-      ? esc(REP)+" has no "+(TAB==="noshow"?"no-shows":"booked calls")+" right now."
-      : (TAB==="noshow"?"No no-shows right now. Nice.":"No booked calls right now.");
-    g.innerHTML = '<div class="empty-state">'+msg+'</div>';
+    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : "booked calls";
+    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : "No booked calls right now.";
+    const msg = REP!=="all" ? esc(REP)+" has no "+label+" right now." : none;
+    g.innerHTML += '<div class="empty-state">'+msg+'</div>';
     return;
   }
   reps.forEach(rep=>{
@@ -156,7 +175,8 @@ function renderGroups(){
         '<span class="src">'+esc(l.source)+'</span>',
       ].filter(Boolean).join('<span class="mdot">&middot;</span>');
       const badge = l.flagged ? '<span class="badge red">'+esc(l.primaryFlag.label)+'</span>' : "";
-      row.innerHTML = '<span class="dotmark '+(l.flagged?"red":(l.status==="noshow"?"amber":"green"))+'"></span>'+
+      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : "green";
+      row.innerHTML = '<span class="dotmark '+dotCls+'"></span>'+
         '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
         badge+'<span class="go">&rsaquo;</span>';
       row.addEventListener("click",()=>openSheet(l));
@@ -284,6 +304,11 @@ function rescheduleBlock(l){
     '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
     '<textarea class="box editable msg-body" rows="9">'+esc(m.email.body)+'</textarea>'+
     '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+  if(l.status==="rescheduling"){
+    return '<div class="dohead">Get them to book a new time</div>'+
+      '<div class="rwarn resched"><b>They are waiting on a new time.</b> Follow up on every channel you can, SMS, LinkedIn, and email, and send them the booking link. The moment they book, move them back to their call stage. If they go quiet, move them to Not Qualified.</div>'+
+      blocks.join("");
+  }
   return '<div class="dohead">Only if you truly cannot make the call</div>'+
     '<div class="rwarn"><b>This is not a standard step.</b> Rescheduling is only for a real emergency or a genuine reason, never routine, and never because it feels easier. If you honestly have to move a call, reach the person on every channel you can, SMS, LinkedIn, and email, with a real reason, so they know you are not standing them up and never sit waiting on the call for you. Each message below already tells them you are reaching out on the other channels too.</div>'+
     blocks.join("");
@@ -344,6 +369,7 @@ function openSheet(l){
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
       (l.status==="noshow"?'<div class="nshead">Did not show up. Give them an easy way back in.</div>':"")+
+      (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
       flagBox+
       '<div class="kv">'+
         '<div class="k">Call</div><div class="v">'+esc(l.callType)+(l.appointment&&l.appointment.at?' &middot; '+esc(dayLabel(l.appointment.at,l.timezone)):"")+'</div>'+
@@ -352,8 +378,7 @@ function openSheet(l){
       '</div>'+
       rebookRow(l)+
       sentBlock(l)+
-      '<div class="dohead">'+doHead+'</div>'+
-      channelBlocks(l)+
+      (l.status==="rescheduling" ? "" : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)))+
       rescheduleBlock(l)+
       stageMover(l)+
       notesBlock(l)+

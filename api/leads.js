@@ -139,15 +139,22 @@ module.exports = async (req, res) => {
 
     const booked = leads.filter((l) => l.status === "booked");
     const noshow = leads.filter((l) => l.status === "noshow");
+    const rescheduling = leads.filter((l) => l.status === "rescheduling");
 
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json({
       generatedAt: new Date().toISOString(),
       rule: RULE,
       stages: ALL_STAGES,
-      totals: { booked: booked.length, noshow: noshow.length, flagged: leads.filter((l) => l.flagged).length },
+      totals: {
+        booked: booked.length,
+        noshow: noshow.length,
+        rescheduling: rescheduling.length,
+        flagged: leads.filter((l) => l.flagged).length,
+      },
       booked: group(booked),
       noshow: group(noshow),
+      rescheduling: group(rescheduling),
     });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
