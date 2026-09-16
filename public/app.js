@@ -42,7 +42,7 @@ function messages(l){
   const first = (l.name||"there").split(" ")[0];
   const rep = l.repName && l.repName!=="Unassigned" ? l.repName.split(" ")[0] : "";
   const from = rep ? rep+" from Aiconic" : "the Aiconic team";
-  const link = l.rebookLink || "";
+  const link = l.bookingLink || l.rebookLink || "";
   if(l.status==="noshow"){
     return {
       sms: [
@@ -214,17 +214,18 @@ function stageMover(l){
 
 function prepBlock(l){
   const rows = [
+    ["Book an intro call", l.bookingLink],
+    ["Book an interview call", l.links.interviewBooking],
+    ["Open the CRM", l.links.pipeline],
     ["Contact card in the Hub", l.links.contact],
     ["Conversify (LinkedIn chats)", l.links.conversify],
     ["Intro call script", l.links.script],
     ["Interview questions", l.links.interviewQuestions],
-    ["Interview booking link", l.links.interviewBooking],
-    ["Open pipeline in the CRM", l.links.pipeline],
   ].filter(r=>r[1]);
   const appt = l.appointment && l.appointment.at
     ? '<div class="appt"><span class="ch">Call</span> '+esc(l.callType)+' &middot; '+esc(dayLabel(l.appointment.at, l.timezone))+'</div>' : "";
   const src = '<div class="srcnote"><b>'+esc(l.source)+'.</b> '+esc(l.sourceCheck)+'</div>';
-  return '<div class="dohead">Call prep, everything you need</div>'+appt+src+
+  return '<div class="dohead">All the relevant links you might need</div>'+appt+src+
     '<div class="prep">'+rows.map(r=>'<a class="preplink" href="'+esc(r[1])+'" target="_blank" rel="noopener"><span>'+esc(r[0])+'</span><span class="arr">Open &rsaquo;</span></a>').join("")+'</div>';
 }
 
@@ -275,7 +276,7 @@ function channelBlocks(l){
 // channels, so they do not sit waiting on the call.
 function rescheduleText(l){
   const first = (l.name||"there").split(" ")[0];
-  const link = l.rebookLink || "";
+  const link = l.status==="rescheduling" ? (l.bookingLink || l.rebookLink || "") : (l.rebookLink || l.bookingLink || "");
   const hasPhone = Boolean(l.phone);
   const verb = { sms: "texting you", linkedin: "reaching out on LinkedIn", email: "sending you an email" };
   function also(cur){
@@ -341,19 +342,22 @@ function linkCard(cls, lbl, note, url){
 }
 function rebookRow(l){
   const out = [];
-  if(l.rebookIsPersonal && l.rebookLink){
+  // The personal reschedule link only works BEFORE the call, so only show it
+  // for an upcoming booked call. Once a call is a no-show, cancelled, or passed,
+  // that link is dead, so we just hand them the intro booking link instead.
+  if(l.status==="booked" && l.rebookIsPersonal && l.rebookLink){
     out.push(linkCard(
       "",
       "Reschedule this exact call",
-      "This link only moves THIS booked call to a different time, for this one person. It keeps the same call, you just pick a new slot. Do not use it if their call was cancelled, or if they want a brand new call. For those, use the new booking link below.",
+      "Only for a call that has not happened yet. This link moves THIS booked call to a new time for this one person, same call, new slot. It stops working once the call has passed or was cancelled. For anything else, use Book an intro call below.",
       l.rebookLink
     ));
   }
   if(l.bookingLink){
     out.push(linkCard(
       "book",
-      "Book a brand new call",
-      "This is our general booking page. Send this one when their call was cancelled, when there is no reschedule link above, or any time they want a fresh call instead of moving an existing one.",
+      "Book an intro call",
+      "Send this whenever they need a fresh call: a no-show, a cancelled call, or a call that already passed. This is the link to use for rebooking, and it always works.",
       l.bookingLink
     ));
   }
