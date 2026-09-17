@@ -1,5 +1,5 @@
 // Front-end for the Daily Reach-Out List.
-// Fetches /api/leads (live from GoHighLevel) and renders booked leads and
+// Fetches /api/leads (live from the CRM) and renders booked leads and
 // no-shows per salesperson, each with call-prep links, what we already sent,
 // a stage mover, and personal messages across every channel.
 
@@ -28,6 +28,7 @@ function dayLabel(iso, tz){
 }
 function typeClass(t){
   const k=(t||"").toLowerCase();
+  if(k.includes("booking interview")) return "t-bookint";
   if(k.includes("interview")) return "t-interview";
   if(k.includes("review")) return "t-review";
   if(k.includes("intro")) return "t-intro";
@@ -102,7 +103,7 @@ async function load(){
     DATA = d;
     render(d);
     s.className="status-pill live";
-    s.textContent = "Live from GoHighLevel, "+new Date(d.generatedAt).toLocaleString();
+    s.textContent = "Live from our CRM, "+new Date(d.generatedAt).toLocaleString();
   }catch(e){
     s.className="status-pill err";
     s.textContent = "Could not load live data: "+e.message;
@@ -117,8 +118,8 @@ function render(d){
     '<ol class="howto">'+
       '<li>Tap any name to open their card. Everything you need for that person is inside.</li>'+
       '<li>Reach out on every channel you can. The SMS, LinkedIn, and email messages are written for you, ready to send or copy.</li>'+
-      '<li>The tabs sort people by where they are: <b>Booked</b> have a call coming up, <b>No-shows</b> did not show and need a rebook nudge, and <b>Rescheduling</b> are people we are actively getting to book a new time.</li>'+
-      '<li>When a call moves or a deal changes, change the stage on the card and GoHighLevel updates on its own.</li>'+
+      '<li>The tabs sort people by where they are: <b>Booked</b> have a call coming up, <b>No-shows</b> did not show and need a rebook nudge, <b>Rescheduling</b> are people we are getting to book a new time, and <b>Booking Interview</b> are people who qualified but have not booked their interview yet.</li>'+
+      '<li>When a call moves or a deal changes, change the stage on the card and the CRM updates on its own.</li>'+
     '</ol>'+
     '<div class="flagline"><b>We flag what matters:</b> no phone so no SMS, an SMS that failed, or a bounced email. A flag never means skip someone. We reach out to everyone.</div>';
 
@@ -126,19 +127,23 @@ function render(d){
     '<div class="stat blue"><div class="n">'+d.totals.booked+'</div><div class="l">Booked, reach out before the call</div></div>'+
     '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows, nudge them to rebook</div></div>'+
     '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Rescheduling, waiting on a new time</div></div>'+
+    '<div class="stat teal"><div class="n">'+(d.totals.bookingInterview||0)+'</div><div class="l">Booking Interview, get them to book</div></div>'+
     '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged, check before reaching out</div></div>';
 
   const resched = d.rescheduling || [];
-  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
+  const bookint = d.bookingInterview || [];
+  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
   const repTotal = (list, rep) => { const r = (list||[]).find(x=>x.repName===rep); return r ? r.total : 0; };
   const bCount = REP==="all" ? d.totals.booked : repTotal(d.booked, REP);
   const nCount = REP==="all" ? d.totals.noshow : repTotal(d.noshow, REP);
   const rCount = REP==="all" ? (d.totals.rescheduling||0) : repTotal(resched, REP);
+  const iCount = REP==="all" ? (d.totals.bookingInterview||0) : repTotal(bookint, REP);
   el("tabs").innerHTML =
     '<div class="tabgroup">'+
       '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+bCount+'</span></button>'+
       '<button class="tab '+(TAB==="noshow"?"on":"")+'" data-tab="noshow">No-shows <span>'+nCount+'</span></button>'+
       '<button class="tab '+(TAB==="rescheduling"?"on":"")+'" data-tab="rescheduling">Rescheduling <span>'+rCount+'</span></button>'+
+      '<button class="tab '+(TAB==="bookinginterview"?"on":"")+'" data-tab="bookinginterview">Booking Interview <span>'+iCount+'</span></button>'+
     '</div>'+
     '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
       '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
@@ -152,7 +157,7 @@ function render(d){
 
 function renderGroups(){
   const d = DATA;
-  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : d.booked;
+  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : d.booked;
   if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
   const g = el("groups"); g.innerHTML="";
 
@@ -168,9 +173,19 @@ function renderGroups(){
       '</div>';
   }
 
+  if(TAB==="bookinginterview"){
+    g.innerHTML =
+      '<div class="explain book">'+
+        '<div class="explain-h">What is Booking Interview?</div>'+
+        '<p>These people qualified on the intro call but have not booked their interview yet. A person only shows up here because someone moved them here on purpose.</p>'+
+        '<p>The system already sent them the email and SMS with the interview booking link. Your job is to follow up on every channel until they actually book.</p>'+
+        '<p>The moment they book their interview, move them to Interview Call Booked. If they go quiet, move them to Not Qualified.</p>'+
+      '</div>';
+  }
+
   if(!reps.length){
-    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : "booked calls";
-    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : "No booked calls right now.";
+    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : "booked calls";
+    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : "No booked calls right now.";
     const msg = REP!=="all" ? esc(REP)+" has no "+label+" right now." : none;
     g.innerHTML += '<div class="empty-state">'+msg+'</div>';
     return;
@@ -191,7 +206,7 @@ function renderGroups(){
         '<span class="src">'+esc(l.source)+'</span>',
       ].filter(Boolean).join('<span class="mdot">&middot;</span>');
       const badge = l.flagged ? '<span class="badge red">'+esc(l.primaryFlag.label)+'</span>' : "";
-      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : "green";
+      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : "green";
       row.innerHTML = '<span class="dotmark '+dotCls+'"></span>'+
         '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
         badge+'<span class="go">&rsaquo;</span>';
@@ -209,7 +224,7 @@ function stageMover(l){
       '<select class="stagesel" data-opp="'+esc(l.id)+'">'+opts+'</select>'+
       '<span class="stagemsg" id="stagemsg"></span>'+
     '</div>'+
-    '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in GoHighLevel right away.</div>';
+    '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in the CRM right away.</div>';
 }
 
 function prepBlock(l){
@@ -249,11 +264,11 @@ function channelBlocks(l){
   const out = [];
   l.channels.forEach(ch=>{
     if(ch==="sms"){
-      out.push('<div class="channel"><div class="top"><span class="tag sms">SMS</span><b>Personal SMS through GoHighLevel</b></div>'+
+      out.push('<div class="channel"><div class="top"><span class="tag sms">SMS</span><b>Personal SMS through the CRM</b></div>'+
         '<textarea class="box editable msg-sms" rows="4">'+esc(m.sms)+'</textarea>'+
-        '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via GoHighLevel</button>'+
+        '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
         '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div>'+
-        '<div class="hint">Edit the message if you like, then send. Goes to '+esc(l.phone)+' through GoHighLevel.</div></div>');
+        '<div class="hint">Edit the message if you like, then send. Goes to '+esc(l.phone)+' through the CRM.</div></div>');
     }else if(ch==="linkedin"){
       out.push('<div class="channel"><div class="top"><span class="tag also">LinkedIn</span><b>Message or connection request</b></div>'+
         '<textarea class="box editable msg-note" rows="3">'+esc(m.note)+'</textarea>'+
@@ -264,7 +279,7 @@ function channelBlocks(l){
         '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
         '<textarea class="box editable msg-body" rows="7">'+esc(m.email.body)+'</textarea>'+
         '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div>'+
-        '<div class="hint">Edit anything you like, then copy. Send from our business inbox, not the GoHighLevel email.</div></div>');
+        '<div class="hint">Edit anything you like, then copy. Send from our business inbox, not the CRM email.</div></div>');
     }
   });
   return out.join("");
@@ -311,7 +326,7 @@ function rescheduleBlock(l){
   if(l.phone){
     blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">SMS</span><b>Text them</b></div>'+
       '<textarea class="box editable msg-sms" rows="5">'+esc(m.sms)+'</textarea>'+
-      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via GoHighLevel</button>'+
+      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
       '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
   }
   blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
@@ -332,7 +347,44 @@ function rescheduleBlock(l){
     blocks.join("");
 }
 
-// The lead's own reschedule link, pulled from their GoHighLevel confirmation
+// Messages for people who qualified but have not booked their interview yet.
+// Same paragraph formatting on every channel, the booking link on its own line.
+function interviewText(l){
+  const first = (l.name||"there").split(" ")[0];
+  const link = (l.links && l.links.interviewBooking) || "";
+  const body = [
+    "Hi "+first+", great call today!",
+    "Your next step is to book your interview as soon as possible.",
+    "This is a relaxed working session, nothing to prepare. We will use the time to understand you and your business better before we start the trial.",
+    "Please pick a time that works for you here:\n"+link,
+    "Looking forward to it.",
+  ].join("\n\n");
+  return { sms: body, note: body, email: { subject: "Great call today, let's book your interview", body: body } };
+}
+
+function interviewBlock(l){
+  const m = interviewText(l);
+  const link = (l.links && l.links.interviewBooking) || "";
+  const linkcard = link ? linkCard("book", "Interview booking link", "Send them this so they can book their interview.", link) : "";
+  const blocks = [];
+  if(l.phone){
+    blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">SMS</span><b>Text them</b></div>'+
+      '<textarea class="box editable msg-sms" rows="6">'+esc(m.sms)+'</textarea>'+
+      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
+      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
+  }
+  blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
+    '<textarea class="box editable msg-note" rows="6">'+esc(m.note)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
+    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
+  blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">Email</span><b>Email them</b></div>'+
+    '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
+    '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+  return '<div class="dohead">Get them to book the interview</div>'+linkcard+blocks.join("");
+}
+
+// The lead's own reschedule link, pulled from their the CRM confirmation
 // email. Shown so a rep can see it, open it, or copy it straight from the card.
 function linkCard(cls, lbl, note, url){
   return '<div class="linkrow '+cls+'">'+
@@ -368,9 +420,9 @@ function rebookRow(l){
 function notesBlock(l){
   return '<div class="dohead">Call notes</div>'+
     '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
-    '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to GoHighLevel..."></textarea>'+
+    '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
-    '<div class="hint" style="margin-bottom:16px">Notes save to this contact in GoHighLevel and show for everyone.</div>';
+    '<div class="hint" style="margin-bottom:16px">Notes save to this contact in the CRM and show for everyone.</div>';
 }
 
 function renderNotes(notes){
@@ -405,16 +457,19 @@ function openSheet(l){
     '<div class="body">'+
       (l.status==="noshow"?'<div class="nshead">Did not show up. Give them an easy way back in.</div>':"")+
       (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
+      (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       flagBox+
       '<div class="kv">'+
         '<div class="k">Call</div><div class="v">'+esc(l.callType)+(l.appointment&&l.appointment.at?' &middot; '+esc(dayLabel(l.appointment.at,l.timezone)):"")+'</div>'+
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
-      rebookRow(l)+
+      (l.status==="bookinginterview" ? "" : rebookRow(l))+
       sentBlock(l)+
       (l.status==="rescheduling"
         ? (rescheduleBlock(l)+stageMover(l)+notesBlock(l))
+        : l.status==="bookinginterview"
+        ? (interviewBlock(l)+stageMover(l)+notesBlock(l))
         : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
       prepBlock(l)+
     '</div>';
@@ -467,7 +522,7 @@ el("sheet").addEventListener("click", async (e)=>{
     const contactId=b.dataset.id;
     const ta=b.closest(".channel").querySelector(".msg-sms");
     const message=ta ? ta.value : "";
-    if(!message.trim()){ b.textContent="Type a message first"; setTimeout(()=>{b.textContent="Send SMS via GoHighLevel";},1600); return; }
+    if(!message.trim()){ b.textContent="Type a message first"; setTimeout(()=>{b.textContent="Send SMS via the CRM";},1600); return; }
     b.textContent="Sending..."; b.disabled=true;
     try{
       const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
