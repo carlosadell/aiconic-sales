@@ -18,7 +18,7 @@
   .toptab.on:hover{border-color:var(--blue)}
   @media (max-width:520px){.toptab{flex:1;text-align:center;padding:14px 10px}}
   .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
-  #commsframe{width:100%;min-height:calc(100vh - 190px);border:none;background:var(--bg);display:block}
+  #commsframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
 </style>
 </head>
 <body>
@@ -65,11 +65,19 @@
 (function(){
   var tabs=document.querySelectorAll(".toptab");
   var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls")};
+  var frame=document.getElementById("commsframe");
+  function sizeComms(){
+    if(!frame) return;
+    try{ var d=frame.contentWindow.document; frame.style.height=((d.documentElement.scrollHeight||d.body.scrollHeight)+2)+"px"; }catch(e){}
+  }
   function show(v){
     for(var k in views){ if(views[k]) views[k].hidden=(k!==v); }
     tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===v); });
+    if(v==="comms"){ requestAnimationFrame(sizeComms); setTimeout(sizeComms,150); }
   }
   tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.view); }); });
+  if(frame){ frame.addEventListener("load", sizeComms); }
+  window.addEventListener("resize", function(){ if(views.comms && !views.comms.hidden) sizeComms(); });
 })();
 </script>
 <script src="/app.js"></script>
