@@ -58,6 +58,12 @@
   ol.rules li{counter-increment:r;position:relative;padding:15px 18px 15px 54px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:14.5px;box-shadow:var(--shadow)}
   ol.rules li::before{content:counter(r);position:absolute;left:15px;top:14px;width:26px;height:26px;border-radius:8px;background:var(--blue);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center}
   ol.rules b{font-weight:700}
+  ol.gate{list-style:none;counter-reset:g;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+  ol.gate li{counter-increment:g;position:relative;padding:16px 18px 16px 58px;background:var(--card);border:1px solid #f3cccc;border-left:4px solid var(--red);border-radius:12px;font-size:14.5px;box-shadow:var(--shadow)}
+  ol.gate li::before{content:counter(g);position:absolute;left:15px;top:15px;width:28px;height:28px;border-radius:8px;background:var(--red);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  ol.gate b{font-weight:700}
+  .gate-h{color:var(--red-ink);margin-top:34px}
+  .gatefoot{margin-top:14px;padding:14px 18px;background:var(--red);color:#fff;border-radius:12px;font-size:15px;font-weight:700}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
   .panel h3{font-size:16px;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
   .checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
@@ -85,6 +91,17 @@
   <p class="lede">One place for how we communicate with every lead: what you send before the call and how to keep it personal, what the system sends automatically, and how to keep it all coordinated so nothing clashes.</p>
 
   <div class="callout"><b>The golden rule.</b> Every message the lead gets, automatic or from you, is first person from the assigned rep and signed <b>[Your name] | Aiconic</b>. To the lead it always reads as you, so keep your live conversations lined up with what they received.</div>
+
+  <h2 class="gate-h">Before you book the interview call with the CEO, they must pass all three</h2>
+  <p class="h2-sub">These are non-negotiable. Before you book a lead onto the interview call with the CEO, they must pass all three conditions below. If even one of them is a no, do not book the interview call.</p>
+
+  <ol class="gate">
+    <li><b>We can actually help their business.</b> There is a real thing we do that would move their business forward, and they want that outcome. If the only reason they are here is to get something for free, they do not qualify.</li>
+    <li><b>They can commit at least $175 a week after the trial.</b> There has to be something we can do for them that is worth at least $175 a week, and they are in a position to pay it. If the money is not there, they do not qualify.</li>
+    <li><b>They are easy to work with and they understand how this works.</b> Friendly, positive, and genuinely interested in what we can do. They understand the free build is our sales process, a real deliverable they get to experience, not a free service forever, and that having us run it afterwards is a paid agreement starting at $175 a week. Pushy, rude, or difficult people do not qualify.</li>
+  </ol>
+
+  <div class="gatefoot">All three, or you do not book the interview call. A booked interview should mean we already believe this person can become a paying client.</div>
 
   <h2>1. Before the call, your personal touch</h2>
   <p class="h2-sub">The system already sends the confirmation and reminders. On top of that, reach out personally before the call. A real message from a real person is what lifts the show-up rate, so this is not optional.</p>
