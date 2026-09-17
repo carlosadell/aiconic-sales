@@ -222,6 +222,15 @@
 
   <p class="foot">The offer every message points back to: we interview the lead for about an hour and turn it into a complete Leads Engine for them, a lead magnet, a landing page, and a simple way to capture leads, all built for free.</p>
 </div>
-
+<script>
+(function(){
+  function post(){ try{ parent.postMessage({ t:"commsHeight", h: Math.ceil(document.documentElement.getBoundingClientRect().height) }, "*"); }catch(e){} }
+  window.addEventListener("load", post);
+  window.addEventListener("resize", post);
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(post); }
+  if("ResizeObserver" in window){ try{ new ResizeObserver(post).observe(document.body); }catch(e){} }
+  setTimeout(post,300); setTimeout(post,1000);
+})();
+</script>
 </body>
 </html>

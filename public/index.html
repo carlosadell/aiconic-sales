@@ -78,6 +78,9 @@
   tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.view); }); });
   if(frame){ frame.addEventListener("load", sizeComms); }
   window.addEventListener("resize", function(){ if(views.comms && !views.comms.hidden) sizeComms(); });
+  window.addEventListener("message", function(e){
+    if(e && e.data && e.data.t==="commsHeight" && frame && e.data.h>0){ frame.style.height=(e.data.h+2)+"px"; }
+  });
 })();
 </script>
 <script src="/app.js"></script>
