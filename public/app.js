@@ -115,7 +115,7 @@ async function load(){
 function render(d){
   el("rule").innerHTML =
     '<h3>How this page works</h3>'+
-    '<p style="margin:0 0 10px;color:var(--ink-2);font-size:14px;line-height:1.6">Tap any lead to open their card. Inside you can see their details, message them, write the call notes, paste the Fathom recording after the call, and log the call once it is finished. At the top of the card you will always see the stage they are in and when their call is.</p>'+
+    '<p style="margin:0 0 10px;color:var(--ink-2);font-size:14px;line-height:1.6">Tap any lead to open their card. Inside you can see their details, message them, write the call notes and paste the Fathom recording link into them after the call, and log the call once it is finished. At the top of the card you will always see the stage they are in and when their call is.</p>'+
     '<p style="margin:0 0 12px;color:var(--ink-2);font-size:14px;line-height:1.6">Some stages are automatic and some you move by hand. <b>Careful:</b> moving a lead into a stage marked "triggers FUP" starts a follow-up right away, so the customer gets emails and texts. Only move a lead there when that is what you want.</p>'+
     '<p style="margin:14px 0 8px;font-weight:800;font-size:13px;letter-spacing:.02em">What each stage means</p>'+
     '<ol class="howto">'+
@@ -428,13 +428,9 @@ function rebookRow(l){
 function notesBlock(l){
   return '<div class="dohead">Call notes</div>'+
     '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
-    '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM..."></textarea>'+
+    '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM. Paste the Fathom recording link in here too..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
-    '<div class="hint">Notes save to this contact in the CRM and show for everyone.</div>'+
-    '<div class="dohead" style="margin-top:16px">Fathom recording</div>'+
-    '<input class="subj-input recnew" id="recnew" placeholder="Paste the Fathom recording link here after the call">'+
-    '<div class="btnrow" style="margin-top:8px"><button class="btn solid" data-act="saverec" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save recording</button></div>'+
-    '<div class="hint">Saves the recording link to this contact in the CRM.</div>'+
+    '<div class="hint">Notes save to this contact in the CRM and show for everyone. Paste the Fathom recording link into a note after the call.</div>'+
     '<div class="dohead" style="margin-top:16px">Log the call</div>'+
     '<a class="calllog" href="https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit" target="_blank" rel="noopener">Open the call log</a>'+
     '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
@@ -544,21 +540,6 @@ el("sheet").addEventListener("click", async (e)=>{
       const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
       const d=await r.json();
       if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
-      else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
-    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
-    return;
-  }
-  if(act==="saverec"){
-    const contactId=b.dataset.id;
-    const userId=b.dataset.user||"";
-    const inp=el("recnew");
-    const url=inp ? inp.value.trim() : "";
-    if(!url){ b.textContent="Paste the link first"; setTimeout(()=>{b.textContent="Save recording";},1600); return; }
-    b.textContent="Saving..."; b.disabled=true;
-    try{
-      const r=await fetch("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,body:"Fathom recording: "+url,userId})});
-      const d=await r.json();
-      if(r.ok && d.ok){ if(inp) inp.value=""; b.textContent="Saved"; b.classList.add("done"); loadNotes(contactId); setTimeout(()=>{ b.textContent="Save recording"; b.classList.remove("done"); b.disabled=false; },1500); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
     }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
     return;
