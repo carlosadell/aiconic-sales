@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Communications</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#eef1f6; --card:#ffffff; --card-2:#fafbfd;
+    --ink:#0f1826; --ink-2:#46526a; --muted:#7c8699;
+    --border:#e2e7ef; --line:#c7d0de;
+    --blue:#2563eb; --blue-ink:#1e40af; --blue-soft:#eaf0ff;
+    --amber:#d97706; --amber-ink:#92400e; --amber-soft:#fdf2e3;
+    --red:#dc2626; --red-ink:#991b1b;
+    --green:#16a34a; --green-ink:#166534; --green-soft:#eaf7ee;
+    --violet:#7c3aed; --violet-ink:#5b21b6; --violet-soft:#f3efff;
+    --teal:#0d9488; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
+    --slate:#64748b; --slate-ink:#46526a; --slate-soft:#eef2f8;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.14);
+    --radius:14px;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding-block:38px 60px;padding-left:20px;padding-right:20px}
+  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 10px}
+  h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em;text-wrap:balance}
+  .lede{font-size:16.5px;color:var(--ink-2);margin:0;max-width:64ch}
+  .callout{margin:22px 0 0;padding:14px 18px;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:12px;font-size:14.5px;color:var(--ink)}
+  .callout b{font-weight:700}
+  h2{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:50px 0 8px}
+  .h2-sub{font-size:14.5px;color:var(--ink-2);margin:0 0 18px;max-width:64ch}
+  .grid{display:flex;flex-direction:column;gap:15px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;border-left:4px solid var(--edge,var(--blue))}
+  .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:9px}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--edge,var(--blue));padding:3px 9px;border-radius:999px;line-height:1.6}
+  .trig{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;line-height:1.6;border:1px solid transparent}
+  .trig.auto{background:var(--green-soft);color:var(--green-ink);border-color:#bfe6c9}
+  .trig.manual{background:var(--amber-soft);color:var(--amber-ink);border-color:#f2d9ac}
+  .card h3{font-size:19px;font-weight:800;margin:0 0 2px;letter-spacing:-.01em}
+  .fires{font-size:14px;color:var(--ink-2);margin:0 0 15px}
+  .fires b{color:var(--ink);font-weight:700}
+  dl.rows{display:grid;grid-template-columns:112px 1fr;gap:9px 18px;margin:0;font-size:14.5px}
+  dl.rows dt{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+  dl.rows dd{margin:0;color:var(--ink)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .step{font-size:12.5px;font-weight:600;background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--ink-2);white-space:nowrap}
+  .step.first{background:var(--edge,var(--blue));border-color:transparent;color:#fff}
+  .arr{color:var(--muted);font-size:12px}
+  .stops{color:var(--green-ink);font-weight:600}
+  a.link{color:var(--blue-ink);text-decoration:none;font-weight:600;border-bottom:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
+  a.link:hover{border-bottom-color:var(--blue)}
+  ol.rules{list-style:none;counter-reset:r;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+  ol.rules li{counter-increment:r;position:relative;padding:15px 18px 15px 54px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:14.5px;box-shadow:var(--shadow)}
+  ol.rules li::before{content:counter(r);position:absolute;left:15px;top:14px;width:26px;height:26px;border-radius:8px;background:var(--blue);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center}
+  ol.rules b{font-weight:700}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+  .panel h3{font-size:16px;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
+  .checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .checks li{position:relative;padding-left:30px;font-size:14.5px;color:var(--ink)}
+  .checks li::before{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border-radius:6px;background:var(--green-soft);border:1px solid #bfe6c9}
+  .checks li::after{content:"";position:absolute;left:6px;top:6px;width:5px;height:9px;border:solid var(--green-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .checks b{font-weight:700}
+  .links{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .linkcard{display:block;text-decoration:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);border-left:3px solid var(--edge,var(--blue))}
+  .linkcard:hover{border-color:var(--line)}
+  .linkcard .lk-label{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px}
+  .linkcard .lk-url{font-size:12px;color:var(--blue-ink);word-break:break-all;font-weight:500}
+  .linkcard .lk-note{font-size:12px;color:var(--muted);margin-top:4px}
+  .foot{margin-top:42px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+  @media (max-width:560px){
+    dl.rows{grid-template-columns:1fr;gap:2px 0}
+    dl.rows dt{padding-top:11px}
+    .links{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Sales Team Aiconic &middot; Sales Resources</p>
+  <h1>Everything about how we talk to a lead</h1>
+  <p class="lede">One place for how we communicate with every lead: what you send before the call and how to keep it personal, what the system sends automatically, and how to keep it all coordinated so nothing clashes.</p>
+
+  <div class="callout"><b>The golden rule.</b> Every message the lead gets, automatic or from you, is first person from the assigned rep and signed <b>[Your name] | Aiconic</b>. To the lead it always reads as you, so keep your live conversations lined up with what they received.</div>
+
+  <h2>1. Before the call, your personal touch</h2>
+  <p class="h2-sub">The system already sends the confirmation and reminders. On top of that, reach out personally before the call. A real message from a real person is what lifts the show-up rate, so this is not optional.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>The order to reach out in</h3>
+      <ol class="rules">
+        <li><b>Personal SMS through GoHighLevel, when there is a phone number.</b> It usually reaches them fastest. Send it from the lead's card in Daily Outreach.</li>
+        <li><b>No working phone? Do two things together.</b> Email them from your own business inbox, not the GoHighLevel email, because your inbox always lands. And send a LinkedIn connection request with a short intro. Do not rely on LinkedIn alone, the request may sit unaccepted.</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <h3>Make every message personal</h3>
+      <ul class="checks">
+        <li>Open the lead's card in <b>Daily Outreach</b>. Each channel has a ready draft. <b>Edit it, never send it raw.</b></li>
+        <li>Before you write, read what you can: their survey answers, their LinkedIn profile, and the Conversify conversations. Name one specific thing about them or their business.</li>
+        <li>Match where they came from: <b>LinkedIn leads</b>, check their profile and Conversify first; <b>email-campaign leads</b>, try to find them on LinkedIn before you dial.</li>
+        <li>Keep it warm and first person, and sign it with your name.</li>
+        <li>Reach them on every channel you can, not just one, so the message lands somewhere.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>2. What the system sends automatically</h2>
+  <p class="h2-sub">Five sequences run in GoHighLevel, each by email and SMS in your name. Some fire on their own, some only fire when you move the lead into a stage by hand. Know which is which so you do not repeat them.</p>
+
+  <div class="grid">
+
+    <div class="card" style="--edge:var(--blue)">
+      <div class="top"><span class="tag">Intro call booked</span><span class="trig auto">Automatic</span></div>
+      <h3>Booking sequence</h3>
+      <p class="fires">Fires on its own the moment a lead <b>books a new intro call</b>. You do nothing.</p>
+      <dl class="rows">
+        <dt>They get</dt><dd>A confirmation, then appointment reminders leading up to the call.</dd>
+        <dt>Timing</dt><dd><div class="flow"><span class="step first">Confirmation email</span><span class="arr">&rarr;</span><span class="step">24 hours before</span><span class="arr">&rarr;</span><span class="step">1 hour before</span><span class="arr">&rarr;</span><span class="step">10 minutes before</span></div></dd>
+        <dt>Your move</dt><dd>Send your personal message before the call, as in section 1.</dd>
+      </dl>
+    </div>
+
+    <div class="card" style="--edge:var(--teal)">
+      <div class="top"><span class="tag" style="--edge:var(--teal)">Booking Interview</span><span class="trig manual">Manual move</span></div>
+      <h3>Get them to book the interview</h3>
+      <p class="fires">You move the lead into <b>Booking Interview</b> by hand. Only do this when a qualified lead <b>did not book their interview while on the intro call</b>. If they booked it live, they never go here.</p>
+      <dl class="rows">
+        <dt>They get</dt><dd>Emails and SMS asking them to book the interview, reminding them it is the hour we turn into a complete Leads Engine for free.</dd>
+        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
+        <dt>Link used</dt><dd>The interview calendar for the assigned rep, Carlos or John.</dd>
+        <dt>Stops when</dt><dd><span class="stops">They book the interview.</span> Move them to Interview Call Booked so the reminders stop.</dd>
+      </dl>
+    </div>
+
+    <div class="card" style="--edge:var(--amber)">
+      <div class="top"><span class="tag" style="--edge:var(--amber)">No Show</span><span class="trig manual">Manual move</span></div>
+      <h3>We missed you</h3>
+      <p class="fires">You move the lead into <b>No Show</b> by hand after they do not turn up.</p>
+      <dl class="rows">
+        <dt>They get</dt><dd>A warm "I was on the call but did not see you, everything ok?", then reminders to rebook, each explaining the offer again.</dd>
+        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
+        <dt>Link used</dt><dd>The intro call booking page.</dd>
+        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> Move the stage so the reminders stop.</dd>
+      </dl>
+    </div>
+
+    <div class="card" style="--edge:var(--slate)">
+      <div class="top"><span class="tag" style="--edge:var(--slate)">Cancelled</span><span class="trig auto">Automatic</span></div>
+      <h3>Did you mean to cancel</h3>
+      <p class="fires">Fires on its own. When a lead <b>cancels</b>, they move to the Cancelled stage automatically and the sequence starts.</p>
+      <dl class="rows">
+        <dt>They get</dt><dd>A no-pressure "sometimes a cancel is a mistake" opener, then gentle reminders that the free offer still stands.</dd>
+        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, on cancel</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
+        <dt>Link used</dt><dd>The intro call booking page.</dd>
+        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> The reminders stop once they rebook.</dd>
+      </dl>
+    </div>
+
+    <div class="card" style="--edge:var(--violet)">
+      <div class="top"><span class="tag" style="--edge:var(--violet)">Rescheduling</span><span class="trig manual">Manual, exceptions only</span></div>
+      <h3>You have to move the call</h3>
+      <p class="fires">You move the lead into <b>Rescheduling</b> by hand. Use this only for real exceptions, when something personal and out of your control means you have to move a call. It is not a routine step.</p>
+      <dl class="rows">
+        <dt>They get</dt><dd>An apology that you have to move the call, then reminders asking them to grab a new time, all owning the change on your side.</dd>
+        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
+        <dt>Link used</dt><dd>The intro call booking page.</dd>
+        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> Move the stage so the reminders stop.</dd>
+      </dl>
+    </div>
+
+  </div>
+
+  <h2>3. How to coordinate your own outreach</h2>
+  <p class="h2-sub">Your personal messages and the automatic ones run at the same time. Keep them working together.</p>
+  <ol class="rules">
+    <li><b>Moving a stage sends messages in your name.</b> The moment you move a lead into a stage, its sequence starts contacting them by email and SMS as you. Move stages promptly and to the correct one.</li>
+    <li><b>Do not repeat the automation word for word.</b> The lead is already getting your email and SMS. When you add a LinkedIn note or a personal message, make it different and specific to them.</li>
+    <li><b>Send the same booking links.</b> Use the intro or interview links below, never a different or personal link that could break or confuse them.</li>
+    <li><b>Move the stage the moment they book.</b> Booking removes them from the sequence, so leaving them in the stage keeps the reminders going after they have booked, which looks careless.</li>
+    <li><b>Do not double up on the same day.</b> Avoid firing a manual message on the same day an automated one goes out, unless yours adds something new.</li>
+    <li><b>After day 5 it is on you.</b> Each follow-up sequence runs day 0, 1, 3, and 5, then stops. Anything after that is manual.</li>
+  </ol>
+
+  <h2>4. Important links</h2>
+  <div class="links">
+    <a class="linkcard" style="--edge:var(--blue)" href="https://app.aiconichub.ai/leads-engine-lkdn" target="_blank" rel="noopener">
+      <div class="lk-label">Intro call, LinkedIn</div>
+      <div class="lk-url">app.aiconichub.ai/leads-engine-lkdn</div>
+      <div class="lk-note">For leads that came in from LinkedIn.</div>
+    </a>
+    <a class="linkcard" style="--edge:var(--blue)" href="https://app.aiconichub.ai/leads-engine" target="_blank" rel="noopener">
+      <div class="lk-label">Intro call, email campaigns</div>
+      <div class="lk-url">app.aiconichub.ai/leads-engine</div>
+      <div class="lk-note">For leads from the email campaigns.</div>
+    </a>
+    <a class="linkcard" style="--edge:var(--teal)" href="https://app.aiconichub.ai/leads-engine-interview" target="_blank" rel="noopener">
+      <div class="lk-label">Interview with Carlos</div>
+      <div class="lk-url">app.aiconichub.ai/leads-engine-interview</div>
+    </a>
+    <a class="linkcard" style="--edge:var(--teal)" href="https://app.aiconichub.ai/leads-engine-interview-john" target="_blank" rel="noopener">
+      <div class="lk-label">Interview with John</div>
+      <div class="lk-url">app.aiconichub.ai/leads-engine-interview-john</div>
+    </a>
+    <a class="linkcard" style="--edge:var(--violet)" href="https://aiconichub.ai/leadsengine" target="_blank" rel="noopener">
+      <div class="lk-label">Leads Engine funnel</div>
+      <div class="lk-url">aiconichub.ai/leadsengine</div>
+      <div class="lk-note">The funnel leads come through. Open it to check what a lead saw and make adjustments.</div>
+    </a>
+    <a class="linkcard" style="--edge:var(--slate)" href="https://aiconic-sales.vercel.app" target="_blank" rel="noopener">
+      <div class="lk-label">Daily Outreach dashboard</div>
+      <div class="lk-url">aiconic-sales.vercel.app</div>
+      <div class="lk-note">The live reach-out tool for booked calls, no-shows and rebooks.</div>
+    </a>
+  </div>
+
+  <p class="foot">The offer every message points back to: we interview the lead for about an hour and turn it into a complete Leads Engine for them, a lead magnet, a landing page, and a simple way to capture leads, all built for free.</p>
+</div>
+
+</body>
+</html>

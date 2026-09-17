@@ -3,18 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Daily Reach-Out List</title>
+<title>Sales Resources</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="stylesheet" href="/styles.css">
+<style>
+  .pagetitle{font-size:clamp(26px,5vw,36px);font-weight:800;letter-spacing:-.02em;margin:0 0 16px;color:var(--ink)}
+  .toptabs{display:flex;gap:0;margin:0 0 24px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+  .toptab{font-family:inherit;font-size:14.5px;font-weight:800;color:var(--ink-2);background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;margin-right:22px;cursor:pointer}
+  .toptab.on{color:var(--blue-ink);border-bottom-color:var(--blue)}
+  .toptab:hover{color:var(--ink)}
+  .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
+  #commsframe{width:100%;min-height:calc(100vh - 190px);border:none;background:var(--bg);display:block}
+</style>
 </head>
 <body>
 <div class="wrap">
+  <div class="eyebrow">Sales team &middot; Aiconic</div>
+  <h1 class="pagetitle">Sales Resources</h1>
+  <nav class="toptabs">
+    <button type="button" class="toptab" data-view="comms">Communications</button>
+    <button type="button" class="toptab on" data-view="calls">Calls</button>
+  </nav>
+
+  <div id="view-comms" hidden>
+    <iframe id="commsframe" title="Communications" src="/resources.html" loading="lazy"></iframe>
+  </div>
+
+  <div id="view-calls">
   <header>
-    <div class="eyebrow">Sales team &middot; Aiconic</div>
-    <h1>Daily Reach-Out List</h1>
+    <h2 class="calls-h">Daily Reach-Out List</h2>
     <p class="sub">Live from GoHighLevel. Everyone who books gets a personal message, and everyone who no-shows gets a nudge to rebook. Reach them everywhere you can. Each card has the call-prep links and what we already sent, so you are ready in one place.</p>
     <div class="meta-row">
       <span id="status" class="status-pill">Loading live data...</span>
@@ -35,9 +55,21 @@
   <div class="foot">
     Reads the Free Trial Funnels pipeline in GoHighLevel every time this page loads. As more bookings come from LinkedIn links with the phone number set to mandatory, the reach-out count should get smaller.
   </div>
+  </div>
 </div>
 
 <div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<script>
+(function(){
+  var tabs=document.querySelectorAll(".toptab");
+  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls")};
+  function show(v){
+    for(var k in views){ if(views[k]) views[k].hidden=(k!==v); }
+    tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===v); });
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.view); }); });
+})();
+</script>
 <script src="/app.js"></script>
 </body>
 </html>
