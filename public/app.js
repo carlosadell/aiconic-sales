@@ -29,6 +29,7 @@ function dayLabel(iso, tz){
 function typeClass(t){
   const k=(t||"").toLowerCase();
   if(k.includes("booking interview")) return "t-bookint";
+  if(k.includes("booking review")) return "t-bookrev";
   if(k.includes("interview")) return "t-interview";
   if(k.includes("review")) return "t-review";
   if(k.includes("intro")) return "t-intro";
@@ -123,6 +124,7 @@ function render(d){
       '<li><b>No Show (triggers FUP).</b> Manual. Move the card here when they do not show up. This starts the no-show follow-up, so they get emails and texts to rebook.</li>'+
       '<li><b>Booking Interview (triggers FUP).</b> Manual. Move here when they qualified on the intro call but have not booked their interview yet. This starts the booking-interview follow-up.</li>'+
       '<li><b>Interview Call Booked.</b> Automatic. The lead moves here when they book their interview.</li>'+
+      '<li><b>Booking Review.</b> Manual. Move here when the interview happened but they have not booked their review call yet. Nothing automatic goes out from this stage, so follow up by hand and get the review booked within the week.</li>'+
       '<li><b>Review Call Booked.</b> Automatic. The lead moves here when they book their review call.</li>'+
       '<li><b>🚨 Reschedule (triggers FUP).</b> Manual, emergency only. Use this only if there is a real emergency and you have to move a call. It sits at the bottom on purpose, it is not a normal step. Moving a lead here starts the reschedule follow-up.</li>'+
       '<li><b>Cancelled.</b> Automatic. The lead moves here when the customer cancels their call.</li>'+
@@ -136,22 +138,26 @@ function render(d){
     '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows</div></div>'+
     '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Reschedule</div></div>'+
     '<div class="stat teal"><div class="n">'+(d.totals.bookingInterview||0)+'</div><div class="l">Booking Interview</div></div>'+
+    '<div class="stat indigo"><div class="n">'+(d.totals.bookingReview||0)+'</div><div class="l">Booking Review</div></div>'+
     '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged</div></div>';
 
   const resched = d.rescheduling || [];
   const bookint = d.bookingInterview || [];
-  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
+  const bookrev = d.bookingReview || [];
+  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint, ...bookrev].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
   const repTotal = (list, rep) => { const r = (list||[]).find(x=>x.repName===rep); return r ? r.total : 0; };
   const bCount = REP==="all" ? d.totals.booked : repTotal(d.booked, REP);
   const nCount = REP==="all" ? d.totals.noshow : repTotal(d.noshow, REP);
   const rCount = REP==="all" ? (d.totals.rescheduling||0) : repTotal(resched, REP);
   const iCount = REP==="all" ? (d.totals.bookingInterview||0) : repTotal(bookint, REP);
+  const vCount = REP==="all" ? (d.totals.bookingReview||0) : repTotal(bookrev, REP);
   el("tabs").innerHTML =
     '<div class="tabgroup">'+
       '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+bCount+'</span></button>'+
       '<button class="tab '+(TAB==="noshow"?"on":"")+'" data-tab="noshow">No-shows <span>'+nCount+'</span></button>'+
       '<button class="tab '+(TAB==="rescheduling"?"on":"")+'" data-tab="rescheduling">Rescheduling <span>'+rCount+'</span></button>'+
       '<button class="tab '+(TAB==="bookinginterview"?"on":"")+'" data-tab="bookinginterview">Booking Interview <span>'+iCount+'</span></button>'+
+      '<button class="tab '+(TAB==="bookingreview"?"on":"")+'" data-tab="bookingreview">Booking Review <span>'+vCount+'</span></button>'+
     '</div>'+
     '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
       '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
@@ -165,7 +171,7 @@ function render(d){
 
 function renderGroups(){
   const d = DATA;
-  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : d.booked;
+  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : TAB==="bookingreview" ? (d.bookingReview||[]) : d.booked;
   if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
   const g = el("groups"); g.innerHTML="";
 
@@ -191,9 +197,19 @@ function renderGroups(){
       '</div>';
   }
 
+  if(TAB==="bookingreview"){
+    g.innerHTML =
+      '<div class="explain review">'+
+        '<div class="explain-h">What is Booking Review?</div>'+
+        '<p>These people had their interview but have not booked their review call yet. A person only shows up here because someone moved them here on purpose.</p>'+
+        '<p>Nothing automatic goes out from this stage. It is on you to follow up by hand on every channel and get the review booked within the week.</p>'+
+        '<p>The moment they book their review, move them to Review Call Booked. If they go quiet, move them to Not Qualified.</p>'+
+      '</div>';
+  }
+
   if(!reps.length){
-    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : "booked calls";
-    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : "No booked calls right now.";
+    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : TAB==="bookingreview" ? "people booking their review" : "booked calls";
+    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : TAB==="bookingreview" ? "Nobody is booking a review right now." : "No booked calls right now.";
     const msg = REP!=="all" ? esc(REP)+" has no "+label+" right now." : none;
     g.innerHTML += '<div class="empty-state">'+msg+'</div>';
     return;
@@ -214,7 +230,7 @@ function renderGroups(){
         '<span class="src">'+esc(l.source)+'</span>',
       ].filter(Boolean).join('<span class="mdot">&middot;</span>');
       const badge = l.flagged ? '<span class="badge red">'+esc(l.primaryFlag.label)+'</span>' : "";
-      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : "green";
+      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : l.status==="bookingreview" ? "indigo" : "green";
       row.innerHTML = '<span class="dotmark '+dotCls+'"></span>'+
         '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
         badge+'<span class="go">&rsaquo;</span>';
@@ -392,6 +408,41 @@ function interviewBlock(l){
   return '<div class="dohead">Get them to book the interview</div>'+linkcard+blocks.join("");
 }
 
+// Messages for people who had their interview but have not booked their review
+// call yet. Nothing automatic goes out from this stage, so this is a manual
+// nudge. There is no self-serve review link, so we ask them to reply with a
+// time and get it booked within the week.
+function reviewText(l){
+  const first = (l.name||"there").split(" ")[0];
+  const body = [
+    "Hi "+first+", great speaking with you.",
+    "The next step is your review call, where we walk you through the Leads Engine we built for you and how to use it.",
+    "Let's get it booked in the next few days. What times work for you this week?",
+    "Looking forward to it.",
+  ].join("\n\n");
+  return { sms: body, note: body, email: { subject: "Let's book your review call", body: body } };
+}
+
+function reviewBlock(l){
+  const m = reviewText(l);
+  const blocks = [];
+  if(l.phone){
+    blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">SMS</span><b>Text them</b></div>'+
+      '<textarea class="box editable msg-sms" rows="6">'+esc(m.sms)+'</textarea>'+
+      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
+      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
+  }
+  blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
+    '<textarea class="box editable msg-note" rows="6">'+esc(m.note)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
+    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
+  blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">Email</span><b>Email them</b></div>'+
+    '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
+    '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+  return '<div class="dohead">Get them to book the review call</div>'+blocks.join("");
+}
+
 // The lead's own reschedule link, pulled from their the CRM confirmation
 // email. Shown so a rep can see it, open it, or copy it straight from the card.
 function linkCard(cls, lbl, note, url){
@@ -469,6 +520,7 @@ function openSheet(l){
       (l.status==="noshow"?'<div class="nshead">Did not show up. Give them an easy way back in.</div>':"")+
       (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
+      (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
       flagBox+
       '<div class="kv">'+
         '<div class="k">Stage</div><div class="v">'+esc(l.stage)+'</div>'+
@@ -476,12 +528,14 @@ function openSheet(l){
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
-      (l.status==="bookinginterview" ? "" : rebookRow(l))+
+      (l.status==="bookinginterview"||l.status==="bookingreview" ? "" : rebookRow(l))+
       sentBlock(l)+
       (l.status==="rescheduling"
         ? (rescheduleBlock(l)+stageMover(l)+notesBlock(l))
         : l.status==="bookinginterview"
         ? (interviewBlock(l)+stageMover(l)+notesBlock(l))
+        : l.status==="bookingreview"
+        ? (reviewBlock(l)+stageMover(l)+notesBlock(l))
         : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
       prepBlock(l)+
     '</div>';

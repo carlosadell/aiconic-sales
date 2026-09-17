@@ -180,6 +180,8 @@ module.exports = async (req, res) => {
     const booked = leads.filter((l) => l.status === "booked");
     const noshow = leads.filter((l) => l.status === "noshow");
     const rescheduling = leads.filter((l) => l.status === "rescheduling");
+    const bookingInterview = leads.filter((l) => l.status === "bookinginterview");
+    const bookingReview = leads.filter((l) => l.status === "bookingreview");
 
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json({
@@ -190,11 +192,15 @@ module.exports = async (req, res) => {
         booked: booked.length,
         noshow: noshow.length,
         rescheduling: rescheduling.length,
+        bookingInterview: bookingInterview.length,
+        bookingReview: bookingReview.length,
         flagged: leads.filter((l) => l.flagged).length,
       },
       booked: group(booked),
       noshow: group(noshow),
       rescheduling: group(rescheduling),
+      bookingInterview: group(bookingInterview),
+      bookingReview: group(bookingReview),
     });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
