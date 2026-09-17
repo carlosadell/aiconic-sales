@@ -11,10 +11,12 @@
 <link rel="stylesheet" href="/styles.css">
 <style>
   .pagetitle{font-size:clamp(26px,5vw,36px);font-weight:800;letter-spacing:-.02em;margin:0 0 16px;color:var(--ink)}
-  .toptabs{display:flex;gap:0;margin:0 0 24px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
-  .toptab{font-family:inherit;font-size:14.5px;font-weight:800;color:var(--ink-2);background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;margin-right:22px;cursor:pointer}
-  .toptab.on{color:var(--blue-ink);border-bottom-color:var(--blue)}
-  .toptab:hover{color:var(--ink)}
+  .toptabs{display:flex;gap:12px;margin:4px 0 28px;flex-wrap:wrap}
+  .toptab{font-family:inherit;font-size:16px;font-weight:800;letter-spacing:.01em;color:var(--ink-2);background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:15px 32px;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.05);transition:border-color .12s,background .12s}
+  .toptab.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 6px 16px -6px rgba(37,99,235,.5)}
+  .toptab:hover{border-color:var(--line)}
+  .toptab.on:hover{border-color:var(--blue)}
+  @media (max-width:520px){.toptab{flex:1;text-align:center;padding:14px 10px}}
   .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
   #commsframe{width:100%;min-height:calc(100vh - 190px);border:none;background:var(--bg);display:block}
 </style>
