@@ -114,21 +114,29 @@ async function load(){
 
 function render(d){
   el("rule").innerHTML =
-    '<h3>How to use this</h3>'+
+    '<h3>How this page works</h3>'+
+    '<p style="margin:0 0 10px;color:var(--ink-2);font-size:14px;line-height:1.6">Tap any lead to open their card. Inside you can see their details, message them, write the call notes, paste the Fathom recording after the call, and log the call once it is finished. At the top of the card you will always see the stage they are in and when their call is.</p>'+
+    '<p style="margin:0 0 12px;color:var(--ink-2);font-size:14px;line-height:1.6">Some stages are automatic and some you move by hand. <b>Careful:</b> moving a lead into a stage marked "triggers FUP" starts a follow-up right away, so the customer gets emails and texts. Only move a lead there when that is what you want.</p>'+
+    '<p style="margin:14px 0 8px;font-weight:800;font-size:13px;letter-spacing:.02em">What each stage means</p>'+
     '<ol class="howto">'+
-      '<li>Tap any name to open their card. Everything you need for that person is inside.</li>'+
-      '<li>Reach out on every channel you can. The SMS, LinkedIn, and email messages are written for you, ready to send or copy.</li>'+
-      '<li>The tabs sort people by where they are: <b>Booked</b> have a call coming up, <b>No-shows</b> did not show and need a rebook nudge, <b>Rescheduling</b> are people we are getting to book a new time, and <b>Booking Interview</b> are people who qualified but have not booked their interview yet.</li>'+
-      '<li>When a call moves or a deal changes, change the stage on the card and the CRM updates on its own.</li>'+
+      '<li><b>Intro Call.</b> Automatic. The lead lands here when they book their first call.</li>'+
+      '<li><b>No Show (triggers FUP).</b> Manual. Move the card here when they do not show up. This starts the no-show follow-up, so they get emails and texts to rebook.</li>'+
+      '<li><b>Booking Interview (triggers FUP).</b> Manual. Move here when they qualified on the intro call but have not booked their interview yet. This starts the booking-interview follow-up.</li>'+
+      '<li><b>Interview Call Booked.</b> Automatic. The lead moves here when they book their interview.</li>'+
+      '<li><b>Review Call Booked.</b> Automatic. The lead moves here when they book their review call.</li>'+
+      '<li><b>🚨 Reschedule (triggers FUP).</b> Manual, emergency only. Use this only if there is a real emergency and you have to move a call. It sits at the bottom on purpose, it is not a normal step. Moving a lead here starts the reschedule follow-up.</li>'+
+      '<li><b>Cancelled.</b> Automatic. The lead moves here when the customer cancels their call.</li>'+
+      '<li><b>🔥 Client Won.</b> Automatic. The lead moves here when they become a client.</li>'+
+      '<li><b>⛔️ Not Qualified.</b> Manual. Move a lead here to take them out of the process when they are not a fit.</li>'+
     '</ol>'+
-    '<div class="flagline"><b>We flag what matters:</b> no phone so no SMS, an SMS that failed, or a bounced email. A flag never means skip someone. We reach out to everyone.</div>';
+    '<div class="flagline">A red flag on a lead means something needs a look before you reach out: no phone, an SMS that failed, or a bounced email. It never means skip them. For the full messages and sequences behind each stage, check the <b>Communications</b> tab.</div>';
 
   el("summary").innerHTML =
-    '<div class="stat blue"><div class="n">'+d.totals.booked+'</div><div class="l">Booked, reach out before the call</div></div>'+
-    '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows, nudge them to rebook</div></div>'+
-    '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Rescheduling, waiting on a new time</div></div>'+
-    '<div class="stat teal"><div class="n">'+(d.totals.bookingInterview||0)+'</div><div class="l">Booking Interview, get them to book</div></div>'+
-    '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged, check before reaching out</div></div>';
+    '<div class="stat blue"><div class="n">'+d.totals.booked+'</div><div class="l">Booked</div></div>'+
+    '<div class="stat red"><div class="n">'+d.totals.noshow+'</div><div class="l">No-shows</div></div>'+
+    '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Reschedule</div></div>'+
+    '<div class="stat teal"><div class="n">'+(d.totals.bookingInterview||0)+'</div><div class="l">Booking Interview</div></div>'+
+    '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged</div></div>';
 
   const resched = d.rescheduling || [];
   const bookint = d.bookingInterview || [];
@@ -422,7 +430,14 @@ function notesBlock(l){
     '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
     '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
-    '<div class="hint" style="margin-bottom:16px">Notes save to this contact in the CRM and show for everyone.</div>';
+    '<div class="hint">Notes save to this contact in the CRM and show for everyone.</div>'+
+    '<div class="dohead" style="margin-top:16px">Fathom recording</div>'+
+    '<input class="subj-input recnew" id="recnew" placeholder="Paste the Fathom recording link here after the call">'+
+    '<div class="btnrow" style="margin-top:8px"><button class="btn solid" data-act="saverec" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save recording</button></div>'+
+    '<div class="hint">Saves the recording link to this contact in the CRM.</div>'+
+    '<div class="dohead" style="margin-top:16px">Log the call</div>'+
+    '<a class="calllog" href="https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit" target="_blank" rel="noopener">Open the call log</a>'+
+    '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
 }
 
 function renderNotes(notes){
@@ -460,6 +475,7 @@ function openSheet(l){
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       flagBox+
       '<div class="kv">'+
+        '<div class="k">Stage</div><div class="v">'+esc(l.stage)+'</div>'+
         '<div class="k">Call</div><div class="v">'+esc(l.callType)+(l.appointment&&l.appointment.at?' &middot; '+esc(dayLabel(l.appointment.at,l.timezone)):"")+'</div>'+
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
@@ -528,6 +544,21 @@ el("sheet").addEventListener("click", async (e)=>{
       const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
       const d=await r.json();
       if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
+      else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
+    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
+    return;
+  }
+  if(act==="saverec"){
+    const contactId=b.dataset.id;
+    const userId=b.dataset.user||"";
+    const inp=el("recnew");
+    const url=inp ? inp.value.trim() : "";
+    if(!url){ b.textContent="Paste the link first"; setTimeout(()=>{b.textContent="Save recording";},1600); return; }
+    b.textContent="Saving..."; b.disabled=true;
+    try{
+      const r=await fetch("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,body:"Fathom recording: "+url,userId})});
+      const d=await r.json();
+      if(r.ok && d.ok){ if(inp) inp.value=""; b.textContent="Saved"; b.classList.add("done"); loadNotes(contactId); setTimeout(()=>{ b.textContent="Save recording"; b.classList.remove("done"); b.disabled=false; },1500); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
     }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
     return;
