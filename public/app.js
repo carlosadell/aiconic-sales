@@ -45,6 +45,28 @@ function messages(l){
   const rep = l.repName && l.repName!=="Unassigned" ? l.repName.split(" ")[0] : "";
   const from = rep ? rep+" from Aiconic" : "the Aiconic team";
   const link = l.bookingLink || l.rebookLink || "";
+  if(l.status==="cancelled"){
+    return {
+      sms: [
+        "Hi "+first+", "+from+" here.",
+        "Saw your call got cancelled. No problem at all, these things happen.",
+        "If you would still like to talk, you can grab another time here:\n"+link,
+      ].join("\n\n"),
+      note: [
+        "Hi "+first+", "+from+" here.",
+        "Saw your call got cancelled. No problem at all, these things happen.",
+        "If you would still like to talk, here is the link to pick a new time:\n"+link,
+      ].join("\n\n"),
+      email: {
+        subject: "Want to grab another time?",
+        body:
+          "Hi "+first+",\n\n"+
+          "I saw your call got cancelled. No problem at all, sometimes the timing just does not work out.\n\n"+
+          "If you would still like to talk, you can pick a new time here:\n"+link+"\n\n"+
+          "Looking forward to it.",
+      },
+    };
+  }
   if(l.status==="noshow"){
     return {
       sms: [
@@ -139,18 +161,21 @@ function render(d){
     '<div class="stat violet"><div class="n">'+(d.totals.rescheduling||0)+'</div><div class="l">Reschedule</div></div>'+
     '<div class="stat teal"><div class="n">'+(d.totals.bookingInterview||0)+'</div><div class="l">Booking Interview</div></div>'+
     '<div class="stat indigo"><div class="n">'+(d.totals.bookingReview||0)+'</div><div class="l">Booking Review</div></div>'+
+    '<div class="stat slate"><div class="n">'+(d.totals.cancelled||0)+'</div><div class="l">Cancelled</div></div>'+
     '<div class="stat amber"><div class="n">'+d.totals.flagged+'</div><div class="l">Flagged</div></div>';
 
   const resched = d.rescheduling || [];
   const bookint = d.bookingInterview || [];
   const bookrev = d.bookingReview || [];
-  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint, ...bookrev].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
+  const cancel = d.cancelled || [];
+  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint, ...bookrev, ...cancel].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
   const repTotal = (list, rep) => { const r = (list||[]).find(x=>x.repName===rep); return r ? r.total : 0; };
   const bCount = REP==="all" ? d.totals.booked : repTotal(d.booked, REP);
   const nCount = REP==="all" ? d.totals.noshow : repTotal(d.noshow, REP);
   const rCount = REP==="all" ? (d.totals.rescheduling||0) : repTotal(resched, REP);
   const iCount = REP==="all" ? (d.totals.bookingInterview||0) : repTotal(bookint, REP);
   const vCount = REP==="all" ? (d.totals.bookingReview||0) : repTotal(bookrev, REP);
+  const cCount = REP==="all" ? (d.totals.cancelled||0) : repTotal(cancel, REP);
   el("tabs").innerHTML =
     '<div class="tabgroup">'+
       '<button class="tab '+(TAB==="booked"?"on":"")+'" data-tab="booked">Booked <span>'+bCount+'</span></button>'+
@@ -158,6 +183,7 @@ function render(d){
       '<button class="tab '+(TAB==="rescheduling"?"on":"")+'" data-tab="rescheduling">Rescheduling <span>'+rCount+'</span></button>'+
       '<button class="tab '+(TAB==="bookinginterview"?"on":"")+'" data-tab="bookinginterview">Booking Interview <span>'+iCount+'</span></button>'+
       '<button class="tab '+(TAB==="bookingreview"?"on":"")+'" data-tab="bookingreview">Booking Review <span>'+vCount+'</span></button>'+
+      '<button class="tab '+(TAB==="cancelled"?"on":"")+'" data-tab="cancelled">Cancelled <span>'+cCount+'</span></button>'+
     '</div>'+
     '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
       '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
@@ -171,7 +197,7 @@ function render(d){
 
 function renderGroups(){
   const d = DATA;
-  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : TAB==="bookingreview" ? (d.bookingReview||[]) : d.booked;
+  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : TAB==="bookingreview" ? (d.bookingReview||[]) : TAB==="cancelled" ? (d.cancelled||[]) : d.booked;
   if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
   const g = el("groups"); g.innerHTML="";
 
@@ -207,9 +233,18 @@ function renderGroups(){
       '</div>';
   }
 
+  if(TAB==="cancelled"){
+    g.innerHTML =
+      '<div class="explain cancel">'+
+        '<div class="explain-h">What is Cancelled?</div>'+
+        '<p>These people cancelled their call. They are still in the system, and the CRM already sends them the cancelled sequence to win them back.</p>'+
+        '<p>On top of that, reach out personally on every channel and offer them an easy way to grab a new time. The moment they book, they move back on their own.</p>'+
+      '</div>';
+  }
+
   if(!reps.length){
-    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : TAB==="bookingreview" ? "people booking their review" : "booked calls";
-    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : TAB==="bookingreview" ? "Nobody is booking a review right now." : "No booked calls right now.";
+    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : TAB==="bookingreview" ? "people booking their review" : TAB==="cancelled" ? "cancelled calls" : "booked calls";
+    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : TAB==="bookingreview" ? "Nobody is booking a review right now." : TAB==="cancelled" ? "No cancelled calls right now." : "No booked calls right now.";
     const msg = REP!=="all" ? esc(REP)+" has no "+label+" right now." : none;
     g.innerHTML += '<div class="empty-state">'+msg+'</div>';
     return;
@@ -230,7 +265,7 @@ function renderGroups(){
         '<span class="src">'+esc(l.source)+'</span>',
       ].filter(Boolean).join('<span class="mdot">&middot;</span>');
       const badge = l.flagged ? '<span class="badge red">'+esc(l.primaryFlag.label)+'</span>' : "";
-      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : l.status==="bookingreview" ? "indigo" : "green";
+      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : l.status==="bookingreview" ? "indigo" : l.status==="cancelled" ? "slate" : "green";
       row.innerHTML = '<span class="dotmark '+dotCls+'"></span>'+
         '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
         badge+'<span class="go">&rsaquo;</span>';
@@ -242,13 +277,17 @@ function renderGroups(){
 }
 
 function stageMover(l){
-  const opts = DATA.stages.map(s=>'<option value="'+esc(s.id)+'"'+(s.id===l.stageId?" selected":"")+'>'+esc(s.name)+'</option>').join("");
+  const opts = DATA.stages.map(s=>{
+    const label = s.auto ? esc(s.name)+" (automatic)" : esc(s.name);
+    const dis = s.auto && s.id!==l.stageId ? " disabled" : "";
+    return '<option value="'+esc(s.id)+'"'+(s.id===l.stageId?" selected":"")+dis+'>'+label+'</option>';
+  }).join("");
   return '<div class="dohead">Move stage</div>'+
     '<div class="stagerow">'+
       '<select class="stagesel" data-opp="'+esc(l.id)+'">'+opts+'</select>'+
       '<span class="stagemsg" id="stagemsg"></span>'+
     '</div>'+
-    '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in the CRM right away.</div>';
+    '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in the CRM right away. Stages marked automatic are greyed out, the CRM moves leads there on its own, so you cannot pick them.</div>';
 }
 
 function prepBlock(l){
@@ -256,8 +295,8 @@ function prepBlock(l){
     ["Book an intro call", l.bookingLink],
     ["Book an interview call with Carlos", l.links.interviewCarlos],
     ["Book an interview call with John", l.links.interviewJohn],
-    ["Open the CRM", l.links.pipeline],
-    ["Contact card in the Hub", l.links.contact],
+    ["Open the pipeline", l.links.pipeline],
+    ["Open the contact card in the CRM", l.links.contact],
     ["Conversify (LinkedIn chats)", l.links.conversify],
     ["Intro call script", l.links.script],
     ["Interview questions", l.links.interviewQuestions],
@@ -344,7 +383,7 @@ function rescheduleText(l){
 }
 
 function rescheduleBlock(l){
-  if(l.status==="noshow") return "";
+  if(l.status==="noshow"||l.status==="cancelled") return "";
   const m = rescheduleText(l);
   const blocks = [];
   if(l.phone){
@@ -512,12 +551,13 @@ function openSheet(l){
   const flagBox = l.flagged
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
     : "";
-  const doHead = l.status==="noshow" ? "Nudge them to rebook, everywhere you can" : "Reach out, everywhere you can";
+  const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out, everywhere you can";
   sheet.innerHTML =
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
       (l.status==="noshow"?'<div class="nshead">Did not show up. Give them an easy way back in.</div>':"")+
+      (l.status==="cancelled"?'<div class="nshead cancel">Cancelled their call. Still in the system, reach out and give them an easy way to rebook.</div>':"")+
       (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
