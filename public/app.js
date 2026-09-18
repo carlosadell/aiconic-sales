@@ -294,7 +294,6 @@ function prepBlock(l){
   const rows = [
     ["Book an intro call", l.bookingLink],
     ["Book an interview call with Carlos", l.links.interviewCarlos],
-    ["Book an interview call with John", l.links.interviewJohn],
     ["Open the pipeline", l.links.pipeline],
     ["Open the contact card in the CRM", l.links.contact],
     ["Conversify (LinkedIn chats)", l.links.conversify],
