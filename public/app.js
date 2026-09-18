@@ -292,7 +292,7 @@ function stageMover(l){
 
 function prepBlock(l){
   const rows = [
-    ["Book an intro call", l.bookingLink],
+    ["Book an intro call with Carlos or John", l.bookingLink],
     ["Book an interview call with Carlos", l.links.interviewCarlos],
     ["Open the pipeline", l.links.pipeline],
     ["Open the contact card in the CRM", l.links.contact],
@@ -506,7 +506,7 @@ function rebookRow(l){
   if(l.bookingLink){
     out.push(linkCard(
       "book",
-      "Book an intro call",
+      "Book an intro call with Carlos or John",
       "Send this whenever they need a fresh call: a no-show, a cancelled call, or a call that already passed. This is the link to use for rebooking, and it always works.",
       l.bookingLink
     ));
