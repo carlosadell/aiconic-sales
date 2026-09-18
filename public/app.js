@@ -525,11 +525,26 @@ function notesBlock(l){
     '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
 }
 
+// Notes from the CRM can come back as rich text (HTML), for example the Fathom
+// recording note. Strip the tags to clean text, then make any link clickable.
+function noteToText(body){
+  let s = String(body==null?"":body);
+  if(/<[a-z/!]/i.test(s)){
+    s = s.replace(/<\s*br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6])>/gi, "\n");
+    try{ const t=document.createElement("div"); t.innerHTML=s; s = t.textContent || t.innerText || ""; }catch(_){ s = s.replace(/<[^>]+>/g, ""); }
+  }
+  return s.replace(/\n{3,}/g, "\n\n").trim();
+}
+function noteHtml(body){
+  return esc(noteToText(body))
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n/g, "<br>");
+}
 function renderNotes(notes){
   const box = el("notes"); if(!box) return;
   if(!notes.length){ box.innerHTML = '<div class="notes-empty">No notes yet. Add the first one below.</div>'; return; }
   box.innerHTML = notes.map(n=>
-    '<div class="note-item"><div class="note-body">'+esc(n.body)+'</div>'+
+    '<div class="note-item"><div class="note-body">'+noteHtml(n.body)+'</div>'+
     (n.at?'<div class="note-when">'+esc(ago(n.at))+'</div>':"")+'</div>').join("");
 }
 
