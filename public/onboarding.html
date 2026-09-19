@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Onboarding</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#eef1f6; --card:#ffffff; --card-2:#fafbfd;
+    --ink:#0f1826; --ink-2:#46526a; --muted:#7c8699;
+    --border:#e2e7ef; --line:#c7d0de;
+    --blue:#2563eb; --blue-ink:#1e40af; --blue-soft:#eaf0ff;
+    --amber:#d97706; --amber-ink:#92400e; --amber-soft:#fdf2e3;
+    --green:#16a34a; --green-ink:#166534; --green-soft:#eaf7ee;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.14);
+    --radius:14px;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:38px 20px 60px}
+  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 10px}
+  h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em}
+  .lede{font-size:16.5px;color:var(--ink-2);margin:0 0 8px;max-width:70ch}
+  .savenote{font-size:13px;color:var(--muted);margin:0 0 22px}
+
+  .prog{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin:0 0 30px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .prog-left{flex:1;min-width:200px}
+  .prog-count{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  .prog-count b{color:var(--blue-ink)}
+  .bar{height:10px;background:#e9edf4;border-radius:999px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),#3b82f6);border-radius:999px;transition:width .25s ease}
+  .reset{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:#fff;border:1px solid var(--border);border-radius:9px;padding:8px 13px;cursor:pointer}
+  .reset:hover{border-color:var(--line)}
+
+  .phase{margin:0 0 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+  .phase-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .phase-n{font-size:12px;font-weight:800;color:#fff;background:var(--blue);border-radius:8px;padding:3px 9px;letter-spacing:.02em}
+  .phase-h{font-size:18px;font-weight:800;letter-spacing:-.01em;margin:0}
+  .phase-sub{font-size:14px;color:var(--ink-2);margin:6px 0 14px;max-width:72ch}
+  .loom{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--blue-ink);text-decoration:none;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:9px;padding:8px 13px;margin:0 0 14px}
+  .loom:hover{border-color:#b9cdf7}
+
+  .tasks{display:flex;flex-direction:column;gap:9px}
+  .task{display:flex;align-items:flex-start;gap:12px;background:var(--card-2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;cursor:pointer}
+  .task:hover{border-color:var(--line)}
+  .task input{appearance:none;-webkit-appearance:none;flex:none;width:21px;height:21px;margin:1px 0 0;border:1.5px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;position:relative;transition:background .12s,border-color .12s}
+  .task input:checked{background:var(--green);border-color:var(--green)}
+  .task input:checked::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .task-main{flex:1;min-width:0}
+  .task-title{font-size:14.5px;color:var(--ink);font-weight:600;display:block}
+  .task.done .task-title{color:var(--muted);text-decoration:line-through}
+  .task-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+  .who{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+  .who.you{background:var(--blue-soft);color:var(--blue-ink)}
+  .who.team{background:var(--amber-soft);color:var(--amber-ink)}
+  .who.both{background:var(--green-soft);color:var(--green-ink)}
+  .mins{font-size:12px;color:var(--muted);font-weight:600}
+  .task-open{flex:none;align-self:center;font-size:12.5px;font-weight:700;color:var(--blue-ink);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;background:#fff}
+  .task-open:hover{border-color:var(--line)}
+
+  .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .endcta{margin:22px 0 0;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:var(--radius);padding:22px 24px;text-align:center}
+  .endcta-h{font-size:18px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .endcta p{font-size:14.5px;color:var(--ink-2);margin:0 0 16px}
+  .endcta-btn{font-family:inherit;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:12px;padding:14px 26px;cursor:pointer;box-shadow:0 6px 16px -6px rgba(37,99,235,.5)}
+  .endcta-btn:hover{background:var(--blue-ink)}
+  @media (max-width:560px){
+    .task-open{padding:6px 10px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Sales team &middot; Aiconic</div>
+  <h1>New sales rep onboarding</h1>
+  <p class="lede">Work through this top to bottom. Each step has a link and a rough time. Tick things off as you go, and by the end you will be set up, you will know how we run our calls, and you will have taken your first ones with support.</p>
+  <p class="savenote">Your progress is saved on this device automatically, so you can stop and come back any time.</p>
+
+  <div class="prog">
+    <div class="prog-left">
+      <div class="prog-count"><b id="pc-done">0</b> of <span id="pc-total">0</span> steps done</div>
+      <div class="bar"><i id="pc-bar"></i></div>
+    </div>
+    <button type="button" class="reset" id="reset">Reset my progress</button>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="endcta">
+    <div class="endcta-h">That is it, you are ready.</div>
+    <p>Your daily home is the Daily Outreach dashboard. Open it and start working your leads.</p>
+    <button type="button" class="endcta-btn" data-view="calls">Go to Daily Outreach &rsaquo;</button>
+  </div>
+
+  <p class="foot">Your daily tools are the Communications tab and the Daily Outreach tab at the top of this page. Keep them open when you work.</p>
+</div>
+
+<script>
+(function(){
+  var DATA = [
+    {
+      title: "Start here",
+      sub: "Ten minutes to see the whole picture before you touch anything.",
+      loom: {label:"Watch the setup walkthrough", url:"https://www.loom.com/share/c1ef4aab747b49caa023f5b0b8fe62e6"},
+      tasks: [
+        {id:"p0-loom2", title:"Watch the how we run it walkthrough", mins:"8 min", url:"https://www.loom.com/share/c4547522ddf54cc8be0d0e2aded4ad52"},
+        {id:"p0-position", title:"Read the Aiconic Positioning, our source of truth", mins:"5 min", url:"https://docs.google.com/document/d/1Pd2FLQAKq_nRewVIcS1DWRuDhzcTxdU_uihzBNfY1mE/edit"},
+        {id:"p0-flow", title:"Look at the Sales Call Process Flow, the whole funnel on one page", mins:"3 min", url:"https://drive.google.com/file/d/1ZpIG83n5xKu-viixwSuQxq98FW9J7Nmb/view"},
+        {id:"p0-folder", title:"Open and bookmark the Free Trial Funnel folder in Drive", mins:"1 min", url:"https://drive.google.com/drive/folders/1cwGyiIfUYztA_F3lcdt74EoSKIG89e8a"}
+      ]
+    },
+    {
+      title: "Get set up in the system",
+      sub: "Some steps the Aiconic team does, some you do. RJ helps you with yours. The whole setup is about forty five minutes.",
+      loom: {label:"Watch the system setup Loom", url:"https://www.loom.com/share/c1ef4aab747b49caa023f5b0b8fe62e6"},
+      tasks: [
+        {id:"p1-email", title:"Business email created and you have logged in", who:"both", mins:"3 min"},
+        {id:"p1-calshare", title:"Your calendar shared with Carlos, John, Sheine and RJ, set to make changes", who:"team", mins:"3 min"},
+        {id:"p1-ghl", title:"GHL user created and you have logged in", who:"both", mins:"2 min"},
+        {id:"p1-sync", title:"Sync your personal calendar with your business calendar so you never get double booked", who:"you", mins:"5 min"},
+        {id:"p1-calghl", title:"Connect your business calendar to GHL", who:"you", mins:"5 min"},
+        {id:"p1-conflicts", title:"Check all calendars for conflicts", who:"you", mins:"2 min"},
+        {id:"p1-meet", title:"Connect Zoom, free is fine, or use your Google Meet link", who:"you", mins:"5 min"},
+        {id:"p1-fathom", title:"Set up Fathom and make sure it records all your calls", who:"you", mins:"5 min", url:"https://fathom.video/"},
+        {id:"p1-ghlcals", title:"You are added to the right GHL calendars", who:"team", mins:"2 min"},
+        {id:"p1-avail", title:"Set your availability", who:"you", mins:"3 min"},
+        {id:"p1-notify", title:"You are added to the right notification workflows, calls and SMS responses", who:"team", mins:"2 min"},
+        {id:"p1-test", title:"Run a booking test with a teammate to confirm everything comes through", who:"both", mins:"5 min"}
+      ]
+    },
+    {
+      title: "Learn how we run the calls",
+      sub: "Read these in order. About an hour end to end, and it is the core of the job.",
+      tasks: [
+        {id:"p2-bda", title:"Before, during, and after the calls", mins:"5 min", url:"https://docs.google.com/document/d/1H0daGFTDaF_SWMSGXij86Nr1kSOa1rY7MrGgeYG72IE/edit"},
+        {id:"p2-method", title:"How to Run the Calls, the method", mins:"8 min", url:"https://docs.google.com/document/d/1R4yzhlXpY5fFw_6gZzL-omv890Ww2qB4mKx2NfndOgM/edit"},
+        {id:"p2-script-le", title:"Discovery call script, Leads Engine", mins:"6 min", url:"https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit"},
+        {id:"p2-script-7d", title:"Discovery call script, 7 Days of Content", mins:"6 min", url:"https://docs.google.com/document/d/1oHovwOxycyLt0WuQyzjboLzr4TRkJ2F9Gm1Ah6mEaqc/edit"},
+        {id:"p2-price", title:"Price List", mins:"5 min", url:"https://docs.google.com/document/d/1KlMicyc455yOXvf3j6wktIgc3XZdV5uC3glvPqAgzi8/edit"},
+        {id:"p2-followup", title:"Follow up, No Show emails and SMS", mins:"1 min", url:"https://docs.google.com/document/d/1v-KflH8NSni0y6uDT2HZanQwb89lV2_b39Tg8J1wXUU/edit"},
+        {id:"p2-c2c", title:"The Call to Content Funnel, the full process, for context", mins:"6 min", url:"https://docs.google.com/document/d/1Qv3XBoOXWDiTa_oZZXRiC5ozBPuSjlxx51VDEL_LI_4/edit"},
+        {id:"p2-interview", title:"The one hour interview questions", mins:"6 min", url:"https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit"}
+      ]
+    },
+    {
+      title: "See it done, then do it",
+      sub: "This is where reading turns into skill. Ask your manager to point you to the right recording and a call to sit in on.",
+      tasks: [
+        {id:"p3-watch", title:"Watch one strong recorded call on Fathom, start to finish", who:"you", mins:"30 min"},
+        {id:"p3-shadow", title:"Shadow a live intro call with a teammate", who:"both", mins:"30 min"}
+      ]
+    },
+    {
+      title: "Your first calls, with support",
+      sub: "Take your first real calls with the app open and the team behind you.",
+      tasks: [
+        {id:"p4-daily", title:"Use the Daily Outreach tab to prep and message the lead before the call"},
+        {id:"p4-comms", title:"Keep the Communications tab open as your live reference, the credo and how to explain what we do"},
+        {id:"p4-book", title:"Book the interview before you hang up, even at a rough time, we adjust later"},
+        {id:"p4-log", title:"Write your notes and paste the Fathom link on the CRM card"},
+        {id:"p4-chat", title:"Post what happened in the team chat"},
+        {id:"p4-coach", title:"Get your call scored by the Sales Coach and read the feedback"}
+      ]
+    },
+    {
+      title: "Your daily tools",
+      sub: "Bookmark these. This is where onboarding hands off to the daily work.",
+      tasks: [
+        {id:"p5-daily", title:"Your Daily Outreach dashboard, where you prep, message and log every lead", view:"calls"},
+        {id:"p5-comms", title:"Communications, the credo, how to explain what we do, and the automatic sequences", view:"comms"},
+        {id:"p5-script-le", title:"The Leads Engine discovery call script", url:"https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit"},
+        {id:"p5-folder", title:"The Free Trial Funnel folder in Drive", url:"https://drive.google.com/drive/folders/1cwGyiIfUYztA_F3lcdt74EoSKIG89e8a"},
+        {id:"p5-tracker", title:"The Intro Calls Tracker sheet", url:"https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit"}
+      ]
+    }
+  ];
+
+  var KEY = "aiconic_onb_v1";
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ return {}; } }
+  function save(state){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  var state = load();
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  var whoLabel = { you:"You", team:"Aiconic team", both:"You + team" };
+
+  function taskRow(t){
+    var checked = state[t.id] ? " checked" : "";
+    var meta = [];
+    if(t.who) meta.push('<span class="who '+t.who+'">'+esc(whoLabel[t.who]||t.who)+'</span>');
+    if(t.mins) meta.push('<span class="mins">'+esc(t.mins)+'</span>');
+    var metaHtml = meta.length ? '<span class="task-meta">'+meta.join("")+'</span>' : '';
+    var open = t.url
+      ? '<a class="task-open" href="'+esc(t.url)+'" target="_blank" rel="noopener">Open</a>'
+      : (t.view ? '<button type="button" class="task-open" data-view="'+esc(t.view)+'">Open tab</button>' : '');
+    return '<label class="task'+(checked?" done":"")+'" data-id="'+esc(t.id)+'">'+
+      '<input type="checkbox" data-id="'+esc(t.id)+'"'+checked+'>'+
+      '<span class="task-main"><span class="task-title">'+esc(t.title)+'</span>'+metaHtml+'</span>'+
+      open+
+    '</label>';
+  }
+
+  function render(){
+    var out = "";
+    DATA.forEach(function(ph, i){
+      var loom = ph.loom ? '<a class="loom" href="'+esc(ph.loom.url)+'" target="_blank" rel="noopener">&#9658; '+esc(ph.loom.label)+'</a>' : '';
+      out += '<section class="phase">'+
+        '<div class="phase-top"><span class="phase-n">'+(i)+'</span><h2 class="phase-h">'+esc(ph.title)+'</h2></div>'+
+        (ph.sub ? '<p class="phase-sub">'+esc(ph.sub)+'</p>' : '')+
+        loom+
+        '<div class="tasks">'+ph.tasks.map(taskRow).join("")+'</div>'+
+      '</section>';
+    });
+    document.getElementById("phases").innerHTML = out;
+    updateProgress();
+    postHeight();
+  }
+
+  function total(){ var n=0; DATA.forEach(function(p){ n+=p.tasks.length; }); return n; }
+  function doneCount(){ var n=0; DATA.forEach(function(p){ p.tasks.forEach(function(t){ if(state[t.id]) n++; }); }); return n; }
+
+  function updateProgress(){
+    var tot = total(), d = doneCount();
+    document.getElementById("pc-done").textContent = d;
+    document.getElementById("pc-total").textContent = tot;
+    document.getElementById("pc-bar").style.width = (tot ? Math.round(d/tot*100) : 0)+"%";
+  }
+
+  document.addEventListener("change", function(e){
+    var cb = e.target.closest && e.target.closest('input[type="checkbox"][data-id]');
+    if(!cb) return;
+    var id = cb.getAttribute("data-id");
+    if(cb.checked) state[id] = true; else delete state[id];
+    save(state);
+    var row = cb.closest(".task"); if(row) row.classList.toggle("done", cb.checked);
+    updateProgress();
+  });
+
+  document.getElementById("reset").addEventListener("click", function(){
+    state = {}; save(state);
+    document.querySelectorAll('input[type="checkbox"][data-id]').forEach(function(cb){ cb.checked=false; });
+    document.querySelectorAll(".task").forEach(function(r){ r.classList.remove("done"); });
+    updateProgress();
+  });
+
+  document.addEventListener("click", function(e){
+    var b = e.target.closest && e.target.closest('[data-view]');
+    if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    try{ parent.postMessage({ t:"gotoView", v:b.getAttribute("data-view") }, "*"); }catch(_){}
+  });
+
+  function postHeight(){
+    try{ parent.postMessage({ t:"onbHeight", h: Math.ceil(document.documentElement.getBoundingClientRect().height) }, "*"); }catch(e){}
+  }
+  window.addEventListener("load", postHeight);
+  window.addEventListener("resize", postHeight);
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(postHeight); }
+  if("ResizeObserver" in window){ try{ new ResizeObserver(postHeight).observe(document.body); }catch(e){} }
+  setTimeout(postHeight,300); setTimeout(postHeight,1000);
+
+  render();
+})();
+</script>
+</body>
+</html>

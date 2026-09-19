@@ -18,7 +18,7 @@
   .toptab.on:hover{border-color:var(--blue)}
   @media (max-width:520px){.toptab{flex:1;text-align:center;padding:14px 10px}}
   .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
-  #commsframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
+  #commsframe,#onbframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
 </style>
 </head>
 <body>
@@ -28,10 +28,15 @@
   <nav class="toptabs">
     <button type="button" class="toptab" data-view="comms">Communications</button>
     <button type="button" class="toptab on" data-view="calls">Daily Outreach</button>
+    <button type="button" class="toptab" data-view="onb">Onboarding</button>
   </nav>
 
   <div id="view-comms" hidden>
     <iframe id="commsframe" title="Communications" src="/resources.html" loading="lazy"></iframe>
+  </div>
+
+  <div id="view-onb" hidden>
+    <iframe id="onbframe" title="Onboarding" src="/onboarding.html" loading="lazy"></iframe>
   </div>
 
   <div id="view-calls">
@@ -60,22 +65,25 @@
 <script>
 (function(){
   var tabs=document.querySelectorAll(".toptab");
-  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls")};
-  var frame=document.getElementById("commsframe");
-  function sizeComms(){
-    if(!frame) return;
-    try{ var d=frame.contentWindow.document; frame.style.height=((d.documentElement.scrollHeight||d.body.scrollHeight)+2)+"px"; }catch(e){}
+  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls"),onb:document.getElementById("view-onb")};
+  var frames={comms:document.getElementById("commsframe"),onb:document.getElementById("onbframe")};
+  function sizeFrame(f){
+    if(!f) return;
+    try{ var d=f.contentWindow.document; f.style.height=((d.documentElement.scrollHeight||d.body.scrollHeight)+2)+"px"; }catch(e){}
   }
   function show(v){
     for(var k in views){ if(views[k]) views[k].hidden=(k!==v); }
     tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===v); });
-    if(v==="comms"){ requestAnimationFrame(sizeComms); setTimeout(sizeComms,150); }
+    if(frames[v]){ requestAnimationFrame(function(){ sizeFrame(frames[v]); }); setTimeout(function(){ sizeFrame(frames[v]); },150); }
   }
   tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.view); }); });
-  if(frame){ frame.addEventListener("load", sizeComms); }
-  window.addEventListener("resize", function(){ if(views.comms && !views.comms.hidden) sizeComms(); });
+  for(var k in frames){ (function(f){ if(f) f.addEventListener("load", function(){ sizeFrame(f); }); })(frames[k]); }
+  window.addEventListener("resize", function(){ for(var k in views){ if(views[k] && !views[k].hidden && frames[k]) sizeFrame(frames[k]); } });
   window.addEventListener("message", function(e){
-    if(e && e.data && e.data.t==="commsHeight" && frame && e.data.h>0){ frame.style.height=(e.data.h+2)+"px"; }
+    if(!e || !e.data) return;
+    if(e.data.t==="commsHeight" && frames.comms && e.data.h>0){ frames.comms.style.height=(e.data.h+2)+"px"; }
+    if(e.data.t==="onbHeight" && frames.onb && e.data.h>0){ frames.onb.style.height=(e.data.h+2)+"px"; }
+    if(e.data.t==="gotoView" && views[e.data.v]){ show(e.data.v); try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_){ window.scrollTo(0,0); } }
   });
 })();
 </script>
