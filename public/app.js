@@ -135,6 +135,49 @@ async function load(){
   }
 }
 
+// Every returned lead, flattened out of the per-status, per-rep groups. Each
+// lead keeps its own stageId, which is how we filter by pipeline stage.
+function allLeads(d){
+  const groups = [d.booked, d.noshow, d.rescheduling, d.bookingInterview, d.bookingReview, d.cancelled, d.clientWon, d.notQualified];
+  const out = [];
+  groups.forEach(g=>{ (g||[]).forEach(rep=>{ (rep.leads||[]).forEach(l=>out.push(l)); }); });
+  return out;
+}
+
+// Strip the emoji and the "(triggers FUP)" note from a stage name for plain
+// sentences like the empty state.
+function cleanStage(name){
+  return String(name||"").replace(/\s*\(triggers FUP\)/i,"").replace(/^[^A-Za-z]+/,"").trim();
+}
+
+// The plain-language explainer shown above the list for the stages that need
+// one. Matched on the stage name so it stays in step with the pipeline.
+function stageExplain(name){
+  const n = String(name||"");
+  if(/booking interview/i.test(n)) return '<div class="explain book"><div class="explain-h">What is Booking Interview?</div>'+
+    '<p>These people qualified on the intro call but have not booked their interview yet. A person only shows up here because someone moved them here on purpose.</p>'+
+    '<p>The system already sent them the email and SMS with the interview booking link. Your job is to follow up on every channel until they actually book.</p>'+
+    '<p>The moment they book their interview, move them to Interview Call Booked. If they go quiet, move them to Not Qualified.</p></div>';
+  if(/booking review/i.test(n)) return '<div class="explain review"><div class="explain-h">What is Booking Review?</div>'+
+    '<p>These people had their interview but have not booked their review call yet. A person only shows up here because someone moved them here on purpose.</p>'+
+    '<p>Nothing automatic goes out from this stage. It is on you to follow up by hand on every channel and get the review booked within the week.</p>'+
+    '<p>The moment they book their review, move them to Review Call Booked. If they go quiet, move them to Not Qualified.</p></div>';
+  if(/reschedul/i.test(n)) return '<div class="explain"><div class="explain-h">What is Reschedule?</div>'+
+    '<p>These are people we are actively trying to get to book a new time. This is the one part of the process we do by hand, so a person only shows up here because someone moved them here on purpose.</p>'+
+    '<p>Usually that is because their call could not go ahead: they did not show, they cancelled, or the salesperson could not make it. Now we are chasing a new booking.</p>'+
+    '<p>Open the card, reach out on every channel, and send them the booking link. The moment they book a new call, move them back to their call stage. If they go quiet, move them to Not Qualified.</p></div>';
+  if(/cancelled/i.test(n)) return '<div class="explain cancel"><div class="explain-h">What is Cancelled?</div>'+
+    '<p>These people cancelled their call. They are still in the system, and the CRM already sends them the cancelled sequence to win them back.</p>'+
+    '<p>On top of that, reach out personally on every channel and offer them an easy way to grab a new time. The moment they book, they move back on their own.</p></div>';
+  if(/client won/i.test(n)) return '<div class="explain won"><div class="explain-h">What is Client Won?</div>'+
+    '<p>These leads became clients. Nothing goes out from here, and there is nothing to chase.</p>'+
+    '<p>Open a card to look back at the account: their details, what we sent, and the notes and Fathom links from their previous calls.</p></div>';
+  if(/not qualified/i.test(n)) return '<div class="explain notq"><div class="explain-h">What is Not Qualified?</div>'+
+    '<p>These leads were taken out of the process because they were not a fit. They only land here because someone moved them here by hand.</p>'+
+    '<p>Open a card to review who was dropped and read their previous call notes. Reach back only if something has genuinely changed.</p></div>';
+  return "";
+}
+
 function render(d){
   el("rule").innerHTML =
     '<div class="infocard">'+
@@ -162,34 +205,20 @@ function render(d){
       '<p class="ip">Some leads show a small red flag: a red dot on their row in the list, and a red note at the top of their card when you open it. It is not a stage of the pipeline. It is a heads up that something about reaching this person needs a look first: there is no phone number on file, so the automatic SMS could not be sent; or the SMS failed to deliver; or the confirmation email bounced. A red flag never means skip the lead. You still reach out to everyone, you just know which detail to work around and which channel is most likely to land. For the full messages and sequences behind each stage, check the <b>Communications</b> tab.</p>'+
     '</div>';
 
-  const resched = d.rescheduling || [];
-  const bookint = d.bookingInterview || [];
-  const bookrev = d.bookingReview || [];
-  const cancel = d.cancelled || [];
-  const won = d.clientWon || [];
-  const nq = d.notQualified || [];
-  const repNames = [...new Set([...d.booked, ...d.noshow, ...resched, ...bookint, ...bookrev, ...cancel, ...won, ...nq].map(r=>r.repName))].sort((a,b)=>a.localeCompare(b));
-  const repTotal = (list, rep) => { const r = (list||[]).find(x=>x.repName===rep); return r ? r.total : 0; };
+  // Flatten every returned lead once so we can filter by the exact pipeline
+  // stage the lead is in. Each lead carries its own stageId from the CRM, so
+  // the filter chips map one to one to the real pipeline stages.
+  const flat = allLeads(d);
+  const stages = d.stages || [];
+  if(!stages.some(s=>s.id===TAB)) TAB = (stages[0] && stages[0].id) || "";
 
-  // One selectable row with every stage of the pipeline. The salesperson can
-  // click any stage to see the people in it, including Client Won and Not
-  // Qualified, so past calls and notes are always reachable.
-  const stageDefs = [
-    ["booked","Booked", d.booked, d.totals.booked],
-    ["noshow","No-shows", d.noshow, d.totals.noshow],
-    ["rescheduling","Rescheduling", resched, d.totals.rescheduling||0],
-    ["bookinginterview","Booking Interview", bookint, d.totals.bookingInterview||0],
-    ["bookingreview","Booking Review", bookrev, d.totals.bookingReview||0],
-    ["cancelled","Cancelled", cancel, d.totals.cancelled||0],
-    ["clientwon","Client Won", won, d.totals.clientWon||0],
-    ["notqualified","Not Qualified", nq, d.totals.notQualified||0],
-  ];
+  const repNames = [...new Set(flat.map(l=>l.repName))].sort((a,b)=>a.localeCompare(b));
+  const stageCount = (id, rep) => flat.filter(l=> l.stageId===id && (rep==="all"||l.repName===rep)).length;
+
   el("summary").innerHTML =
-    '<div class="stagerow">'+
-      stageDefs.map(function(s){
-        var key=s[0], label=s[1], list=s[2], tot=s[3];
-        var c = REP==="all" ? tot : repTotal(list, REP);
-        return '<button class="stagechip '+(TAB===key?"on":"")+'" data-tab="'+key+'"><span class="sc-n">'+c+'</span><span class="sc-l">'+esc(label)+'</span></button>';
+    '<div class="stagechips">'+
+      stages.map(function(s){
+        return '<button class="stagechip '+(TAB===s.id?"on":"")+'" data-tab="'+esc(s.id)+'"><span class="sc-n">'+stageCount(s.id, REP)+'</span><span class="sc-l">'+esc(s.name)+'</span></button>';
       }).join("")+
     '</div>';
 
@@ -208,84 +237,42 @@ function render(d){
 
 function renderGroups(){
   const d = DATA;
-  let reps = TAB==="noshow" ? d.noshow : TAB==="rescheduling" ? (d.rescheduling||[]) : TAB==="bookinginterview" ? (d.bookingInterview||[]) : TAB==="bookingreview" ? (d.bookingReview||[]) : TAB==="cancelled" ? (d.cancelled||[]) : TAB==="clientwon" ? (d.clientWon||[]) : TAB==="notqualified" ? (d.notQualified||[]) : d.booked;
-  if(REP!=="all") reps = reps.filter(r=>r.repName===REP);
+  const stages = d.stages || [];
+  const stage = stages.find(s=>s.id===TAB) || null;
+  const name = stage ? stage.name : "";
+  const isRef = /client won|not qualified/i.test(name);
+
+  // Filter every lead down to the exact pipeline stage that is selected.
+  let leads = allLeads(d).filter(l=>l.stageId===TAB);
+  if(REP!=="all") leads = leads.filter(l=>l.repName===REP);
+
   const g = el("groups"); g.innerHTML="";
 
-  // Plain-language explainer for the Rescheduling tab, so anyone new understands
-  // at a glance why these people are here.
-  if(TAB==="rescheduling"){
-    g.innerHTML =
-      '<div class="explain">'+
-        '<div class="explain-h">What is Rescheduling?</div>'+
-        '<p>These are people we are actively trying to get to book a new time. This is the one part of the process we do by hand, so a person only shows up here because someone moved them here on purpose.</p>'+
-        '<p>Usually that is because their call could not go ahead: they did not show, they cancelled, or the salesperson could not make it. Now we are chasing a new booking.</p>'+
-        '<p>Open the card, reach out on every channel, and send them the booking link. The moment they book a new call, move them back to their call stage. If they go quiet, move them to Not Qualified.</p>'+
-      '</div>';
-  }
+  const exp = stageExplain(name);
+  if(exp) g.innerHTML = exp;
 
-  if(TAB==="bookinginterview"){
-    g.innerHTML =
-      '<div class="explain book">'+
-        '<div class="explain-h">What is Booking Interview?</div>'+
-        '<p>These people qualified on the intro call but have not booked their interview yet. A person only shows up here because someone moved them here on purpose.</p>'+
-        '<p>The system already sent them the email and SMS with the interview booking link. Your job is to follow up on every channel until they actually book.</p>'+
-        '<p>The moment they book their interview, move them to Interview Call Booked. If they go quiet, move them to Not Qualified.</p>'+
-      '</div>';
-  }
-
-  if(TAB==="bookingreview"){
-    g.innerHTML =
-      '<div class="explain review">'+
-        '<div class="explain-h">What is Booking Review?</div>'+
-        '<p>These people had their interview but have not booked their review call yet. A person only shows up here because someone moved them here on purpose.</p>'+
-        '<p>Nothing automatic goes out from this stage. It is on you to follow up by hand on every channel and get the review booked within the week.</p>'+
-        '<p>The moment they book their review, move them to Review Call Booked. If they go quiet, move them to Not Qualified.</p>'+
-      '</div>';
-  }
-
-  if(TAB==="cancelled"){
-    g.innerHTML =
-      '<div class="explain cancel">'+
-        '<div class="explain-h">What is Cancelled?</div>'+
-        '<p>These people cancelled their call. They are still in the system, and the CRM already sends them the cancelled sequence to win them back.</p>'+
-        '<p>On top of that, reach out personally on every channel and offer them an easy way to grab a new time. The moment they book, they move back on their own.</p>'+
-      '</div>';
-  }
-
-  if(TAB==="clientwon"){
-    g.innerHTML =
-      '<div class="explain won">'+
-        '<div class="explain-h">What is Client Won?</div>'+
-        '<p>These leads became clients. Nothing goes out from here, and there is nothing to chase.</p>'+
-        '<p>Open a card to look back at the account: their details, what we sent, and the notes and Fathom links from their previous calls.</p>'+
-      '</div>';
-  }
-
-  if(TAB==="notqualified"){
-    g.innerHTML =
-      '<div class="explain notq">'+
-        '<div class="explain-h">What is Not Qualified?</div>'+
-        '<p>These leads were taken out of the process because they were not a fit. They only land here because someone moved them here by hand.</p>'+
-        '<p>Open a card to review who was dropped and read their previous call notes. Reach back only if something has genuinely changed.</p>'+
-      '</div>';
-  }
-
-  if(!reps.length){
-    const label = TAB==="noshow" ? "no-shows" : TAB==="rescheduling" ? "people to reschedule" : TAB==="bookinginterview" ? "people booking their interview" : TAB==="bookingreview" ? "people booking their review" : TAB==="cancelled" ? "cancelled calls" : TAB==="clientwon" ? "clients won" : TAB==="notqualified" ? "not qualified leads" : "booked calls";
-    const none = TAB==="noshow" ? "No no-shows right now. Nice." : TAB==="rescheduling" ? "Nobody is waiting to reschedule right now." : TAB==="bookinginterview" ? "Nobody is booking an interview right now." : TAB==="bookingreview" ? "Nobody is booking a review right now." : TAB==="cancelled" ? "No cancelled calls right now." : TAB==="clientwon" ? "No clients won in this pipeline yet." : TAB==="notqualified" ? "Nobody has been marked not qualified." : "No booked calls right now.";
-    const msg = REP!=="all" ? esc(REP)+" has no "+label+" right now." : none;
+  if(!leads.length){
+    const where = cleanStage(name) || "this stage";
+    const msg = REP!=="all" ? esc(REP)+" has nobody in "+esc(where)+" right now." : "Nobody is in "+esc(where)+" right now.";
     g.innerHTML += '<div class="empty-state">'+msg+'</div>';
     return;
   }
-  reps.forEach(rep=>{
+
+  // Group the filtered leads by salesperson, keeping the soonest-call order the
+  // API already sorted them into.
+  const byRep = {};
+  leads.forEach(l=>{ (byRep[l.repName] = byRep[l.repName] || []).push(l); });
+
+  Object.keys(byRep).sort((a,b)=>a.localeCompare(b)).forEach(repName=>{
+    const list = byRep[repName];
+    const flaggedN = list.filter(l=>l.flagged).length;
     const box = document.createElement("div"); box.className="group";
-    const flagPill = rep.flagged>0 ? '<span class="count">'+rep.flagged+' flagged</span>' : "";
-    const totalWord = (TAB==="clientwon"||TAB==="notqualified") ? (rep.total===1?" lead":" leads") : " to reach";
-    box.innerHTML = '<div class="grouphead"><span class="avatar">'+initials(rep.repName)+'</span>'+
-      '<h2>'+esc(rep.repName)+'</h2><span class="total strong">'+rep.total+totalWord+'</span>'+flagPill+'</div>';
+    const flagPill = flaggedN>0 ? '<span class="count">'+flaggedN+' flagged</span>' : "";
+    const totalWord = isRef ? (list.length===1?" lead":" leads") : " to reach";
+    box.innerHTML = '<div class="grouphead"><span class="avatar">'+initials(repName)+'</span>'+
+      '<h2>'+esc(repName)+'</h2><span class="total strong">'+list.length+totalWord+'</span>'+flagPill+'</div>';
     const rows = document.createElement("div"); rows.className="rows";
-    rep.leads.forEach(l=>{
+    list.forEach(l=>{
       const row = document.createElement("div");
       row.className = "row"+(l.flagged?"":" calm");
       const day = dayLabel(l.appointment && l.appointment.at, l.timezone);
