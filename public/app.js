@@ -339,7 +339,7 @@ function sentBlock(l){
     ? '<div class="sent-item"><div class="sent-h"><span class="ch">SMS</span><span class="tagstatus '+cls+'">'+esc(st)+'</span><span class="when">'+esc(ago(l.lastSms.at))+'</span></div>'+
         '<div class="sent-snip">'+esc(l.lastSms.body)+'</div></div>'
     : '<div class="sent-item empty">No SMS '+(l.phone?"on record":"(no phone number)")+'</div>';
-  return '<div class="dohead">What we already sent</div><div class="sent">'+email+sms+'</div>';
+  return '<div class="dohead">What the lead already received</div><div class="sent">'+email+sms+'</div>';
 }
 
 function channelBlocks(l){
@@ -531,7 +531,7 @@ function notesBlock(l){
     '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM. Paste the Fathom recording link in here too..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
     '<div class="hint">Notes save to this contact in the CRM and show for everyone. Paste the Fathom recording link into a note after the call.</div>'+
-    '<div class="dohead" style="margin-top:16px">Log the call</div>'+
+    '<div class="dohead">Log the call</div>'+
     '<a class="calllog" href="https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit" target="_blank" rel="noopener">Open the call log</a>'+
     '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
 }
@@ -576,7 +576,7 @@ function openSheet(l){
   const flagBox = l.flagged
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
     : "";
-  const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out, everywhere you can";
+  const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out everywhere you can to lift the show-up rate";
   sheet.innerHTML =
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
@@ -603,7 +603,9 @@ function openSheet(l){
         ? (reviewBlock(l)+stageMover(l)+notesBlock(l))
         : (l.status==="clientwon"||l.status==="notqualified")
         ? (wonNqBlock(l)+stageMover(l)+notesBlock(l))
-        : ('<div class="dohead">'+doHead+'</div>'+channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
+        : ('<div class="dohead">'+doHead+'</div>'+
+           '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
+           channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
       prepBlock(l)+
     '</div>';
   el("scrim").classList.add("open");
