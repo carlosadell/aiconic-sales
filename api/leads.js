@@ -182,6 +182,8 @@ module.exports = async (req, res) => {
     const bookingInterview = leads.filter((l) => l.status === "bookinginterview");
     const bookingReview = leads.filter((l) => l.status === "bookingreview");
     const cancelled = leads.filter((l) => l.status === "cancelled");
+    const clientWon = leads.filter((l) => l.status === "clientwon");
+    const notQualified = leads.filter((l) => l.status === "notqualified");
 
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json({
@@ -195,6 +197,8 @@ module.exports = async (req, res) => {
         bookingInterview: bookingInterview.length,
         bookingReview: bookingReview.length,
         cancelled: cancelled.length,
+        clientWon: clientWon.length,
+        notQualified: notQualified.length,
         flagged: leads.filter((l) => l.flagged).length,
       },
       booked: group(booked),
@@ -203,6 +207,8 @@ module.exports = async (req, res) => {
       bookingInterview: group(bookingInterview),
       bookingReview: group(bookingReview),
       cancelled: group(cancelled),
+      clientWon: group(clientWon),
+      notQualified: group(notQualified),
     });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
