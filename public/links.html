@@ -30,7 +30,7 @@
   h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em}
   .lede{font-size:16.5px;color:var(--ink-2);margin:0 0 8px;max-width:70ch}
 
-  h2{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:38px 0 4px}
+  h2{font-size:clamp(20px,3.4vw,26px);font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:44px 0 6px;padding-top:22px;border-top:1px solid var(--border)}
   .h2-sub{font-size:14px;color:var(--ink-2);margin:0 0 16px;max-width:66ch}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:12px}
@@ -60,20 +60,16 @@
   <div class="callout"><b>Always send these exact booking links.</b> Never a different or personal link that could break or confuse the lead.</div>
 
   <h2>Booking links</h2>
-  <p class="h2-sub">Send these to leads. Match the intro link to where the lead came from.</p>
+  <p class="h2-sub">Send these to leads. Use the Copy button so you send the exact link.</p>
   <div class="grid" id="g-book"></div>
 
-  <h2>Scripts and talk tracks</h2>
-  <p class="h2-sub">Open these before and during a call. Read only, do not edit the master copies.</p>
+  <h2>Scripts and trackers</h2>
+  <p class="h2-sub">Open these before and during a call, and log every call you take.</p>
   <div class="grid" id="g-scripts"></div>
 
   <h2>Systems and tools</h2>
   <p class="h2-sub">Where the work happens day to day.</p>
   <div class="grid" id="g-systems"></div>
-
-  <h2>Trackers and logs</h2>
-  <p class="h2-sub">Keep these current so the team can see what happened.</p>
-  <div class="grid" id="g-track"></div>
 
   <p class="foot">Missing a link, or one has moved? Tell the team so we fix it here for everyone, instead of passing around a personal copy.</p>
 </div>
@@ -83,22 +79,19 @@
   var DATA = {
     "g-book": [
       {edge:"blue", label:"Intro call, LinkedIn leads", url:"https://app.aiconichub.ai/leads-engine-lkdn", note:"For leads that came in from LinkedIn.", copy:true},
-      {edge:"blue", label:"Intro call, email campaign leads", url:"https://app.aiconichub.ai/leads-engine", note:"For leads from the email campaigns.", copy:true},
-      {edge:"teal", label:"Interview call with Carlos", url:"https://app.aiconichub.ai/leads-engine-interview", note:"The hour we turn into a full Leads Engine, for free.", copy:true}
+      {edge:"teal", label:"Interview call", url:"https://app.aiconichub.ai/leads-engine-interview", note:"The hour we turn into a full Leads Engine, for free.", copy:true},
+      {edge:"violet", label:"Review call", url:"https://links.aiconichub.ai/widget/booking/EkNg9CbinOGLYq4LDtfP", note:"The call at the end, to review what we built.", copy:true}
     ],
     "g-scripts": [
       {edge:"violet", label:"Intro call script", url:"https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit", note:"The Leads Engine discovery call script."},
       {edge:"violet", label:"Interview questions", url:"https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit", note:"The one hour interview questions."},
-      {edge:"amber", label:"Price list", url:"https://docs.google.com/document/d/1KlMicyc455yOXvf3j6wktIgc3XZdV5uC3glvPqAgzi8/edit", note:"What we charge, for when it comes up."}
+      {edge:"amber", label:"Aiconic price list", url:"https://docs.google.com/document/d/1KlMicyc455yOXvf3j6wktIgc3XZdV5uC3glvPqAgzi8/edit", note:"What we charge, for when it comes up."},
+      {edge:"green", label:"Intro Calls Tracker", url:"https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit", note:"Log every call you actually took, with your name on it."}
     ],
     "g-systems": [
       {edge:"slate", label:"Open the CRM", url:"https://app.theiconicceo.com/", note:"GoHighLevel. Opens your pipeline and contacts."},
       {edge:"slate", label:"Conversify, LinkedIn chats", url:"https://conversifi.io/dashboard", note:"Read a lead's LinkedIn conversations before you reach out."},
       {edge:"blue", label:"Leads Engine funnel", url:"https://aiconichub.ai/leadsengine", note:"The funnel leads come through. Open it to see what a lead saw."}
-    ],
-    "g-track": [
-      {edge:"green", label:"Intro Calls Tracker", url:"https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit", note:"Log every call you actually took, with your name on it."},
-      {edge:"green", label:"Free Trial Funnel folder", url:"https://drive.google.com/drive/folders/1cwGyiIfUYztA_F3lcdt74EoSKIG89e8a", note:"Everything for the funnel in one Drive folder."}
     ]
   };
 
