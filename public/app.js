@@ -329,6 +329,10 @@ function prepBlock(l){
 }
 
 function sentBlock(l){
+  if(l.commsOk===false){
+    return '<div class="dohead">What the lead already received</div>'+
+      '<div class="sent"><div class="sent-item warn">Could not load this from the CRM just now. That does not mean nothing was sent, the read failed, most likely a busy moment on the CRM. Hit <b>Refresh</b> at the top and open the card again.</div></div>';
+  }
   const email = l.lastEmail
     ? '<div class="sent-item"><div class="sent-h"><span class="ch">Email</span><span class="when">'+esc(ago(l.lastEmail.at))+'</span></div>'+
         '<div class="sent-subj">'+esc(l.lastEmail.subject)+'</div><div class="sent-snip">'+esc(l.lastEmail.snippet)+'</div></div>'

@@ -115,6 +115,8 @@ h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:7px 0 6px}
 .sent{margin-bottom:18px;display:flex;flex-direction:column;gap:8px}
 .sent-item{border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#fafbfd}
 .sent-item.empty{color:var(--muted);font-size:12.5px;background:#f7f9fc}
+.sent-item.warn{color:var(--amber-ink);font-size:13px;line-height:1.5;background:#fdf2e3;border-color:#f2d9ac}
+.sent-item.warn b{font-weight:700}
 .sent-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .sent-h .ch{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);background:#eef2f8;padding:2px 7px;border-radius:6px}
 .sent-h .when{font-size:11.5px;color:var(--muted);margin-left:auto}

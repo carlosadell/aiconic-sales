@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
       overrides = JSON.parse(process.env.REP_NAMES || "{}");
     } catch (_) {}
 
-    const leads = await mapLimit(active, 6, async ({ o, status }) => {
+    const leads = await mapLimit(active, 4, async ({ o, status }) => {
       const rel = (o.relations && o.relations[0]) || {};
       const contactId = o.contactId || rel.recordId;
       let phone = rel.phone || "";
@@ -87,9 +87,15 @@ module.exports = async (req, res) => {
       } catch (_) {}
 
       let comms = { lastEmail: null, lastSms: null, appointment: null, rescheduleLink: null };
+      let commsOk = true;
       try {
         comms = await getComms(contactId);
-      } catch (_) {}
+      } catch (_) {
+        // The fetch failed (rate limit, timeout). We could not read what was
+        // sent, which is NOT the same as nothing having been sent. Flag it so
+        // the card can say "could not load" instead of a false "nothing sent".
+        commsOk = false;
+      }
 
       const smsStatus = comms.lastSms ? comms.lastSms.status : null;
       const hasPhone = Boolean(phone);
@@ -130,6 +136,7 @@ module.exports = async (req, res) => {
         appointment,
         lastEmail: comms.lastEmail,
         lastSms: comms.lastSms,
+        commsOk,
         rebookLink: rebook,
         rebookIsPersonal: Boolean(comms.rescheduleLink),
         bookingLink: generalBooking,
