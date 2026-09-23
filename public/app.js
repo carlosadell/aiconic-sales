@@ -5,8 +5,8 @@
 
 const el = (id) => document.getElementById(id);
 let DATA = null;
-let TAB = "booked";
 let REP = "all";
+let REP_NAMES = [];
 
 function initials(n){ return (n||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -28,14 +28,14 @@ function dayLabel(iso, tz){
 }
 function typeClass(t){
   const k=(t||"").toLowerCase();
-  if(k.includes("booking interview")) return "t-bookint";
-  if(k.includes("booking review")) return "t-bookrev";
+  if(k.includes("book interview")||k.includes("booking interview")) return "t-bookint";
+  if(k.includes("book review")||k.includes("booking review")) return "t-bookrev";
+  if(k.includes("rebook")||k.includes("no show")) return "t-noshow";
   if(k.includes("interview")) return "t-interview";
   if(k.includes("review")) return "t-review";
-  if(k.includes("intro")) return "t-intro";
-  if(k.includes("no show")) return "t-noshow";
   if(k.includes("reschedul")) return "t-resched";
-  if(k.includes("cancel")) return "t-cancel";
+  if(k.includes("cancel")||k.includes("never")) return "t-cancel";
+  if(k.includes("intro")) return "t-intro";
   return "t-intro";
 }
 
@@ -135,161 +135,176 @@ async function load(){
   }
 }
 
-// Every returned lead, flattened out of the per-status, per-rep groups. Each
-// lead keeps its own stageId, which is how we filter by pipeline stage.
+// Every returned lead. The API now returns a single flat list, each lead tagged
+// with its own stageId and status, which is how we bucket by pipeline stage.
 function allLeads(d){
-  const groups = [d.booked, d.noshow, d.rescheduling, d.bookingInterview, d.bookingReview, d.cancelled, d.clientWon, d.notQualified];
-  const out = [];
-  groups.forEach(g=>{ (g||[]).forEach(rep=>{ (rep.leads||[]).forEach(l=>out.push(l)); }); });
-  return out;
+  if(d && Array.isArray(d.leads)) return d.leads;
+  return [];
 }
 
-// Strip the emoji and the "(triggers FUP)" note from a stage name for plain
-// sentences like the empty state.
+// Strip the emoji and the "(FUP)" / "(Manual)" notes from a stage name for a
+// clean header and plain sentences.
 function cleanStage(name){
-  return String(name||"").replace(/\s*\(triggers FUP\)/i,"").replace(/^[^A-Za-z]+/,"").trim();
+  return String(name||"")
+    .replace(/\((?:triggers\s*)?fup\)/ig,"")
+    .replace(/\(manual\)/ig,"")
+    .replace(/[^\x20-\x7E]/g,"")
+    .replace(/\s{2,}/g," ")
+    .trim();
 }
 
-// The plain-language explainer shown above the list for the stages that need
-// one. Matched on the stage name so it stays in step with the pipeline.
+// The plain-language explainer shown under each stage on the pipeline board.
+// Matched on the stage NAME so it stays in step with the live pipeline even if a
+// stage is renamed, as long as the name still says what the stage is.
 function stageExplain(name){
-  const n = String(name||"");
-  if(/booking interview/i.test(n)) return '<div class="explain book"><div class="explain-h">What is Booking Interview?</div>'+
-    '<p>These people qualified on the intro call but have not booked their interview yet. A person only shows up here because someone moved them here on purpose.</p>'+
-    '<p>The system already sent them the email and SMS with the interview booking link. Your job is to follow up on every channel until they actually book.</p>'+
-    '<p>The moment they book their interview, move them to Interview Call Booked. If they go quiet, move them to Not Qualified.</p></div>';
-  if(/booking review/i.test(n)) return '<div class="explain review"><div class="explain-h">What is Booking Review?</div>'+
-    '<p>These people had their interview but have not booked their review call yet. A person only shows up here because someone moved them here on purpose.</p>'+
-    '<p>Nothing automatic goes out from this stage. It is on you to follow up by hand on every channel and get the review booked within the week.</p>'+
-    '<p>The moment they book their review, move them to Review Call Booked. If they go quiet, move them to Not Qualified.</p></div>';
-  if(/reschedul/i.test(n)) return '<div class="explain"><div class="explain-h">What is Reschedule?</div>'+
-    '<p>These are people we are actively trying to get to book a new time. This is the one part of the process we do by hand, so a person only shows up here because someone moved them here on purpose.</p>'+
-    '<p>Usually that is because their call could not go ahead: they did not show, they cancelled, or the salesperson could not make it. Now we are chasing a new booking.</p>'+
-    '<p>Open the card, reach out on every channel, and send them the booking link. The moment they book a new call, move them back to their call stage. If they go quiet, move them to Not Qualified.</p></div>';
-  if(/cancelled/i.test(n)) return '<div class="explain cancel"><div class="explain-h">What is Cancelled?</div>'+
-    '<p>These people cancelled their call. They are still in the system, and the CRM already sends them the cancelled sequence to win them back.</p>'+
-    '<p>On top of that, reach out personally on every channel and offer them an easy way to grab a new time. The moment they book, they move back on their own.</p></div>';
-  if(/client won/i.test(n)) return '<div class="explain won"><div class="explain-h">What is Client Won?</div>'+
+  const n = String(name||"").toLowerCase();
+  const wrap = (cls, h, body) => '<div class="explain '+cls+'"><div class="explain-h">'+h+'</div>'+body+'</div>';
+  if(/never\s*reschedul/.test(n)) return wrap("cancel","Never Rescheduled",
+    '<p>These leads went through the rebooking reminders and never booked a new time. This is the end of the line for a lost booking.</p>'+
+    '<p>Nothing automatic runs from here. Open a card only to review the history, and reach back if something has genuinely changed.</p>');
+  if(/not\s*qualified/.test(n)) return wrap("notq","Not Qualified",
+    '<p>These leads were taken out of the process because they were not a fit, or because the team cancelled on them. They only land here on purpose.</p>'+
+    '<p>Open a card to review who was dropped and read their previous call notes. Reach back only if something has genuinely changed.</p>');
+  if(/client\s*won/.test(n)) return wrap("won","Client Won",
     '<p>These leads became clients. Nothing goes out from here, and there is nothing to chase.</p>'+
-    '<p>Open a card to look back at the account: their details, what we sent, and the notes and Fathom links from their previous calls.</p></div>';
-  if(/not qualified/i.test(n)) return '<div class="explain notq"><div class="explain-h">What is Not Qualified?</div>'+
-    '<p>These leads were taken out of the process because they were not a fit. They only land here because someone moved them here by hand.</p>'+
-    '<p>Open a card to review who was dropped and read their previous call notes. Reach back only if something has genuinely changed.</p></div>';
+    '<p>Open a card to look back at the account: their details, what we sent, and the notes and Fathom links from their previous calls.</p>');
+  if(/bak(ing|ed)/.test(n)) return wrap("","Baking",
+    '<p>These are leads you are nurturing. Not clients yet, and no automation runs from here.</p>'+
+    '<p>Keep them warm. Open a card to review their history and reach out when the timing is right.</p>');
+  if(/survey/.test(n)) return wrap("book","Survey Qualified",
+    '<p>These people filled in the qualification form on the website and qualified, but have not booked their intro call yet.</p>'+
+    '<p>Reach out and send them the intro booking link so they book. The booking links are in the Links tab.</p>');
+  if(/sorry|emergency/.test(n)) return wrap("","Sorry Emergency Intro Reminders (FUP)",
+    '<p>Emergency only. Use this when the salesperson has to move an intro call. Moving a lead here starts the reminder sequence asking them to rebook.</p>'+
+    '<p>It sits here on purpose, it is not a normal step. The moment they book a new time, they leave this stage on their own.</p>');
+  if(/reminder/.test(n) && /interview/.test(n)) return wrap("book","Book Interview Reminders (FUP)",
+    '<p>These people qualified on the intro but have not booked their interview yet. Move a lead here to start the reminders asking them to book.</p>'+
+    '<p>Follow up on every channel too. The moment they book, they move to Interview Booked on their own. If they go quiet, move them to Not Qualified.</p>');
+  if(/reminder/.test(n) && /review/.test(n)) return wrap("review","Book Review Reminders (FUP)",
+    '<p>These people had their interview but have not booked their review call yet. Move a lead here to start the reminders asking them to book.</p>'+
+    '<p>Follow up by hand as well and get the review booked within the week. The moment they book, they move to Review Booked on their own.</p>');
+  if(/reminder/.test(n) && /intro/.test(n)) return wrap("","Book Intro Reminders (FUP)",
+    '<p>The rebooking lane for the intro call. Cancellations land here automatically. For a no-show, move the lead here by hand.</p>'+
+    '<p>Moving a lead here starts the reminders asking them to book a new intro. Reach out on every channel too. The moment they book, they leave on their own; if they never do, they move to Never Rescheduled.</p>');
+  if(/interview/.test(n) && /booked/.test(n)) return wrap("","Interview Booked",
+    '<p>Automatic. The lead lands here when they book their interview. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
+    '<p>Prepare, reach out, and get them to show up. During the interview, try to book their review call there and then.</p>');
+  if(/review/.test(n) && /booked/.test(n)) return wrap("review","Review Booked",
+    '<p>Automatic. The lead lands here when they book their review call. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
+    '<p>Prepare and reach out so they show up.</p>');
+  if(/intro/.test(n) && /booked/.test(n)) return wrap("","Intro Booked",
+    '<p>Automatic. The lead lands here when they book their first call. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
+    '<p>Prepare and reach out so they show up. If they qualify but do not book the interview, move them to Book Interview Reminders. If they do not show, move them to Book Intro Reminders.</p>');
   return "";
 }
 
 function render(d){
-  el("rule").innerHTML =
+  const leads = allLeads(d);
+  REP_NAMES = [...new Set(leads.map(l=>l.repName))].sort((a,b)=>a.localeCompare(b));
+  if(REP!=="all" && !REP_NAMES.includes(REP)) REP="all";
+  renderFilters();
+  renderDocs();
+  renderDaily();
+  renderPipeline();
+}
+
+// One salesperson filter, shown in both the Daily Outreach and Pipeline tabs and
+// kept in sync. Changing either re-renders both.
+function repSelect(id){
+  return '<div class="filterrow"><select class="repfilter" id="'+id+'" aria-label="Salesperson">'+
+    '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
+    REP_NAMES.map(n=>'<option value="'+esc(n)+'"'+(n===REP?" selected":"")+'>'+esc(n)+'</option>').join("")+
+    '</select></div>';
+}
+function renderFilters(){
+  const dt=el("dailytools");
+  if(dt){ dt.innerHTML=repSelect("dailyfilter"); const s=dt.querySelector("#dailyfilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); }); }
+  const pt=el("pipetools");
+  if(pt){ pt.innerHTML=repSelect("pipefilter"); const s=pt.querySelector("#pipefilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); }); }
+}
+
+function renderDocs(){
+  const box=el("pipedocs"); if(!box) return;
+  box.innerHTML =
     '<div class="infocard">'+
-      '<h3>How this page works</h3>'+
-      '<p class="ip">Tap any lead to open their card. Inside you can see their details, message them, write the call notes and paste the Fathom recording link into the notes after the call, and log the call once it is finished. At the top of the card you will always see the stage they are in inside the pipeline and when their call is.</p>'+
-      '<p class="ip">Some stages of the pipeline are automatic and some you move the lead into by hand. <b>Careful:</b> moving a lead into a stage of the pipeline marked "triggers FUP" starts a follow-up right away, so the customer gets emails and texts. Only move a lead into a stage when that is what you want.</p>'+
-    '</div>'+
-    '<div class="infocard">'+
-      '<h3>The stages of the pipeline and what each one means</h3>'+
-      '<ol class="howto">'+
-        '<li><b>Intro Call.</b> Automatic. The lead lands here when they book their first call.</li>'+
-        '<li><b>No Show (triggers FUP).</b> Manual. Move the card here when they do not show up. This starts the no-show follow-up, so they get emails and texts to rebook.</li>'+
-        '<li><b>Booking Interview (triggers FUP).</b> Manual. Move here when they qualified on the intro call but have not booked their interview yet. This starts the booking-interview follow-up.</li>'+
-        '<li><b>Interview Call Booked.</b> Automatic. The lead moves here when they book their interview.</li>'+
-        '<li><b>Booking Review.</b> Manual. Move here when the interview happened but they have not booked their review call yet. Nothing automatic goes out from this stage, so follow up by hand and get the review booked within the week.</li>'+
-        '<li><b>Review Call Booked.</b> Automatic. The lead moves here when they book their review call.</li>'+
-        '<li><b>🚨 Reschedule (triggers FUP).</b> Manual, emergency only. Use this only if there is a real emergency and you have to move a call. It sits at the bottom on purpose, it is not a normal step. Moving a lead here starts the reschedule follow-up.</li>'+
-        '<li><b>Cancelled.</b> Automatic. The lead moves here when the customer cancels their call.</li>'+
-        '<li><b>🔥 Client Won.</b> Automatic. The lead moves here when they become a client.</li>'+
-        '<li><b>⛔️ Not Qualified.</b> Manual. Move a lead here to take them out of the process when they are not a fit.</li>'+
-      '</ol>'+
+      '<h3>How the pipeline works</h3>'+
+      '<p class="ip">Each stage below is a step in the funnel, in order. Some the CRM moves people into automatically, some you move by hand. <b>Careful:</b> a stage marked (FUP) starts reminder emails and texts the moment you move a lead into it, so only move a lead in when that is what you want.</p>'+
+      '<p class="ip">Tap any card to open the lead: their details, the messages, the call notes, and where to log the call.</p>'+
     '</div>'+
     '<div class="infocard">'+
       '<h3>What a red flag means</h3>'+
-      '<p class="ip">Some leads show a small red flag: a red dot on their row in the list, and a red note at the top of their card when you open it. It is not a stage of the pipeline. It is a heads up that something about reaching this person needs a look first: there is no phone number on file, so the automatic SMS could not be sent; or the SMS failed to deliver; or the confirmation email bounced. A red flag never means skip the lead. You still reach out to everyone, you just know which detail to work around and which channel is most likely to land. For the full messages and sequences behind each stage, check the <b>Communications</b> tab.</p>'+
+      '<p class="ip">A small red flag on a card means something about reaching this person needs a look first: no phone on file so the automatic SMS could not be sent, an SMS that failed, or a bounced email. It never means skip the lead. You still reach out, you just know which channel is most likely to land. For the messages behind each stage, see the <b>Communications</b> tab.</p>'+
     '</div>';
-
-  // Flatten every returned lead once so we can filter by the exact pipeline
-  // stage the lead is in. Each lead carries its own stageId from the CRM, so
-  // the filter chips map one to one to the real pipeline stages.
-  const flat = allLeads(d);
-  const stages = d.stages || [];
-  if(!stages.some(s=>s.id===TAB)) TAB = (stages[0] && stages[0].id) || "";
-
-  const repNames = [...new Set(flat.map(l=>l.repName))].sort((a,b)=>a.localeCompare(b));
-  const stageCount = (id, rep) => flat.filter(l=> l.stageId===id && (rep==="all"||l.repName===rep)).length;
-
-  el("summary").innerHTML =
-    '<div class="stagechips">'+
-      stages.map(function(s){
-        return '<button class="stagechip '+(TAB===s.id?"on":"")+'" data-tab="'+esc(s.id)+'"><span class="sc-n">'+stageCount(s.id, REP)+'</span><span class="sc-l">'+esc(s.name)+'</span></button>';
-      }).join("")+
-    '</div>';
-
-  el("tabs").innerHTML =
-    '<div class="filterrow">'+
-      '<select class="repfilter" id="repfilter" aria-label="Salesperson">'+
-        '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
-        repNames.map(n=>'<option value="'+esc(n)+'"'+(n===REP?" selected":"")+'>'+esc(n)+'</option>').join("")+
-      '</select>'+
-    '</div>';
-  el("summary").querySelectorAll(".stagechip").forEach(b=>b.addEventListener("click",()=>{ TAB=b.dataset.tab; render(DATA); }));
-  el("repfilter").addEventListener("change",e=>{ REP=e.target.value; render(DATA); });
-
-  renderGroups();
 }
 
-function renderGroups(){
-  const d = DATA;
-  const stages = d.stages || [];
-  const stage = stages.find(s=>s.id===TAB) || null;
-  const name = stage ? stage.name : "";
-  const isRef = /client won|not qualified/i.test(name);
+// One lead row, used in both views. showRep puts the salesperson in the meta
+// line (the board and the upcoming list mix reps, so you want to see whose it is).
+function rowEl(l, showRep){
+  const row=document.createElement("div");
+  row.className="row"+(l.flagged?"":" calm");
+  const day=dayLabel(l.appointment && l.appointment.at, l.timezone);
+  const meta=[
+    '<span class="ctype '+typeClass(l.callType)+'">'+esc(l.callType)+'</span>',
+    day?'<span class="day">'+esc(day)+'</span>':"",
+    showRep?'<span class="src">'+esc(l.repName)+'</span>':'<span class="src">'+esc(l.source)+'</span>',
+  ].filter(Boolean).join('<span class="mdot">&middot;</span>');
+  const badge=l.flagged?'<span class="badge red">'+esc(l.primaryFlag.label)+'</span>':"";
+  const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking")?"slate":"green";
+  row.innerHTML='<span class="dotmark '+dotCls+'"></span>'+
+    '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
+    badge+'<span class="go">&rsaquo;</span>';
+  row.addEventListener("click",()=>openSheet(l));
+  return row;
+}
 
-  // Filter every lead down to the exact pipeline stage that is selected.
-  let leads = allLeads(d).filter(l=>l.stageId===TAB);
-  if(REP!=="all") leads = leads.filter(l=>l.repName===REP);
-
-  const g = el("groups"); g.innerHTML="";
-
-  const exp = stageExplain(name);
-  if(exp) g.innerHTML = exp;
-
-  if(!leads.length){
-    const where = cleanStage(name) || "this stage";
-    const msg = REP!=="all" ? esc(REP)+" has nobody in "+esc(where)+" right now." : "Nobody is in "+esc(where)+" right now.";
-    g.innerHTML += '<div class="empty-state">'+msg+'</div>';
+// Daily Outreach: only the upcoming scheduled calls (intro, interview, review),
+// soonest first. Everything else lives on the Pipeline board.
+function renderDaily(){
+  const box=el("upcoming"); if(!box) return;
+  const startToday=new Date(); startToday.setHours(0,0,0,0);
+  let ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
+  ups=ups.filter(l=> new Date(l.appointment.at).getTime() >= startToday.getTime());
+  if(REP!=="all") ups=ups.filter(l=>l.repName===REP);
+  ups.sort((a,b)=> new Date(a.appointment.at)-new Date(b.appointment.at));
+  box.innerHTML="";
+  if(!ups.length){
+    box.innerHTML='<div class="empty-state">'+(REP!=="all"?esc(REP)+" has no upcoming calls right now.":"No upcoming calls right now.")+'</div>';
     return;
   }
+  const rows=document.createElement("div"); rows.className="rows";
+  ups.forEach(l=>rows.appendChild(rowEl(l,true)));
+  box.appendChild(rows);
+}
 
-  // Group the filtered leads by salesperson, keeping the soonest-call order the
-  // API already sorted them into.
-  const byRep = {};
-  leads.forEach(l=>{ (byRep[l.repName] = byRep[l.repName] || []).push(l); });
-
-  Object.keys(byRep).sort((a,b)=>a.localeCompare(b)).forEach(repName=>{
-    const list = byRep[repName];
-    const flaggedN = list.filter(l=>l.flagged).length;
-    const box = document.createElement("div"); box.className="group";
-    const flagPill = flaggedN>0 ? '<span class="count">'+flaggedN+' flagged</span>' : "";
-    const totalWord = isRef ? (list.length===1?" lead":" leads") : " to reach";
-    box.innerHTML = '<div class="grouphead"><span class="avatar">'+initials(repName)+'</span>'+
-      '<h2>'+esc(repName)+'</h2><span class="total strong">'+list.length+totalWord+'</span>'+flagPill+'</div>';
-    const rows = document.createElement("div"); rows.className="rows";
-    list.forEach(l=>{
-      const row = document.createElement("div");
-      row.className = "row"+(l.flagged?"":" calm");
-      const day = dayLabel(l.appointment && l.appointment.at, l.timezone);
-      const meta = [
-        '<span class="ctype '+typeClass(l.callType)+'">'+esc(l.callType)+'</span>',
-        day ? '<span class="day">'+esc(day)+'</span>' : "",
-        '<span class="src">'+esc(l.source)+'</span>',
-      ].filter(Boolean).join('<span class="mdot">&middot;</span>');
-      const badge = l.flagged ? '<span class="badge red">'+esc(l.primaryFlag.label)+'</span>' : "";
-      const dotCls = l.flagged ? "red" : l.status==="noshow" ? "amber" : l.status==="rescheduling" ? "violet" : l.status==="bookinginterview" ? "teal" : l.status==="bookingreview" ? "indigo" : l.status==="cancelled" ? "slate" : l.status==="notqualified" ? "slate" : "green";
-      row.innerHTML = '<span class="dotmark '+dotCls+'"></span>'+
-        '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
-        badge+'<span class="go">&rsaquo;</span>';
-      row.addEventListener("click",()=>openSheet(l));
-      rows.appendChild(row);
+// Pipeline board: every live stage in order, with everyone in it below.
+function renderPipeline(){
+  const box=el("board"); if(!box) return;
+  const stages=DATA.stages||[];
+  const leads=allLeads(DATA);
+  box.innerHTML="";
+  if(!stages.length){ box.innerHTML='<div class="empty-state">Could not load the pipeline stages.</div>'; return; }
+  stages.forEach(s=>{
+    let list=leads.filter(l=>l.stageId===s.id);
+    if(REP!=="all") list=list.filter(l=>l.repName===REP);
+    list.sort((a,b)=>{
+      const ta=a.appointment&&a.appointment.at?new Date(a.appointment.at).getTime():Infinity;
+      const tb=b.appointment&&b.appointment.at?new Date(b.appointment.at).getTime():Infinity;
+      if(ta!==tb) return ta-tb;
+      return String(a.name||"").localeCompare(String(b.name||""));
     });
-    box.appendChild(rows); g.appendChild(box);
+    const block=document.createElement("div"); block.className="stageblock";
+    const dot='<span class="stagedot" style="background:'+esc(s.color||"#94a3b8")+'"></span>';
+    const tag=s.auto?'<span class="stagetag auto">automatic</span>':'<span class="stagetag manual">manual</span>';
+    block.innerHTML='<div class="stagehead">'+dot+'<h3>'+esc(cleanStage(s.name))+'</h3><span class="stagecount">'+list.length+'</span>'+tag+'</div>';
+    const exp=stageExplain(s.name); if(exp) block.insertAdjacentHTML("beforeend", exp);
+    if(!list.length){
+      block.insertAdjacentHTML("beforeend",'<div class="stage-empty">Nobody here right now.</div>');
+    }else{
+      const rows=document.createElement("div"); rows.className="rows";
+      list.forEach(l=>rows.appendChild(rowEl(l,true)));
+      block.appendChild(rows);
+    }
+    box.appendChild(block);
   });
 }
 
@@ -307,13 +322,17 @@ function stageMover(l){
     '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in the CRM right away. Stages marked automatic are greyed out, the CRM moves leads there on its own, so you cannot pick them.</div>';
 }
 
-// Client Won and Not Qualified are reference only. No message drafts, no
-// booking links. The rep looks back at the account and its previous call notes.
-function wonNqBlock(l){
-  const msg = l.status==="clientwon"
-    ? "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below."
-    : "This lead was taken out of the process as not a fit. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.";
-  return '<div class="dohead">For reference</div><div class="srcnote">'+esc(msg)+'</div>';
+// Reference-only stages: no message drafts, no booking links. The rep looks back
+// at the account and its previous call notes.
+function referenceBlock(l){
+  const map = {
+    survey: "They qualified through the form but have not booked their intro call yet. Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
+    baking: "This lead is being nurtured. Not a client yet, and no automation runs from here. Use this card to look back at their details and previous call notes, and reach out when the timing is right.",
+    neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
+    clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
+    notqualified: "This lead was taken out of the process as not a fit. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
+  };
+  return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
 }
 
 function prepBlock(l){
@@ -581,15 +600,20 @@ function openSheet(l){
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
     : "";
   const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out everywhere you can to lift the show-up rate";
+  const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled");
+  const showSent = (l.status==="booked"||l.status==="noshow"||l.status==="rescheduling"||l.status==="bookinginterview"||l.status==="bookingreview"||l.status==="cancelled");
   sheet.innerHTML =
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
-      (l.status==="noshow"?'<div class="nshead">Did not show up. Give them an easy way back in.</div>':"")+
+      (l.status==="noshow"?'<div class="nshead">In the rebooking lane. Give them an easy way back in.</div>':"")+
       (l.status==="cancelled"?'<div class="nshead cancel">Cancelled their call. Still in the system, reach out and give them an easy way to rebook.</div>':"")+
       (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
+      (l.status==="survey"?'<div class="nshead book">Qualified through the form but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
+      (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
+      (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
       '<div class="kv">'+
         '<div class="k">Stage</div><div class="v">'+esc(l.stage)+'</div>'+
@@ -597,16 +621,16 @@ function openSheet(l){
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
-      (l.status==="bookinginterview"||l.status==="bookingreview" ? "" : rebookRow(l))+
-      sentBlock(l)+
+      (l.status==="bookinginterview"||l.status==="bookingreview"||isRef ? "" : rebookRow(l))+
+      (showSent ? sentBlock(l) : "")+
       (l.status==="rescheduling"
         ? (rescheduleBlock(l)+stageMover(l)+notesBlock(l))
         : l.status==="bookinginterview"
         ? (interviewBlock(l)+stageMover(l)+notesBlock(l))
         : l.status==="bookingreview"
         ? (reviewBlock(l)+stageMover(l)+notesBlock(l))
-        : (l.status==="clientwon"||l.status==="notqualified")
-        ? (wonNqBlock(l)+stageMover(l)+notesBlock(l))
+        : isRef
+        ? (referenceBlock(l)+stageMover(l)+notesBlock(l))
         : ('<div class="dohead">'+doHead+'</div>'+
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
            channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+

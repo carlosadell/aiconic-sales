@@ -16,7 +16,7 @@
   .toptab.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 6px 16px -6px rgba(37,99,235,.5)}
   .toptab:hover{border-color:var(--line)}
   .toptab.on:hover{border-color:var(--blue)}
-  @media (max-width:520px){.toptab{flex:1;text-align:center;padding:14px 10px}}
+  @media (max-width:560px){.toptab{flex:1 1 auto;text-align:center;padding:14px 10px}}
   .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
   #commsframe,#onbframe,#linksframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
 </style>
@@ -28,6 +28,7 @@
   <nav class="toptabs">
     <button type="button" class="toptab" data-view="onb">Onboarding</button>
     <button type="button" class="toptab" data-view="comms">Communications</button>
+    <button type="button" class="toptab" data-view="pipeline">Pipeline</button>
     <button type="button" class="toptab" data-view="links">Links</button>
     <button type="button" class="toptab on" data-view="calls">Daily Outreach</button>
   </nav>
@@ -44,6 +45,14 @@
     <iframe id="linksframe" title="Links" src="/links.html" loading="lazy"></iframe>
   </div>
 
+  <div id="view-pipeline" hidden>
+    <h2 class="calls-h">The pipeline</h2>
+    <p class="viewlede">Every stage in the funnel, in order, with everyone currently in it. Tap any card to open it. Each stage says what it means and whether the CRM moves people into it automatically or you do it by hand.</p>
+    <div id="pipedocs"></div>
+    <div id="pipetools"></div>
+    <div id="board"></div>
+  </div>
+
   <div id="view-calls">
   <header>
     <div class="meta-row">
@@ -52,16 +61,15 @@
     </div>
   </header>
 
-  <section class="rule" id="rule"></section>
+  <h2 class="calls-h">Upcoming calls</h2>
+  <p class="viewlede">Every scheduled call coming up, soonest first. Tap a card to prepare, message the lead, and reach out so they show up. Follow-ups and every other stage live in the <b>Pipeline</b> tab.</p>
 
-  <div class="summary" id="summary"></div>
+  <div id="dailytools"></div>
 
-  <div class="tabs" id="tabs"></div>
-
-  <div id="groups"></div>
+  <div id="upcoming"></div>
 
   <div class="foot">
-    Reads the Free Trial Funnels pipeline in our CRM every time this page loads. As more bookings come from LinkedIn links with the phone number set to mandatory, the reach-out count should get smaller.
+    Reads the Leads Engine Funnel in our CRM every time this page loads. Upcoming calls are the leads with a scheduled intro, interview, or review coming up.
   </div>
   </div>
 </div>
@@ -70,7 +78,7 @@
 <script>
 (function(){
   var tabs=document.querySelectorAll(".toptab");
-  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls"),onb:document.getElementById("view-onb"),links:document.getElementById("view-links")};
+  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls"),onb:document.getElementById("view-onb"),links:document.getElementById("view-links"),pipeline:document.getElementById("view-pipeline")};
   var frames={comms:document.getElementById("commsframe"),onb:document.getElementById("onbframe"),links:document.getElementById("linksframe")};
   function sizeFrame(f){
     if(!f) return;
