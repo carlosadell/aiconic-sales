@@ -318,8 +318,15 @@ function rowEl(l, showRep){
   return row;
 }
 
+// A stable day key (YYYY-MM-DD) in the given time zone, for grouping calls.
+function dayKey(iso, tz){
+  try{ const o={year:"numeric",month:"2-digit",day:"2-digit"}; if(tz) o.timeZone=tz; return new Date(iso).toLocaleDateString("en-CA",o); }
+  catch(_){ try{ return new Date(iso).toISOString().slice(0,10); }catch(e){ return ""; } }
+}
+
 // Daily Outreach: only the upcoming scheduled calls (intro, interview, review),
-// soonest first. Everything else lives on the Pipeline board.
+// in one column, soonest first, grouped under a heading for each day so it reads
+// straight down. Everything else lives on the Pipeline board.
 function renderDaily(){
   const box=el("upcoming"); if(!box) return;
   const startToday=new Date(); startToday.setHours(0,0,0,0);
@@ -332,9 +339,25 @@ function renderDaily(){
     box.innerHTML='<div class="empty-state">'+(REP!=="all"?esc(REP)+" has no upcoming calls right now.":"No upcoming calls right now.")+'</div>';
     return;
   }
-  const rows=document.createElement("div"); rows.className="rows";
-  ups.forEach(l=>rows.appendChild(rowEl(l,true)));
-  box.appendChild(rows);
+  const todayKey=dayKey(new Date().toISOString());
+  const tmrKey=dayKey(new Date(Date.now()+86400000).toISOString());
+  const list=document.createElement("div"); list.className="daylist";
+  let curKey=null;
+  ups.forEach(l=>{
+    const k=dayKey(l.appointment.at, l.timezone);
+    if(k!==curKey){
+      curKey=k;
+      let label=dayLabel(l.appointment.at, l.timezone);
+      if(k===todayKey) label="Today";
+      else if(k===tmrKey) label="Tomorrow";
+      const cnt=ups.filter(x=>dayKey(x.appointment.at, x.timezone)===k).length;
+      const head=document.createElement("div"); head.className="dayhead";
+      head.innerHTML='<span class="dayhead-d">'+esc(label)+'</span><span class="dayhead-c">'+cnt+' call'+(cnt===1?"":"s")+'</span>';
+      list.appendChild(head);
+    }
+    list.appendChild(rowEl(l,true));
+  });
+  box.appendChild(list);
 }
 
 // Leads in a stage, filtered by the current salesperson and sorted by call day.
@@ -350,45 +373,101 @@ function stageLeads(stageId){
   return list;
 }
 
-// Pipeline map: the whole funnel on one screen, grouped into three bands. Every
-// stage is a tile showing its count and whether it is automatic or by hand. Tap
-// a tile to open the stage card (what it is, how to use it, who is in it).
+// The label on a chase lane, by status.
+function laneWhen(s){
+  if(s.status==="rescheduling") return "Emergency";
+  if(s.status==="noshow") return "If missed";
+  return "If not booked";
+}
+
+// One numbered milestone row on the timeline.
+function pipeMainRow(s, num){
+  const n=stageLeads(s.id).length;
+  const emoji=stageEmoji(s.name);
+  const row=document.createElement("div"); row.className="pfstage";
+  row.innerHTML=
+    '<div class="pfnode">'+num+'</div>'+
+    '<div class="pfcard">'+
+      (emoji?'<span class="pf-emoji">'+esc(emoji)+'</span>':'')+
+      '<span class="pf-name">'+esc(cleanStage(s.name))+'</span>'+
+      '<span class="pf-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span>'+
+      '<span class="pf-count">'+n+'</span><span class="pf-people">'+(n===1?"lead":"leads")+'</span>'+
+      '<span class="pf-go">&rsaquo;</span>'+
+    '</div>';
+  row.addEventListener("click",()=>openStageSheet(s));
+  return row;
+}
+
+// A chase lane, indented under the call it belongs to.
+function pipeSubRow(s){
+  const n=stageLeads(s.id).length;
+  const emoji=stageEmoji(s.name);
+  const row=document.createElement("div"); row.className="pfsub"+(n>0?" hot":"");
+  row.innerHTML=
+    '<span class="pfsub-when">'+esc(laneWhen(s))+'</span>'+
+    (emoji?'<span class="pf-emoji sm">'+esc(emoji)+'</span>':'')+
+    '<span class="pf-name">'+esc(cleanStage(s.name))+'</span>'+
+    '<span class="pf-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span>'+
+    '<span class="pf-count">'+n+'</span><span class="pf-people">'+(n===1?"lead":"leads")+'</span>'+
+    '<span class="pf-go">&rsaquo;</span>';
+  row.addEventListener("click",()=>openStageSheet(s));
+  return row;
+}
+
+// A closed end state, shown as a chip in the footer.
+function pipeChip(s){
+  const n=stageLeads(s.id).length;
+  const emoji=stageEmoji(s.name);
+  const chip=document.createElement("button"); chip.type="button"; chip.className="pfchip";
+  chip.innerHTML=(emoji?'<span class="pf-emoji sm">'+esc(emoji)+'</span>':'')+
+    '<span class="pfchip-n">'+esc(cleanStage(s.name))+'</span>'+
+    '<span class="pf-count">'+n+'</span>';
+  chip.addEventListener("click",()=>openStageSheet(s));
+  return chip;
+}
+
+// Pipeline as one vertical timeline, read top to bottom. The numbered steps are
+// the calls that move a deal forward. Under each call sit the chase lanes where
+// people wait when they miss it or have not booked it. Closed end states are a
+// quiet footer. Tap anything to open its stage card.
 function renderPipeline(){
   const box=el("board"); if(!box) return;
-  const stages=(DATA.stages||[]).slice();
+  const stages=(DATA.stages||[]).slice().sort((a,b)=>(a.position||0)-(b.position||0));
   box.innerHTML="";
   if(!stages.length){ box.innerHTML='<div class="empty-state">Could not load the pipeline stages.</div>'; return; }
-  const known = new Set([].concat(...PIPE_BANDS.map(b=>b.statuses)));
-  const map=document.createElement("div"); map.className="pipemap";
-  PIPE_BANDS.forEach(band=>{
-    let inBand=stages.filter(s=>band.statuses.includes(s.status));
-    if(band.key==="out") inBand=inBand.concat(stages.filter(s=>!known.has(s.status)));
-    inBand.sort((a,b)=>(a.position||0)-(b.position||0));
-    if(!inBand.length) return;
-    const sec=document.createElement("div"); sec.className="band";
-    sec.innerHTML='<div class="band-h"><span class="band-t">'+esc(band.title)+'</span><span class="band-sub">'+esc(band.sub)+'</span></div>';
-    const lane=document.createElement("div"); lane.className="lane"+(band.arrows?" path":"");
-    inBand.forEach((s,i)=>{
-      const n=stageLeads(s.id).length;
-      const emoji=stageEmoji(s.name);
-      const color=s.color||"#94a3b8";
-      const btn=document.createElement("button");
-      btn.type="button";
-      btn.className="ptile"+(band.key==="chase"&&n>0?" hot":"");
-      btn.style.setProperty("--ac", color);
-      btn.innerHTML=
-        '<div class="pt-top">'+(emoji?'<span class="pt-emoji">'+esc(emoji)+'</span>':'<span class="pt-dot" style="background:'+esc(color)+'"></span>')+
-          '<span class="pt-count">'+n+'</span></div>'+
-        '<div class="pt-name">'+esc(cleanStage(s.name))+'</div>'+
-        '<div class="pt-foot"><span class="pt-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span></div>';
-      btn.addEventListener("click",()=>openStageSheet(s));
-      lane.appendChild(btn);
-      if(band.arrows && i<inBand.length-1){ const c=document.createElement("span"); c.className="pconn"; c.innerHTML="&rarr;"; lane.appendChild(c); }
-    });
-    sec.appendChild(lane);
-    map.appendChild(sec);
+
+  const booked=(kind)=>stages.filter(s=>s.status==="booked" && new RegExp(kind,"i").test(s.name));
+  const byStatus=(sts)=>stages.filter(s=>sts.includes(s.status));
+
+  // Build the ordered milestones, each with the chase lanes that hang under it.
+  const nodes=[];
+  byStatus(["survey"]).forEach(s=>nodes.push({stage:s, lanes:[]}));
+  booked("intro").forEach(s=>nodes.push({stage:s, lanes:byStatus(["noshow","rescheduling"])}));
+  booked("interview").forEach(s=>nodes.push({stage:s, lanes:byStatus(["bookinginterview"])}));
+  booked("review").forEach(s=>nodes.push({stage:s, lanes:byStatus(["bookingreview"])}));
+  byStatus(["clientwon"]).forEach(s=>nodes.push({stage:s, lanes:[]}));
+
+  // Any booked stage that did not match intro/interview/review keeps its place.
+  const placed=new Set(nodes.map(n=>n.stage.id).concat([].concat(...nodes.map(n=>n.lanes.map(l=>l.id)))));
+  stages.filter(s=>s.status==="booked" && !placed.has(s.id)).forEach(s=>nodes.push({stage:s, lanes:[]}));
+
+  const flow=document.createElement("div"); flow.className="pipeflow";
+  nodes.forEach((node,i)=>{
+    flow.appendChild(pipeMainRow(node.stage, i+1));
+    node.lanes.forEach(l=>flow.appendChild(pipeSubRow(l)));
   });
-  box.appendChild(map);
+  box.appendChild(flow);
+
+  const closed=byStatus(["baking","notqualified","neverrescheduled"])
+    .concat(stages.filter(s=>!placed.has(s.id) && s.status!=="booked" && !["survey","noshow","rescheduling","bookinginterview","bookingreview","baking","notqualified","neverrescheduled"].includes(s.status)));
+  if(closed.length){
+    const c=document.createElement("div"); c.className="pfclosed";
+    c.innerHTML='<div class="pfclosed-h">Out of play, nothing chases from here</div>';
+    const row=document.createElement("div"); row.className="pfclosed-row";
+    closed.forEach(s=>row.appendChild(pipeChip(s)));
+    c.appendChild(row);
+    box.appendChild(c);
+  }
 }
 
 // The stage card. Opens in the same sheet as a lead. Explains the stage in plain
