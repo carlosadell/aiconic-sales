@@ -426,48 +426,18 @@ function pipeChip(s){
   return chip;
 }
 
-// Pipeline as one vertical timeline, read top to bottom. The numbered steps are
-// the calls that move a deal forward. Under each call sit the chase lanes where
-// people wait when they miss it or have not booked it. Closed end states are a
-// quiet footer. Tap anything to open its stage card.
+// Pipeline as one vertical timeline: every stage, numbered 1 upward, in the exact
+// order they sit in the CRM, read straight down. Tap any step to open its card,
+// which says what the stage is, how to use it, how the system works with it, and
+// who is in it.
 function renderPipeline(){
   const box=el("board"); if(!box) return;
   const stages=(DATA.stages||[]).slice().sort((a,b)=>(a.position||0)-(b.position||0));
   box.innerHTML="";
   if(!stages.length){ box.innerHTML='<div class="empty-state">Could not load the pipeline stages.</div>'; return; }
-
-  const booked=(kind)=>stages.filter(s=>s.status==="booked" && new RegExp(kind,"i").test(s.name));
-  const byStatus=(sts)=>stages.filter(s=>sts.includes(s.status));
-
-  // Build the ordered milestones, each with the chase lanes that hang under it.
-  const nodes=[];
-  byStatus(["survey"]).forEach(s=>nodes.push({stage:s, lanes:[]}));
-  booked("intro").forEach(s=>nodes.push({stage:s, lanes:byStatus(["noshow","rescheduling"])}));
-  booked("interview").forEach(s=>nodes.push({stage:s, lanes:byStatus(["bookinginterview"])}));
-  booked("review").forEach(s=>nodes.push({stage:s, lanes:byStatus(["bookingreview"])}));
-  byStatus(["clientwon"]).forEach(s=>nodes.push({stage:s, lanes:[]}));
-
-  // Any booked stage that did not match intro/interview/review keeps its place.
-  const placed=new Set(nodes.map(n=>n.stage.id).concat([].concat(...nodes.map(n=>n.lanes.map(l=>l.id)))));
-  stages.filter(s=>s.status==="booked" && !placed.has(s.id)).forEach(s=>nodes.push({stage:s, lanes:[]}));
-
   const flow=document.createElement("div"); flow.className="pipeflow";
-  nodes.forEach((node,i)=>{
-    flow.appendChild(pipeMainRow(node.stage, i+1));
-    node.lanes.forEach(l=>flow.appendChild(pipeSubRow(l)));
-  });
+  stages.forEach((s,i)=>flow.appendChild(pipeMainRow(s, i+1)));
   box.appendChild(flow);
-
-  const closed=byStatus(["baking","notqualified","neverrescheduled"])
-    .concat(stages.filter(s=>!placed.has(s.id) && s.status!=="booked" && !["survey","noshow","rescheduling","bookinginterview","bookingreview","baking","notqualified","neverrescheduled"].includes(s.status)));
-  if(closed.length){
-    const c=document.createElement("div"); c.className="pfclosed";
-    c.innerHTML='<div class="pfclosed-h">Out of play, nothing chases from here</div>';
-    const row=document.createElement("div"); row.className="pfclosed-row";
-    closed.forEach(s=>row.appendChild(pipeChip(s)));
-    c.appendChild(row);
-    box.appendChild(c);
-  }
 }
 
 // The stage card. Opens in the same sheet as a lead. Explains the stage in plain
