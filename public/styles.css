@@ -205,18 +205,79 @@ a.linkrow-lbl:hover{text-decoration:underline}
 .foot{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7;border-top:1px solid var(--border);padding-top:16px}
 [hidden]{display:none!important}
 
-/* ---- Pipeline board + view intros (Sep 2026) ---- */
-.viewlede{font-size:15px;line-height:1.6;color:var(--ink-2);margin:0 0 20px;max-width:70ch}
-#board{display:flex;flex-direction:column;gap:18px;margin-top:4px}
-.stageblock{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px 16px 8px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
-.stagehead{display:flex;align-items:center;gap:10px;margin:2px 2px 6px}
-.stagehead h3{font-size:clamp(16px,2.6vw,19px);font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:0}
-.stagedot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
-.stagecount{font-size:13px;font-weight:800;color:var(--ink-2);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 10px;min-width:26px;text-align:center}
-.stagetag{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 10px}
-.stagetag.auto{color:#0a7d55;background:#e7f7ef;border:1px solid #b9e6cf}
-.stagetag.manual{color:#8a5a00;background:#fdf3e3;border:1px solid #f2ddb2}
-.stage-empty{font-size:14px;color:var(--ink-3,#8a90a2);padding:6px 4px 12px}
-.stageblock .explain{margin:4px 2px 12px}
-.stageblock .rows{margin-top:4px}
-@media (max-width:560px){.stagehead{flex-wrap:wrap}.stagetag{margin-left:0}}
+/* ---- Pipeline map + view intros (Sep 2026) ---- */
+.viewlede{font-size:15px;line-height:1.6;color:var(--ink-2);margin:0 0 18px;max-width:78ch}
+.viewlede b{color:var(--ink);font-weight:700}
+.stage-empty{font-size:13px;color:var(--muted);padding:2px 2px}
+
+/* Board container */
+#board{margin-top:4px}
+
+/* The map: a vertical stack of bands */
+.pipemap{display:flex;flex-direction:column;gap:26px}
+.band{}
+.band-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin:0 2px 12px}
+.band-t{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.band-sub{font-size:13px;color:var(--muted)}
+
+/* A lane of tiles */
+.lane{display:flex;flex-wrap:wrap;gap:10px}
+.lane:not(.path) .ptile{flex:1 1 190px}
+
+/* The funnel path: one row on desktop, tiles share the width evenly */
+.lane.path{flex-wrap:nowrap;align-items:stretch}
+.lane.path .ptile{flex:1 1 0;min-width:0}
+.pconn{align-self:center;flex:none;color:var(--line);font-size:16px;font-weight:800;line-height:1}
+
+/* A stage tile (a button) */
+.ptile{
+  appearance:none;font-family:inherit;text-align:left;cursor:pointer;
+  display:flex;flex-direction:column;gap:9px;min-height:104px;
+  background:var(--card);border:1px solid var(--border);border-left:4px solid var(--ac,var(--line));
+  border-radius:14px;padding:13px 15px;
+  box-shadow:0 1px 2px rgba(16,24,40,.05);
+  transition:box-shadow .14s ease,border-color .14s ease,transform .06s ease;
+}
+.ptile:hover{border-color:#c8d5ec;box-shadow:0 6px 18px -8px rgba(16,24,40,.28)}
+.ptile:active{transform:translateY(1px)}
+
+.pt-top{display:flex;align-items:center;gap:8px}
+.pt-emoji{font-size:17px;line-height:1;flex:none}
+.pt-dot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none}
+.pt-count{margin-left:auto;font-size:14px;font-weight:800;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:999px;min-width:28px;text-align:center;padding:1px 9px}
+.ptile.hot .pt-count{color:var(--amber-ink);background:var(--amber-soft);border-color:#f2ddb2}
+
+.pt-name{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3;letter-spacing:-.01em}
+.pt-foot{margin-top:auto}
+.pt-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:2px 9px}
+.pt-tag.auto{color:#0a7d55;background:#e7f7ef;border:1px solid #b9e6cf}
+.pt-tag.manual{color:#8a5a00;background:#fdf3e3;border:1px solid #f2ddb2}
+
+/* Stage detail card, rendered into the sheet */
+.sd-tag{display:inline-flex;align-items:center;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:3px 11px;margin-top:4px}
+.sd-tag.auto{color:#0a7d55;background:#e7f7ef;border:1px solid #b9e6cf}
+.sd-tag.manual{color:#8a5a00;background:#fdf3e3;border:1px solid #f2ddb2}
+.sd-sec{margin:16px 0 0}
+.sd-sec .sd-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+.sd-sec p{margin:0;font-size:14px;line-height:1.6;color:var(--ink-2)}
+.sd-sec p b{color:var(--ink)}
+.sd-fup{margin-top:16px;background:var(--amber-soft);border:1px solid #f2ddb2;color:var(--amber-ink);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.55}
+.sd-fup b{font-weight:800}
+.dohead .cnt{font-size:13px;font-weight:800;color:var(--blue-ink);background:var(--blue-soft);border-radius:999px;padding:1px 10px;margin-left:6px}
+.stagesheet .rows{margin-top:2px}
+
+/* Legend (inside #pipedocs) */
+#pipedocs{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+.legendrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.legchip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px}
+.legchip .lc-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:2px 9px}
+.legchip .lc-tag.auto{color:#0a7d55;background:#e7f7ef;border:1px solid #b9e6cf}
+.legchip .lc-tag.manual{color:#8a5a00;background:#fdf3e3;border:1px solid #f2ddb2}
+
+/* Phone: stack the funnel path vertically, arrows point down */
+@media (max-width:720px){
+  .lane.path{flex-direction:column;flex-wrap:nowrap}
+  .lane.path .ptile{flex:1 1 auto}
+  .pconn{align-self:center;transform:rotate(90deg)}
+  .ptile{min-height:0}
+}

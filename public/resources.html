@@ -21,182 +21,238 @@
     --teal:#0d9488; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
     --slate:#64748b; --slate-ink:#46526a; --slate-soft:#eef2f8;
     --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.14);
-    --radius:14px;
+    --radius:16px;
     color-scheme:light;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1120px;margin:0 auto;padding-block:38px 60px;padding-left:20px;padding-right:20px}
-  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 10px}
-  h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em;text-wrap:balance}
-  .lede{font-size:16.5px;color:var(--ink-2);margin:0;max-width:64ch}
-  .callout{margin:22px 0 0;padding:14px 18px;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:12px;font-size:14.5px;color:var(--ink)}
-  .callout b{font-weight:700}
-  .watch{display:inline-flex;align-items:center;gap:8px;margin:18px 0 0;font-size:14px;font-weight:700;color:var(--blue-ink);text-decoration:none;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:10px;padding:10px 16px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 20px 72px}
+
+  /* Header */
+  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 12px}
+  h1{font-size:clamp(28px,5vw,40px);font-weight:800;line-height:1.12;margin:0 0 16px;letter-spacing:-.02em;text-wrap:balance}
+  .lede{font-size:16.5px;color:var(--ink-2);margin:0;max-width:66ch}
+  .watch{display:inline-flex;align-items:center;gap:9px;margin:24px 0 0;font-size:14px;font-weight:700;color:var(--blue-ink);text-decoration:none;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:11px;padding:11px 18px}
   .watch:hover{border-color:#b9cdf7}
-  h2{font-size:clamp(21px,3.2vw,27px);font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:48px 0 10px;text-wrap:balance}
-  .goalbig{margin:18px 0 0;padding:20px 24px;background:var(--blue-soft);border:1px solid #cddcfb;border-left:5px solid var(--blue);border-radius:14px;font-size:16.5px;line-height:1.6;color:var(--ink)}
+
+  /* Section rhythm */
+  section{margin-top:56px}
+  .sec-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px}
+  .sec-num{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--blue);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px -4px rgba(37,99,235,.5);margin-top:3px}
+  .sec-title h2{font-size:clamp(21px,3.2vw,27px);font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:0 0 8px;text-wrap:balance}
+  .sec-title p{font-size:14.5px;color:var(--ink-2);margin:0;max-width:66ch}
+
+  /* Goal callout */
+  .goalbig{margin:0 0 24px;padding:22px 24px;background:var(--blue-soft);border:1px solid #cddcfb;border-left:5px solid var(--blue);border-radius:14px;font-size:16px;line-height:1.6;color:var(--ink)}
   .goalbig b{font-weight:800}
-  .coord p{font-size:15px;color:var(--ink-2);line-height:1.7;max-width:64ch;margin:0 0 14px}
-  .coord p b{color:var(--ink);font-weight:700}
-  .h2-sub{font-size:14.5px;color:var(--ink-2);margin:0 0 18px;max-width:64ch}
-  .grid{display:flex;flex-direction:column;gap:15px;max-width:940px}
-  ol.gate,ol.rules{max-width:940px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;border-left:4px solid var(--edge,var(--blue))}
-  .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:9px}
-  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--edge,var(--blue));padding:3px 9px;border-radius:999px;line-height:1.6}
-  .trig{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;line-height:1.6;border:1px solid transparent}
+
+  /* Column of blocks, nothing ever touching */
+  .stack{display:flex;flex-direction:column;gap:20px}
+
+  /* Panels (section 1) */
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+  .panel h3{font-size:17px;font-weight:800;margin:0 0 18px;letter-spacing:-.01em}
+  ol.rules{list-style:none;counter-reset:r;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+  ol.rules li{counter-increment:r;position:relative;padding:2px 0 2px 44px;font-size:14.5px;line-height:1.6}
+  ol.rules li::before{content:counter(r);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:9px;background:var(--blue-soft);color:var(--blue-ink);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  ol.rules b{font-weight:700}
+  ul.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+  ul.checks li{position:relative;padding-left:32px;font-size:14.5px;line-height:1.6;color:var(--ink)}
+  ul.checks li::before{content:"";position:absolute;left:0;top:2px;width:19px;height:19px;border-radius:6px;background:var(--green-soft);border:1px solid #bfe6c9}
+  ul.checks li::after{content:"";position:absolute;left:6px;top:5px;width:5px;height:9px;border:solid var(--green-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  ul.checks b{font-weight:700}
+
+  /* Reminder cards (section 2) */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;border-left:4px solid var(--edge,var(--blue))}
+  .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--edge,var(--blue));padding:4px 11px;border-radius:999px;line-height:1.6}
+  .trig{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:999px;line-height:1.6;border:1px solid transparent}
   .trig.auto{background:var(--green-soft);color:var(--green-ink);border-color:#bfe6c9}
   .trig.manual{background:var(--amber-soft);color:var(--amber-ink);border-color:#f2d9ac}
-  .card h3{font-size:19px;font-weight:800;margin:0 0 2px;letter-spacing:-.01em}
-  .fires{font-size:14px;color:var(--ink-2);margin:0 0 15px}
-  .fires b{color:var(--ink);font-weight:700}
-  dl.rows{display:grid;grid-template-columns:112px 1fr;gap:9px 18px;margin:0;font-size:14.5px}
-  dl.rows dt{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
-  dl.rows dd{margin:0;color:var(--ink)}
-  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-  .step{font-size:12.5px;font-weight:600;background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--ink-2);white-space:nowrap}
+  .card h3{font-size:19px;font-weight:800;margin:0 0 14px;letter-spacing:-.01em}
+  .caution{display:flex;align-items:flex-start;gap:9px;margin:0 0 18px;padding:11px 14px;background:var(--amber-soft);border:1px solid #f2d9ac;border-radius:11px;font-size:13px;color:var(--amber-ink);font-weight:600;line-height:1.5}
+  .caution .ico{flex:0 0 auto;font-size:13px;line-height:1.3}
+  dl.rows{display:grid;grid-template-columns:120px 1fr;gap:14px 20px;margin:0;font-size:14.5px}
+  dl.rows dt{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+  dl.rows dd{margin:0;color:var(--ink);line-height:1.55}
+  .entry{display:flex;flex-wrap:wrap;gap:8px 10px}
+  .entry .e{font-size:13px;color:var(--ink);line-height:1.5}
+  .entry .e b{font-weight:700}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+  .step{font-size:12.5px;font-weight:600;background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;color:var(--ink-2);white-space:nowrap}
   .step.first{background:var(--edge,var(--blue));border-color:transparent;color:#fff}
+  .step.stop{background:var(--slate-soft);border-color:var(--border);color:var(--slate-ink)}
   .arr{color:var(--muted);font-size:12px}
-  .stops{color:var(--green-ink);font-weight:600}
-  a.link{color:var(--blue-ink);text-decoration:none;font-weight:600;border-bottom:1px solid color-mix(in srgb,var(--blue) 30%,transparent)}
-  a.link:hover{border-bottom-color:var(--blue)}
-  ol.rules{list-style:none;counter-reset:r;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
-  ol.rules li{counter-increment:r;position:relative;padding:15px 18px 15px 54px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:14.5px;box-shadow:var(--shadow)}
-  ol.rules li::before{content:counter(r);position:absolute;left:15px;top:14px;width:26px;height:26px;border-radius:8px;background:var(--blue);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center}
-  ol.rules b{font-weight:700}
-  ol.gate{list-style:none;counter-reset:g;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
-  ol.gate li{counter-increment:g;position:relative;padding:16px 18px 16px 58px;background:var(--card);border:1px solid #f3cccc;border-left:4px solid var(--red);border-radius:12px;font-size:14.5px;box-shadow:var(--shadow)}
-  ol.gate li::before{content:counter(g);position:absolute;left:15px;top:15px;width:28px;height:28px;border-radius:8px;background:var(--red);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
-  ol.gate b{font-weight:700}
-  .gate-h{color:var(--red-ink);margin-top:34px}
-  .gatefoot{margin-top:14px;padding:14px 18px;background:var(--red);color:#fff;border-radius:12px;font-size:15px;font-weight:700}
-  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
-  .panel h3{font-size:16px;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
-  .checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-  .checks li{position:relative;padding-left:30px;font-size:14.5px;color:var(--ink)}
-  .checks li::before{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border-radius:6px;background:var(--green-soft);border:1px solid #bfe6c9}
-  .checks li::after{content:"";position:absolute;left:6px;top:6px;width:5px;height:9px;border:solid var(--green-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
-  .checks b{font-weight:700}
-  .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
-  .linkcard{display:block;text-decoration:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);border-left:3px solid var(--edge,var(--blue))}
-  .linkcard:hover{border-color:var(--line)}
-  .linkcard .lk-label{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px}
-  .linkcard .lk-url{font-size:12px;color:var(--blue-ink);word-break:break-all;font-weight:500}
-  .linkcard .lk-note{font-size:12px;color:var(--muted);margin-top:4px}
-  .golink{font-family:inherit;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:12px;padding:13px 24px;cursor:pointer;box-shadow:0 6px 16px -6px rgba(37,99,235,.5)}
-  .golink:hover{background:var(--blue-ink)}
-  .foot{margin-top:42px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .stops{color:var(--green-ink);font-weight:700}
+
+  /* Coordinate (section 3) */
+  .coord{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+  .coord p{font-size:15px;color:var(--ink-2);line-height:1.7;max-width:70ch;margin:0}
+  .coord p + p{margin-top:16px}
+  .coord p b{color:var(--ink);font-weight:700}
+
+  .foot{margin-top:52px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+
   @media (max-width:560px){
-    dl.rows{grid-template-columns:1fr;gap:2px 0}
-    dl.rows dt{padding-top:11px}
-    .links{grid-template-columns:1fr}
+    .wrap{padding:34px 16px 60px}
+    section{margin-top:44px}
+    .panel,.card,.coord{padding:20px}
+    dl.rows{grid-template-columns:1fr;gap:5px 0}
+    dl.rows dt{padding-top:14px}
+    dl.rows dt:first-of-type{padding-top:0}
   }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <p class="eyebrow">Communications Playbook</p>
+  <h1>Get booked leads to show up</h1>
+  <p class="lede">This page shows you how to turn a booking into a lead who actually attends, and it shows you exactly what the CRM sends on its own so your messages work with it, never against it.</p>
   <a class="watch" href="https://www.loom.com/share/4d1ed7c35b3043d3bec4e56a09134c0a" target="_blank" rel="noopener">&#9658; Watch the walkthrough</a>
 
-  <h2>1. A lead books an intro call, now get them to show up</h2>
-  <p class="h2-sub">The booking is not the win. A call no one attends is a wasted slot. From the moment a lead books, reach out to them yourself and get a real reply that says they will be there. This is how we keep no shows down.</p>
-
-  <div class="goalbig"><b>The goal is a confirmed yes, not a sent message.</b> Sending one text and moving on is not the job. Reach out by every means you can, and keep going until the lead answers and tells you they will attend the call. A message they never replied to does not count. The system already sends the confirmation and reminders, but a real reply to a real person is what actually gets someone to show up.</div>
-
-  <div class="grid">
-    <div class="panel">
-      <h3>The order to reach out in</h3>
-      <ol class="rules">
-        <li><b>Personal SMS through the CRM, when there is a phone number.</b> It usually reaches them fastest. Send it from the lead's card in Daily Outreach.</li>
-        <li><b>No working phone? Do two things together.</b> Email them from your own business inbox, not the CRM email, because your inbox always lands. And send a LinkedIn connection request with a short intro. Do not rely on LinkedIn alone, the request may sit unaccepted.</li>
-      </ol>
+  <!-- SECTION 1 -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <div class="sec-title">
+        <h2>Get them to show up</h2>
+        <p>The booking is not the win. A call nobody attends is a wasted slot. From the moment a lead books, you reach out personally and keep going until they reply and confirm they will be there.</p>
+      </div>
     </div>
 
-    <div class="panel">
-      <h3>Make every message personal, and get a reply</h3>
-      <ul class="checks">
-        <li>Open the lead's card in <b>Daily Outreach</b>. Each channel has a ready draft. <b>Edit it, never send it raw.</b></li>
-        <li>Before you write, read what you can: their survey answers, their LinkedIn profile, and the Conversify conversations. Name one specific thing about them or their business.</li>
-        <li>Match where they came from: <b>LinkedIn leads</b>, check their profile and Conversify first; <b>email-campaign leads</b>, try to find them on LinkedIn before you dial.</li>
-        <li>Keep it warm and first person, and sign it with your name.</li>
-        <li>Reach them on every channel you can, not just one, so the message lands somewhere.</li>
-        <li><b>Do not stop at one message. Keep following up until they reply and confirm they will be on the call.</b> Ask them directly to confirm the time works.</li>
-      </ul>
+    <div class="goalbig"><b>The goal is a confirmed reply, not a sent message.</b> Sending one text and moving on is not the job. Reach out by every means you can and keep going until the lead answers and tells you they will attend. A message they never replied to does not count. The system sends the confirmation and reminders on its own, but a real reply to a real person is what actually gets someone to show up.</div>
+
+    <div class="stack">
+
+      <div class="panel">
+        <h3>The order to reach out in</h3>
+        <ol class="rules">
+          <li><b>Personal SMS through the CRM first, when there is a phone number.</b> It usually reaches them fastest. Send it from the lead card in Daily Outreach.</li>
+          <li><b>No working phone? Do two things together.</b> Email them from your own business inbox, not the CRM, because your inbox always lands. And send a LinkedIn connection request with a short intro. Do not rely on LinkedIn alone, the request can sit unaccepted.</li>
+        </ol>
+      </div>
+
+      <div class="panel">
+        <h3>Make every message personal and get a reply</h3>
+        <ul class="checks">
+          <li>Open the lead card in <b>Daily Outreach</b>. Each channel has a ready draft. <b>Edit it, never send it raw.</b></li>
+          <li>Before you write, read their survey answers, their LinkedIn profile, and their Conversify conversations. Name one specific thing about them or their business.</li>
+          <li>Match where they came from, so the message fits how they found us.</li>
+          <li>Keep it warm and first person, and sign it with your name.</li>
+          <li>Reach them on every channel you can, not just one, so the message lands somewhere.</li>
+          <li><b>Do not stop at one message. Keep following up until they reply and confirm the time works.</b> Ask them directly to confirm they will be on the call.</li>
+        </ul>
+      </div>
+
     </div>
-  </div>
+  </section>
 
-  <h2>2. What the system sends automatically</h2>
-  <p class="h2-sub">Five sequences run in the CRM, each by email and SMS in your name. Some fire on their own, some only fire when you move the lead into a stage by hand. Know which is which so you do not repeat them.</p>
-
-  <div class="grid">
-
-    <div class="card" style="--edge:var(--blue)">
-      <div class="top"><span class="tag">Intro call booked</span><span class="trig auto">Automatic</span></div>
-      <h3>Booking sequence</h3>
-      <p class="fires">Fires on its own the moment a lead <b>books a new intro call</b>. You do nothing.</p>
-      <dl class="rows">
-        <dt>They get</dt><dd>A confirmation, then reminders by email and SMS leading up to the call.</dd>
-        <dt>Timing</dt><dd><div class="flow"><span class="step first">Confirmation email</span><span class="arr">&rarr;</span><span class="step">24 hours before</span><span class="arr">&rarr;</span><span class="step">1 hour before</span><span class="arr">&rarr;</span><span class="step">10 minutes before</span></div></dd>
-        <dt>Your move</dt><dd>Send your personal message before the call, as in section 1.</dd>
-      </dl>
-    </div>
-
-    <div class="card" style="--edge:var(--teal)">
-      <div class="top"><span class="tag" style="--edge:var(--teal)">Booking Interview</span><span class="trig manual">Manual move</span></div>
-      <h3>Get them to book the interview</h3>
-      <p class="fires">You move the lead into <b>Booking Interview</b> by hand. Only do this when a qualified lead <b>did not book their interview while on the intro call</b>. If they booked it live, they never go here.</p>
-      <dl class="rows">
-        <dt>They get</dt><dd>Emails and SMS asking them to book the interview, reminding them it is the hour we turn into a complete Leads Engine for free.</dd>
-        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
-        <dt>Link used</dt><dd>The interview booking calendar.</dd>
-        <dt>Stops when</dt><dd><span class="stops">They book the interview.</span> Move them to Interview Call Booked so the reminders stop.</dd>
-      </dl>
+  <!-- SECTION 2 -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">2</div>
+      <div class="sec-title">
+        <h2>What the system sends</h2>
+        <p>There are three reminder workflows, one per call. Each one handles both a cancellation and a no show inside a single workflow, so the lead always gets the right message. One extra workflow covers the case where you have to move an intro yourself.</p>
+      </div>
     </div>
 
-    <div class="card" style="--edge:var(--amber)">
-      <div class="top"><span class="tag" style="--edge:var(--amber)">No Show</span><span class="trig manual">Manual move</span></div>
-      <h3>We missed you</h3>
-      <p class="fires">You move the lead into <b>No Show</b> by hand after they do not turn up.</p>
-      <dl class="rows">
-        <dt>They get</dt><dd>A warm "I was on the call but did not see you, everything ok?", then reminders to rebook, each explaining the offer again.</dd>
-        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
-        <dt>Link used</dt><dd>The intro call booking page.</dd>
-        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> Move the stage so the reminders stop.</dd>
-      </dl>
+    <div class="stack">
+
+      <!-- Intro -->
+      <div class="card" style="--edge:var(--blue)">
+        <div class="top">
+          <span class="tag">Sending Intro Reminders (FUP)</span>
+          <span class="trig auto">Automatic on cancel</span>
+          <span class="trig manual">By hand for a no show</span>
+        </div>
+        <h3>The intro call</h3>
+        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
+        <dl class="rows">
+          <dt>Entry</dt><dd class="entry"><span class="e"><b>Automatic:</b> a cancelled intro lands here on its own, the CRM moves them.</span><span class="e"><b>By hand:</b> a no show is moved here by you.</span></dd>
+          <dt>They get</dt><dd>Reminder emails and texts asking them to book a new intro.</dd>
+          <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
+          <dt>Link used</dt><dd>The intro booking page.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> If they never rebook, they move to Never Rescheduled.</dd>
+        </dl>
+      </div>
+
+      <!-- Interview -->
+      <div class="card" style="--edge:var(--teal)">
+        <div class="top">
+          <span class="tag" style="--edge:var(--teal)">Sending Interview Reminders (FUP)</span>
+          <span class="trig auto">Automatic on cancel</span>
+          <span class="trig manual">By hand to start</span>
+        </div>
+        <h3>The interview</h3>
+        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
+        <dl class="rows">
+          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand:</b> use it when someone qualified on the intro but did not book their interview, or cancelled or did not show for it.</span><span class="e"><b>Automatic:</b> a cancel is caught on its own.</span></dd>
+          <dt>They get</dt><dd>Reminder emails and texts asking them to book the interview.</dd>
+          <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
+          <dt>Link used</dt><dd>The interview booking calendar.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> The moment they book they move to Interview Booked. If they go quiet, move them to Not Qualified.</dd>
+        </dl>
+      </div>
+
+      <!-- Review -->
+      <div class="card" style="--edge:var(--violet)">
+        <div class="top">
+          <span class="tag" style="--edge:var(--violet)">Sending Review Reminders (FUP)</span>
+          <span class="trig auto">Automatic on cancel</span>
+          <span class="trig manual">By hand to start</span>
+        </div>
+        <h3>The review call</h3>
+        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
+        <dl class="rows">
+          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand:</b> use it when someone had their interview but has not booked their review call, or cancelled or did not show.</span><span class="e"><b>Automatic:</b> a cancel is caught on its own.</span></dd>
+          <dt>They get</dt><dd>Reminder emails and texts asking them to book the review call.</dd>
+          <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
+          <dt>Link used</dt><dd>The review call booking page.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Review Booked on their own.</dd>
+        </dl>
+      </div>
+
+      <!-- Emergency -->
+      <div class="card" style="--edge:var(--amber)">
+        <div class="top">
+          <span class="tag" style="--edge:var(--amber)">Sending Emergency Intro Reminders (FUP)</span>
+          <span class="trig manual">By hand, emergency only</span>
+        </div>
+        <h3>You have to move an intro</h3>
+        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
+        <dl class="rows">
+          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand only:</b> use it when you, the salesperson, have to move an intro call. This is not a normal step.</span></dd>
+          <dt>They get</dt><dd>Messages that own the change on our side and ask the lead to rebook.</dd>
+          <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
+          <dt>Link used</dt><dd>The intro booking page.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> The moment they book, they leave on their own.</dd>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">3</div>
+      <div class="sec-title">
+        <h2>Coordinate your own outreach with the automatic messages</h2>
+        <p>The moment you move a lead into a stage, the CRM starts sending emails and texts in your name. Your job is to add to what went out, never to contradict or repeat it.</p>
+      </div>
     </div>
 
-    <div class="card" style="--edge:var(--slate)">
-      <div class="top"><span class="tag" style="--edge:var(--slate)">Cancelled</span><span class="trig auto">Automatic</span></div>
-      <h3>Did you mean to cancel</h3>
-      <p class="fires">Fires on its own. When a lead <b>cancels</b>, they move to the Cancelled stage automatically and the sequence starts.</p>
-      <dl class="rows">
-        <dt>They get</dt><dd>A no-pressure "sometimes a cancel is a mistake" opener, then gentle reminders that the free offer still stands.</dd>
-        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, on cancel</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
-        <dt>Link used</dt><dd>The intro call booking page.</dd>
-        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> The reminders stop once they rebook.</dd>
-      </dl>
+    <div class="coord">
+      <p>Before you send anything yourself, <b>check what already went out.</b> You can see it on the lead card in Daily Outreach or in the sequences above. If you skip this, the lead can get a message from you that clashes with what the system just sent, and that makes us look careless.</p>
+      <p>Do not copy the automatic message word for word. Do not fire a manual message on the same day one is already going out unless yours adds something new. When you add a note or a personal message, make it different and specific to them.</p>
+      <p>Each sequence runs day 0, 1, 3 and 5, then stops, and after that it is on you. The moment a lead books, move them to the right stage so the reminders stop, otherwise they keep getting nudged after they have already booked.</p>
     </div>
+  </section>
 
-    <div class="card" style="--edge:var(--violet)">
-      <div class="top"><span class="tag" style="--edge:var(--violet)">Rescheduling</span><span class="trig manual">Manual, exceptions only</span></div>
-      <h3>You have to move the call</h3>
-      <p class="fires">You move the lead into <b>Rescheduling</b> by hand. Use this only for real exceptions, when something personal and out of your control means you have to move a call. It is not a routine step.</p>
-      <dl class="rows">
-        <dt>They get</dt><dd>An apology that you have to move the call, then reminders asking them to grab a new time, all owning the change on your side.</dd>
-        <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0, when you move them</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span></div></dd>
-        <dt>Link used</dt><dd>The intro call booking page.</dd>
-        <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> Move the stage so the reminders stop.</dd>
-      </dl>
-    </div>
+  <p class="foot">Aiconic Sales Toolkit. Keep this open while you work a lead.</p>
 
-  </div>
-
-  <h2>3. Coordinate your own outreach with the automatic messages</h2>
-  <div class="coord">
-    <p>The moment you move a lead into a stage, the CRM starts sending emails and SMS in your name. So before you send anything yourself, know which automatic messages have already gone out and check them, either on the lead's card in Daily Outreach or in the sequences above. If you skip this, the lead can end up getting messages from you that contradict what the system just sent, and that makes us look careless.</p>
-    <p>The point is to add to what they received, not repeat or clash with it. Do not copy the automatic message word for word, and do not fire a manual message on the same day one is already going out unless yours adds something new. When you add a LinkedIn note or a personal message, make it different and specific to them.</p>
-    <p>Each follow-up sequence runs on day 0, 1, 3, and 5, then stops, and after that it is on you. The moment a lead books, move them to the right stage so the reminders stop, otherwise they keep getting nudges after they have already booked.</p>
-  </div>
 </div>
 <script>
 (function(){

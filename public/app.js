@@ -153,49 +153,107 @@ function cleanStage(name){
     .trim();
 }
 
-// The plain-language explainer shown under each stage on the pipeline board.
-// Matched on the stage NAME so it stays in step with the live pipeline even if a
-// stage is renamed, as long as the name still says what the stage is.
-function stageExplain(name){
-  const n = String(name||"").toLowerCase();
-  const wrap = (cls, h, body) => '<div class="explain '+cls+'"><div class="explain-h">'+h+'</div>'+body+'</div>';
-  if(/never\s*reschedul/.test(n)) return wrap("cancel","Never Rescheduled",
-    '<p>These leads went through the rebooking reminders and never booked a new time. This is the end of the line for a lost booking.</p>'+
-    '<p>Nothing automatic runs from here. Open a card only to review the history, and reach back if something has genuinely changed.</p>');
-  if(/not\s*qualified/.test(n)) return wrap("notq","Not Qualified",
-    '<p>These leads were taken out of the process because they were not a fit, or because the team cancelled on them. They only land here on purpose.</p>'+
-    '<p>Open a card to review who was dropped and read their previous call notes. Reach back only if something has genuinely changed.</p>');
-  if(/client\s*won/.test(n)) return wrap("won","Client Won",
-    '<p>These leads became clients. Nothing goes out from here, and there is nothing to chase.</p>'+
-    '<p>Open a card to look back at the account: their details, what we sent, and the notes and Fathom links from their previous calls.</p>');
-  if(/bak(ing|ed)/.test(n)) return wrap("","Baking",
-    '<p>These are leads you are nurturing. Not clients yet, and no automation runs from here.</p>'+
-    '<p>Keep them warm. Open a card to review their history and reach out when the timing is right.</p>');
-  if(/survey/.test(n)) return wrap("book","Survey Qualified",
-    '<p>These people filled in the qualification form on the website and qualified, but have not booked their intro call yet.</p>'+
-    '<p>Reach out and send them the intro booking link so they book. The booking links are in the Links tab.</p>');
-  if(/sorry|emergency/.test(n)) return wrap("","Sorry Emergency Intro Reminders (FUP)",
-    '<p>Emergency only. Use this when the salesperson has to move an intro call. Moving a lead here starts the reminder sequence asking them to rebook.</p>'+
-    '<p>It sits here on purpose, it is not a normal step. The moment they book a new time, they leave this stage on their own.</p>');
-  if(/reminder/.test(n) && /interview/.test(n)) return wrap("book","Book Interview Reminders (FUP)",
-    '<p>These people qualified on the intro but have not booked their interview yet. Move a lead here to start the reminders asking them to book.</p>'+
-    '<p>Follow up on every channel too. The moment they book, they move to Interview Booked on their own. If they go quiet, move them to Not Qualified.</p>');
-  if(/reminder/.test(n) && /review/.test(n)) return wrap("review","Book Review Reminders (FUP)",
-    '<p>These people had their interview but have not booked their review call yet. Move a lead here to start the reminders asking them to book.</p>'+
-    '<p>Follow up by hand as well and get the review booked within the week. The moment they book, they move to Review Booked on their own.</p>');
-  if(/reminder/.test(n) && /intro/.test(n)) return wrap("","Book Intro Reminders (FUP)",
-    '<p>The rebooking lane for the intro call. Cancellations land here automatically. For a no-show, move the lead here by hand.</p>'+
-    '<p>Moving a lead here starts the reminders asking them to book a new intro. Reach out on every channel too. The moment they book, they leave on their own; if they never do, they move to Never Rescheduled.</p>');
-  if(/interview/.test(n) && /booked/.test(n)) return wrap("","Interview Booked",
-    '<p>Automatic. The lead lands here when they book their interview. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
-    '<p>Prepare, reach out, and get them to show up. During the interview, try to book their review call there and then.</p>');
-  if(/review/.test(n) && /booked/.test(n)) return wrap("review","Review Booked",
-    '<p>Automatic. The lead lands here when they book their review call. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
-    '<p>Prepare and reach out so they show up.</p>');
-  if(/intro/.test(n) && /booked/.test(n)) return wrap("","Intro Booked",
-    '<p>Automatic. The lead lands here when they book their first call. This is an upcoming call, so it also shows in the Daily Outreach tab.</p>'+
-    '<p>Prepare and reach out so they show up. If they qualify but do not book the interview, move them to Book Interview Reminders. If they do not show, move them to Book Intro Reminders.</p>');
-  return "";
+// The pipeline map is grouped into three bands. A stage is placed in a band by
+// its status (derived from the live stage name), so renaming or reordering a
+// stage in the CRM keeps working.
+const PIPE_BANDS = [
+  { key:"path",  title:"The path to a client", sub:"The calls that move a deal forward, in order.", statuses:["survey","booked","clientwon"], arrows:true },
+  { key:"chase", title:"Chase lanes", sub:"A missed, cancelled, or unbooked call waits here and gets reminders until they rebook.", statuses:["noshow","rescheduling","bookinginterview","bookingreview"], arrows:false },
+  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled"], arrows:false },
+];
+
+// Pull the leading emoji out of a live stage name, if it has one.
+function stageEmoji(name){
+  try{ const m = String(name||"").match(/\p{Extended_Pictographic}/u); return m ? m[0] : ""; }
+  catch(_){ const m = String(name||"").match(/[^\x00-\x7F]/); return m ? m[0] : ""; }
+}
+
+// The plain-language card shown when you tap a stage: what it is, how you use it,
+// how the system works with it, and where people go next. Keyed on status so it
+// stays in step with the live pipeline through a rename.
+function stageDetail(s){
+  const st = s.status;
+  const t = String(s.name||"").toLowerCase();
+  if(st==="survey") return {
+    what:"People who filled in the qualification form on the website and qualified, but have not booked their intro call yet.",
+    use:"Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
+    system:"Nothing automatic sends from here. It is a holding stage until they book.",
+    next:"When they book an intro call, they move to Intro Booked on their own.",
+  };
+  if(st==="booked"){
+    if(/interview/.test(t)) return {
+      what:"The lead booked their interview. This is an upcoming call, so it also shows in the Daily Outreach tab.",
+      use:"Prepare, reach out, and get them to show up. During the interview, book their review call there and then.",
+      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
+      next:"After the interview, if they do not book the review, move them to Sending Review Reminders. If they do not show, move them to Sending Interview Reminders.",
+    };
+    if(/review/.test(t)) return {
+      what:"The lead booked their review call. This is an upcoming call, so it also shows in the Daily Outreach tab.",
+      use:"Prepare and reach out so they show up.",
+      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
+      next:"After the review, move them to Client Won if they buy, or Baking if they need more time.",
+    };
+    return {
+      what:"The lead booked their first call. This is an upcoming call, so it also shows in the Daily Outreach tab.",
+      use:"Prepare and reach out so they show up. Confirm the time and get a real reply.",
+      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
+      next:"If they qualify but do not book the interview on the call, move them to Sending Interview Reminders. If they do not show, move them to Sending Intro Reminders. If they are not a fit, move them to Not Qualified.",
+    };
+  }
+  if(st==="noshow") return {
+    what:"The rebooking lane for the intro call. A cancelled intro lands here on its own. For a no show, you move the lead here by hand.",
+    use:"Moving a lead here starts the reminders asking them to book a new intro. Reach out on every channel too.",
+    system:"A reminder stage. The cancel messages and the no show messages are separate inside the one workflow, so each person gets the right one.",
+    next:"The moment they book, they leave on their own. If they never rebook, they move to Never Rescheduled.",
+  };
+  if(st==="rescheduling") return {
+    what:"Emergency only. Use this when the salesperson has to move an intro call. It is not a normal step.",
+    use:"Moving a lead here starts the reminders asking them to rebook, owning the change on our side.",
+    system:"A reminder stage. The messages start the moment you move someone in.",
+    next:"The moment they book a new time, they leave this stage on their own.",
+  };
+  if(st==="bookinginterview") return {
+    what:"People who qualified on the intro but have not booked their interview yet.",
+    use:"Move a lead here to start the reminders asking them to book. Follow up on every channel too.",
+    system:"A reminder stage. The messages start the moment you move someone in.",
+    next:"The moment they book, they move to Interview Booked on their own. If they go quiet, move them to Not Qualified.",
+  };
+  if(st==="bookingreview") return {
+    what:"People who had their interview but have not booked their review call yet.",
+    use:"Move a lead here to start the reminders. Follow up by hand and get the review booked within the week.",
+    system:"A reminder stage. The messages start the moment you move someone in.",
+    next:"The moment they book, they move to Review Booked on their own.",
+  };
+  if(st==="clientwon") return {
+    what:"These leads became clients. Nothing goes out from here and there is nothing to chase.",
+    use:"Open a lead to look back at the account, what we sent, and the notes and Fathom links from previous calls.",
+    system:"Manual. No automation runs from here.",
+    next:"This is the end of the sales pipeline. They are a client now.",
+  };
+  if(st==="baking") return {
+    what:"Leads you are nurturing. Not clients yet, and no automation runs from here.",
+    use:"Keep them warm. Open a lead to review their history and reach out when the timing is right.",
+    system:"Manual. You move people here by hand.",
+    next:"When the timing is right, move them back to the right call stage.",
+  };
+  if(st==="notqualified") return {
+    what:"Leads taken out of the process because they were not a fit, or because the team cancelled on them. They only land here on purpose.",
+    use:"Open a lead to review who was dropped and read their previous call notes.",
+    system:"Manual. Nothing sends from here.",
+    next:"Reach back only if something has genuinely changed.",
+  };
+  if(st==="neverrescheduled") return {
+    what:"Leads who went through the rebooking reminders and never booked a new time. This is the end of the line for a lost booking.",
+    use:"Open a lead to review the history. Reach back only if something has genuinely changed.",
+    system:"Automatic. The CRM moves people here after the reminders run out with no rebooking.",
+    next:"End of the line unless something genuinely changes.",
+  };
+  return {
+    what:"A stage in the pipeline.",
+    use:"Open a lead to see their details and history.",
+    system:s.auto?"The CRM moves people here automatically.":"You move people here by hand.",
+    next:"Move them on when the next step is clear.",
+  };
 }
 
 function render(d){
@@ -227,13 +285,16 @@ function renderDocs(){
   const box=el("pipedocs"); if(!box) return;
   box.innerHTML =
     '<div class="infocard">'+
-      '<h3>How the pipeline works</h3>'+
-      '<p class="ip">Each stage below is a step in the funnel, in order. Some the CRM moves people into automatically, some you move by hand. <b>Careful:</b> a stage marked (FUP) starts reminder emails and texts the moment you move a lead into it, so only move a lead in when that is what you want.</p>'+
-      '<p class="ip">Tap any card to open the lead: their details, the messages, the call notes, and where to log the call.</p>'+
+      '<h3>How to read the board</h3>'+
+      '<div class="legendrow">'+
+        '<span class="legchip"><span class="lc-tag auto">Automatic</span> the CRM moves people in on its own</span>'+
+        '<span class="legchip"><span class="lc-tag manual">By hand</span> you move people in from a lead card</span>'+
+      '</div>'+
+      '<p class="ip" style="margin-top:13px">A stage marked <b>(FUP)</b> starts reminder emails and texts the moment you move a lead into it, so only move a lead in when that is what you want.</p>'+
     '</div>'+
     '<div class="infocard">'+
       '<h3>What a red flag means</h3>'+
-      '<p class="ip">A small red flag on a card means something about reaching this person needs a look first: no phone on file so the automatic SMS could not be sent, an SMS that failed, or a bounced email. It never means skip the lead. You still reach out, you just know which channel is most likely to land. For the messages behind each stage, see the <b>Communications</b> tab.</p>'+
+      '<p class="ip">A red flag on a lead means reaching them needs a look first: no phone on file so the automatic SMS could not be sent, an SMS that failed, or a bounced email. It never means skip the lead. You still reach out, you just know which channel is most likely to land. For the messages behind each stage, see the <b>Communications</b> tab.</p>'+
     '</div>';
 }
 
@@ -276,36 +337,90 @@ function renderDaily(){
   box.appendChild(rows);
 }
 
-// Pipeline board: every live stage in order, with everyone in it below.
+// Leads in a stage, filtered by the current salesperson and sorted by call day.
+function stageLeads(stageId){
+  let list=allLeads(DATA).filter(l=>l.stageId===stageId);
+  if(REP!=="all") list=list.filter(l=>l.repName===REP);
+  list.sort((a,b)=>{
+    const ta=a.appointment&&a.appointment.at?new Date(a.appointment.at).getTime():Infinity;
+    const tb=b.appointment&&b.appointment.at?new Date(b.appointment.at).getTime():Infinity;
+    if(ta!==tb) return ta-tb;
+    return String(a.name||"").localeCompare(String(b.name||""));
+  });
+  return list;
+}
+
+// Pipeline map: the whole funnel on one screen, grouped into three bands. Every
+// stage is a tile showing its count and whether it is automatic or by hand. Tap
+// a tile to open the stage card (what it is, how to use it, who is in it).
 function renderPipeline(){
   const box=el("board"); if(!box) return;
-  const stages=DATA.stages||[];
-  const leads=allLeads(DATA);
+  const stages=(DATA.stages||[]).slice();
   box.innerHTML="";
   if(!stages.length){ box.innerHTML='<div class="empty-state">Could not load the pipeline stages.</div>'; return; }
-  stages.forEach(s=>{
-    let list=leads.filter(l=>l.stageId===s.id);
-    if(REP!=="all") list=list.filter(l=>l.repName===REP);
-    list.sort((a,b)=>{
-      const ta=a.appointment&&a.appointment.at?new Date(a.appointment.at).getTime():Infinity;
-      const tb=b.appointment&&b.appointment.at?new Date(b.appointment.at).getTime():Infinity;
-      if(ta!==tb) return ta-tb;
-      return String(a.name||"").localeCompare(String(b.name||""));
+  const known = new Set([].concat(...PIPE_BANDS.map(b=>b.statuses)));
+  const map=document.createElement("div"); map.className="pipemap";
+  PIPE_BANDS.forEach(band=>{
+    let inBand=stages.filter(s=>band.statuses.includes(s.status));
+    if(band.key==="out") inBand=inBand.concat(stages.filter(s=>!known.has(s.status)));
+    inBand.sort((a,b)=>(a.position||0)-(b.position||0));
+    if(!inBand.length) return;
+    const sec=document.createElement("div"); sec.className="band";
+    sec.innerHTML='<div class="band-h"><span class="band-t">'+esc(band.title)+'</span><span class="band-sub">'+esc(band.sub)+'</span></div>';
+    const lane=document.createElement("div"); lane.className="lane"+(band.arrows?" path":"");
+    inBand.forEach((s,i)=>{
+      const n=stageLeads(s.id).length;
+      const emoji=stageEmoji(s.name);
+      const color=s.color||"#94a3b8";
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="ptile"+(band.key==="chase"&&n>0?" hot":"");
+      btn.style.setProperty("--ac", color);
+      btn.innerHTML=
+        '<div class="pt-top">'+(emoji?'<span class="pt-emoji">'+esc(emoji)+'</span>':'<span class="pt-dot" style="background:'+esc(color)+'"></span>')+
+          '<span class="pt-count">'+n+'</span></div>'+
+        '<div class="pt-name">'+esc(cleanStage(s.name))+'</div>'+
+        '<div class="pt-foot"><span class="pt-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span></div>';
+      btn.addEventListener("click",()=>openStageSheet(s));
+      lane.appendChild(btn);
+      if(band.arrows && i<inBand.length-1){ const c=document.createElement("span"); c.className="pconn"; c.innerHTML="&rarr;"; lane.appendChild(c); }
     });
-    const block=document.createElement("div"); block.className="stageblock";
-    const dot='<span class="stagedot" style="background:'+esc(s.color||"#94a3b8")+'"></span>';
-    const tag=s.auto?'<span class="stagetag auto">automatic</span>':'<span class="stagetag manual">manual</span>';
-    block.innerHTML='<div class="stagehead">'+dot+'<h3>'+esc(cleanStage(s.name))+'</h3><span class="stagecount">'+list.length+'</span>'+tag+'</div>';
-    const exp=stageExplain(s.name); if(exp) block.insertAdjacentHTML("beforeend", exp);
-    if(!list.length){
-      block.insertAdjacentHTML("beforeend",'<div class="stage-empty">Nobody here right now.</div>');
-    }else{
-      const rows=document.createElement("div"); rows.className="rows";
-      list.forEach(l=>rows.appendChild(rowEl(l,true)));
-      block.appendChild(rows);
-    }
-    box.appendChild(block);
+    sec.appendChild(lane);
+    map.appendChild(sec);
   });
+  box.appendChild(map);
+}
+
+// The stage card. Opens in the same sheet as a lead. Explains the stage in plain
+// language, then lists everyone in it; tapping a person opens their lead card.
+function openStageSheet(s){
+  const sheet=el("sheet");
+  const list=stageLeads(s.id);
+  const d=stageDetail(s);
+  const emoji=stageEmoji(s.name);
+  const tagCls=s.auto?"auto":"manual";
+  const tagTxt=s.auto?"Automatic, the CRM moves people here":"By hand, you move people here";
+  const isFup=/\(fup\)/i.test(s.name)||/reminder/i.test(s.name);
+  const fup=isFup?'<div class="sd-fup"><b>This is a reminder stage.</b> The moment a lead lands here, the reminder emails and texts start, so only move someone in when that is what you want.</div>':"";
+  const secs=[
+    ["What this stage is", d.what],
+    ["How you use it", d.use],
+    ["How the system works with it", d.system],
+    ["Where they go next", d.next],
+  ].map(x=>'<div class="sd-sec"><div class="sd-h">'+x[0]+'</div><p>'+esc(x[1])+'</p></div>').join("");
+  sheet.innerHTML=
+    '<div class="sh"><div><h2>'+(emoji?esc(emoji)+" ":"")+esc(cleanStage(s.name))+'</h2>'+
+      '<div class="role"><span class="sd-tag '+tagCls+'">'+esc(tagTxt)+'</span></div></div>'+
+      '<button class="x" data-act="close">&times;</button></div>'+
+    '<div class="body stagesheet">'+
+      secs+fup+
+      '<div class="dohead">Who is here now <span class="cnt">'+list.length+'</span></div>'+
+      '<div id="stagerows"></div>'+
+    '</div>';
+  const rowsBox=sheet.querySelector("#stagerows");
+  if(!list.length){ rowsBox.innerHTML='<div class="stage-empty">Nobody here right now.</div>'; }
+  else{ const rows=document.createElement("div"); rows.className="rows"; list.forEach(l=>rows.appendChild(rowEl(l,true))); rowsBox.appendChild(rows); }
+  el("scrim").classList.add("open");
 }
 
 function stageMover(l){
