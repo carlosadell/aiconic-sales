@@ -455,7 +455,7 @@ function actionPlan(l){
     noBookReview:{label:"Qualified, review not booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
     noshowReview:{label:"No show", tag:"noshow-review", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the review."},
     won:{label:"Won the client", tag:"won", tone:"green", icon:"🏆", what:"They signed. Moves them to Client Won."},
-    baking:{label:"Nurture for later", tag:"baking", tone:"gray", icon:"🌱", what:"Interested but not ready yet. Moves them to Baking with no reminders."},
+    baking:{label:"Nurture for later", tag:"baking", tone:"gray", icon:"🌱", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
     nq:{label:"Not a fit", tag:"not-qualified", tone:"dark", icon:"⛔", what:"Moves them to Not Qualified and stops all messages."},
   };
   if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq,B.won]};
@@ -471,7 +471,7 @@ function actionButtons(l){
     '<button type="button" class="pbtn '+a.tone+'" data-act="tag" data-tag="'+esc(a.tag)+'" data-id="'+esc(l.contactId)+'" data-label="'+esc(a.label)+'">'+
       '<span class="pbtn-ic">'+a.icon+'</span><span class="pbtn-l">'+esc(a.label)+'</span></button>'+
     '<div class="actwhat">'+esc(a.what)+'</div></div>';
-  let h='<div class="actpanel"><div class="act-h">'+esc(p.title)+'</div>';
+  let h='<div class="dohead">'+esc(p.title)+'</div><div class="actpanel">';
   if(p.auto) h+='<div class="act-auto">'+esc(p.auto)+'</div>';
   h+='<div class="actlist">'+p.after.map(row).join("")+'</div>';
   if(p.before) h+='<div class="act-h sub">Before the call, only if you cannot make it</div><div class="actlist">'+p.before.map(row).join("")+'</div>';
@@ -491,15 +491,32 @@ function referenceBlock(l){
 }
 
 function prepBlock(l){
-  const rows = [
-    ["Open the contact card in the CRM", l.links.contact],
-  ].filter(r=>r[1]);
-  const appt = l.appointment && l.appointment.at
-    ? '<div class="appt"><span class="ch">Call</span> '+esc(l.callType)+' &middot; '+esc(dayLabel(l.appointment.at, l.timezone))+'</div>' : "";
   const src = '<div class="srcnote"><b>'+esc(l.source)+'.</b> '+esc(l.sourceCheck)+'</div>';
-  return '<div class="dohead">This lead</div>'+appt+src+
-    '<div class="prep">'+rows.map(r=>'<a class="preplink" href="'+esc(r[1])+'" target="_blank" rel="noopener"><span>'+esc(r[0])+'</span><span class="arr">Open &rsaquo;</span></a>').join("")+'</div>'+
-    '<div class="hint" style="margin-top:8px">Every shared link, booking links, scripts, the CRM, Conversify and the trackers, lives in the <b>Links</b> tab at the top.</div>';
+  return '<div class="dohead">This lead</div>'+
+    '<div class="kv">'+
+      '<div class="k">Stage</div><div class="v">'+esc(cleanStage(l.stage))+'</div>'+
+      '<div class="k">Call</div><div class="v">'+esc(l.callType)+(l.appointment&&l.appointment.at?' &middot; '+esc(dayLabel(l.appointment.at,l.timezone)):"")+'</div>'+
+      '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
+      '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
+    '</div>'+src+
+    (l.links&&l.links.contact?'<div class="prep"><a class="preplink" href="'+esc(l.links.contact)+'" target="_blank" rel="noopener"><span>Open the contact card in the CRM</span><span class="arr">Open &rsaquo;</span></a></div>':"");
+}
+
+// Every link a rep might need for this lead, in one place: the lead's own
+// reschedule link, the three booking links, and the call scripts.
+const REVIEW_BOOKING = "https://links.aiconichub.ai/widget/booking/EkNg9CbinOGLYq4LDtfP";
+function linksBlock(l){
+  const L = l.links||{};
+  const rows = [];
+  if(l.status==="booked" && l.rebookIsPersonal && l.rebookLink){
+    rows.push(linkCard("", "Reschedule this exact call", "Only before the call happens. Moves this booked call to a new time for this person. It stops working once the call has passed or was cancelled.", l.rebookLink));
+  }
+  if(l.bookingLink) rows.push(linkCard("", "Intro call booking link", "The plain intro booking page"+(l.source==="LinkedIn"?" for LinkedIn leads.":"."), l.bookingLink));
+  if(L.interviewBooking) rows.push(linkCard("", "Interview booking link", "The interview booking page.", L.interviewBooking));
+  rows.push(linkCard("", "Review call booking link", "The review call booking page.", REVIEW_BOOKING));
+  const docs = [["Intro call script", L.script], ["Interview questions", L.interviewQuestions]].filter(r=>r[1]);
+  return '<div class="dohead">Links</div>'+rows.join("")+
+    (docs.length?'<div class="prep" style="margin-top:10px">'+docs.map(r=>'<a class="preplink" href="'+esc(r[1])+'" target="_blank" rel="noopener"><span>'+esc(r[0])+'</span><span class="arr">Open &rsaquo;</span></a>').join("")+'</div>':"");
 }
 
 function sentBlock(l){
@@ -709,7 +726,7 @@ function notesBlock(l){
     '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM. Paste the Fathom recording link in here too..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
     '<div class="hint">Notes save to this contact in the CRM and show for everyone. Paste the Fathom recording link into a note after the call.</div>'+
-    '<div class="dohead">Log the call</div>'+
+    '<div class="subhead">Log the call</div>'+
     '<a class="calllog" href="https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit" target="_blank" rel="noopener">Open the call log</a>'+
     '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
 }
@@ -769,25 +786,17 @@ function openSheet(l){
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
-      '<div class="kv">'+
-        '<div class="k">Stage</div><div class="v">'+esc(l.stage)+'</div>'+
-        '<div class="k">Call</div><div class="v">'+esc(l.callType)+(l.appointment&&l.appointment.at?' &middot; '+esc(dayLabel(l.appointment.at,l.timezone)):"")+'</div>'+
-        '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
-        '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
-      '</div>'+
-      actionButtons(l)+
-      (l.status==="bookinginterview"||l.status==="bookingreview"||isRef ? "" : rebookRow(l))+
+      prepBlock(l)+
       (showSent ? sentBlock(l) : "")+
-      (l.status==="bookinginterview"
-        ? (interviewBlock(l)+notesBlock(l))
-        : l.status==="bookingreview"
-        ? (reviewBlock(l)+notesBlock(l))
-        : isRef
-        ? (referenceBlock(l)+notesBlock(l))
+      (l.status==="bookinginterview" ? interviewBlock(l)
+        : l.status==="bookingreview" ? reviewBlock(l)
+        : isRef ? referenceBlock(l)
         : ('<div class="dohead">'+doHead+'</div>'+
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
-           channelBlocks(l)+notesBlock(l)))+
-      prepBlock(l)+
+           channelBlocks(l)))+
+      linksBlock(l)+
+      actionButtons(l)+
+      notesBlock(l)+
     '</div>';
   el("scrim").classList.add("open");
   // Size the editable boxes after the modal is visible, otherwise the text is

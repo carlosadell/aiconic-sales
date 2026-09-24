@@ -358,3 +358,12 @@ a.linkrow-lbl:hover{text-decoration:underline}
 .hint{font-size:13.5px;color:var(--ink-2)}
 .foot{font-size:13.5px;color:var(--ink-2)}
 .pf-tag,.pfsub-when,.sd-tag,.legchip .lc-tag,.stagechip .sc-l,.pfclosed-h{text-transform:none;letter-spacing:0;font-size:12.5px}
+/* Walkthrough video button, same as the Communications page */
+.watch{display:inline-flex;align-items:center;gap:9px;margin:4px 0 18px;font-size:14px;font-weight:700;color:var(--blue-ink);text-decoration:none;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:11px;padding:11px 18px}
+.watch:hover{border-color:#b9cdf7}
+/* Lead card: numbered sections in the order a rep works */
+#sheet .body:not(.stagesheet){counter-reset:sec}
+#sheet .body:not(.stagesheet) > .dohead::before{counter-increment:sec;content:counter(sec) ". ";color:var(--blue)}
+#sheet .body:not(.stagesheet) > .dohead:first-of-type{margin-top:6px}
+.subhead{font-size:15px;font-weight:800;color:var(--ink);margin:20px 0 8px}
+.linkrow{margin-bottom:10px}
