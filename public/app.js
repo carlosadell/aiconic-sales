@@ -472,22 +472,52 @@ function openStageSheet(s){
   el("scrim").classList.add("open");
 }
 
-function stageMover(l){
-  const opts = DATA.stages.map(s=>{
-    const label = s.auto ? esc(s.name)+" (automatic)" : esc(s.name);
-    const dis = s.auto && s.id!==l.stageId ? " disabled" : "";
-    return '<option value="'+esc(s.id)+'"'+(s.id===l.stageId?" selected":"")+dis+'>'+label+'</option>';
-  }).join("");
-  return '<div class="dohead">Move stage</div>'+
-    '<div class="stagerow">'+
-      '<select class="stagesel" data-opp="'+esc(l.id)+'">'+opts+'</select>'+
-      '<span class="stagemsg" id="stagemsg"></span>'+
-    '</div>'+
-    '<div class="hint" style="margin-bottom:16px">Changing this moves the deal in the CRM right away. Stages marked automatic are greyed out, the CRM moves leads there on its own, so you cannot pick them.</div>';
+// The action buttons that move a lead. Stages are automatic and cannot be moved
+// by hand from the toolkit. Each button adds one tag, and the tag triggers the
+// matching workflow in the CRM, which sets the stage and starts the right
+// messages. Which buttons show depends on where the lead is now, so a rep only
+// ever sees the two or three that make sense.
+// The action buttons that move a lead. Stages move automatically and cannot be
+// moved by hand from the toolkit. The next call is normally booked during the
+// call, and then the lead moves on its own. These buttons are only for when
+// something did not happen: a no show, the next call not booked, not a fit, or
+// an emergency. Each button adds one tag, and the tag triggers the matching
+// workflow in the CRM. Each card only shows the buttons for its own call.
+function actionPlan(l){
+  const s=l.status, st=l.stage||"";
+  const isInterview=/interview/i.test(st), isReview=/review/i.test(st);
+  const B={
+    noshowIntro:{label:"No show", tag:"noshow-intro", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the intro call."},
+    noBookInterview:{label:"Qualified, interview not booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
+    noshowInterview:{label:"No show", tag:"noshow-interview", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the interview."},
+    noBookReview:{label:"Qualified, review not booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
+    noshowReview:{label:"No show", tag:"noshow-review", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the review."},
+    won:{label:"Won the client", tag:"won", tone:"green", icon:"🏆", what:"They signed. Moves them to Client Won."},
+    baking:{label:"Nurture for later", tag:"baking", tone:"gray", icon:"🌱", what:"Interested but not ready yet. Moves them to Baking with no reminders."},
+    nq:{label:"Not a fit", tag:"not-qualified", tone:"dark", icon:"⛔", what:"Moves them to Not Qualified and stops all messages."},
+    emergency:{label:"Emergency, move the call", tag:"emergency-intro", tone:"red", icon:"🚨", what:"Only if you truly cannot make the call. Sends an apology and asks them to pick a new time."},
+  };
+  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq,B.won]};
+  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.noBookReview,B.baking,B.nq,B.won]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq,B.won], before:[B.emergency]};
+  return null; // Client Won, Not Qualified, Never Rescheduled are end stages
 }
 
-// Reference-only stages: no message drafts, no booking links. The rep looks back
-// at the account and its previous call notes.
+function actionButtons(l){
+  const p=actionPlan(l);
+  if(!p) return "";
+  const row=a=>'<div class="actrow">'+
+    '<button type="button" class="pbtn '+a.tone+'" data-act="tag" data-tag="'+esc(a.tag)+'" data-id="'+esc(l.contactId)+'" data-label="'+esc(a.label)+'">'+
+      '<span class="pbtn-ic">'+a.icon+'</span><span class="pbtn-l">'+esc(a.label)+'</span></button>'+
+    '<div class="actwhat">'+esc(a.what)+'</div></div>';
+  let h='<div class="actpanel"><div class="act-h">'+esc(p.title)+'</div>';
+  if(p.auto) h+='<div class="act-auto">'+esc(p.auto)+'</div>';
+  h+='<div class="actlist">'+p.after.map(row).join("")+'</div>';
+  if(p.before) h+='<div class="act-h sub">Before the call, only if you cannot make it</div><div class="actlist">'+p.before.map(row).join("")+'</div>';
+  h+='<div class="act-foot">Tap once, then tap again to confirm. The system moves the lead and starts the right messages. Stages cannot be moved by hand here.</div></div>';
+  return h;
+}
+
 function referenceBlock(l){
   const map = {
     survey: "They qualified through the form but have not booked their intro call yet. Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
@@ -785,19 +815,20 @@ function openSheet(l){
         '<div class="k">Email</div><div class="v">'+esc(l.email||"None on file")+'</div>'+
         '<div class="k">Phone</div><div class="v">'+esc(l.phone||"None on file")+'</div>'+
       '</div>'+
+      actionButtons(l)+
       (l.status==="bookinginterview"||l.status==="bookingreview"||isRef ? "" : rebookRow(l))+
       (showSent ? sentBlock(l) : "")+
       (l.status==="rescheduling"
-        ? (rescheduleBlock(l)+stageMover(l)+notesBlock(l))
+        ? (rescheduleBlock(l)+notesBlock(l))
         : l.status==="bookinginterview"
-        ? (interviewBlock(l)+stageMover(l)+notesBlock(l))
+        ? (interviewBlock(l)+notesBlock(l))
         : l.status==="bookingreview"
-        ? (reviewBlock(l)+stageMover(l)+notesBlock(l))
+        ? (reviewBlock(l)+notesBlock(l))
         : isRef
-        ? (referenceBlock(l)+stageMover(l)+notesBlock(l))
+        ? (referenceBlock(l)+notesBlock(l))
         : ('<div class="dohead">'+doHead+'</div>'+
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
-           channelBlocks(l)+stageMover(l)+notesBlock(l)+rescheduleBlock(l)))+
+           channelBlocks(l)+notesBlock(l)+rescheduleBlock(l)))+
       prepBlock(l)+
     '</div>';
   el("scrim").classList.add("open");
@@ -836,6 +867,25 @@ el("sheet").addEventListener("click", async (e)=>{
   const b = e.target.closest("button"); if(!b) return;
   const act = b.dataset.act;
   if(act==="close"){ closeSheet(); return; }
+  if(act==="tag"){
+    const lbl=b.querySelector(".pbtn-l");
+    const what=b.closest(".actrow") ? b.closest(".actrow").querySelector(".actwhat") : null;
+    if(b.dataset.armed!=="1"){
+      b.dataset.armed="1"; b.classList.add("arm");
+      if(lbl) lbl.textContent="Tap again to confirm";
+      clearTimeout(b._t); b._t=setTimeout(()=>{ b.dataset.armed="0"; b.classList.remove("arm"); if(lbl) lbl.textContent=b.dataset.label||""; },4000);
+      return;
+    }
+    clearTimeout(b._t); b.dataset.armed="0"; b.classList.remove("arm"); b.disabled=true;
+    if(lbl) lbl.textContent="Working...";
+    try{
+      const r=await fetch("/api/add-tag",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id, tag:b.dataset.tag})});
+      const d=await r.json();
+      if(r.ok && d.ok){ b.classList.add("done"); if(lbl) lbl.textContent="Done"; if(what) what.textContent="The system is moving this lead now. Hit Refresh at the top to see it in its new stage."; }
+      else{ b.disabled=false; if(lbl) lbl.textContent=b.dataset.label||""; if(what) what.textContent="That did not go through: "+(d.error||"try again")+"."; }
+    }catch(_){ b.disabled=false; if(lbl) lbl.textContent=b.dataset.label||""; if(what) what.textContent="That did not go through, try again."; }
+    return;
+  }
   if(act==="copy"){
     const field=b.dataset.field;
     const node=field ? b.closest(".channel").querySelector("."+field) : null;

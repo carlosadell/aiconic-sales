@@ -284,3 +284,42 @@ a.linkrow-lbl:hover{text-decoration:underline}
   .pfsub{margin-left:32px;flex-wrap:wrap;gap:7px 10px}
   .pfsub .pf-name{flex:1 1 100%}
 }
+
+/* ---- Action buttons on the lead card (tag driven, Sep 2026) ---- */
+.curstage{display:flex;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.curstage .cs-l{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.curstage .cs-v{font-size:13px;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px 12px}
+.actpanel{background:#f7f9fc;border:1px solid var(--border);border-radius:16px;padding:18px 20px 16px;margin:4px 0 18px}
+.act-h{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:0 0 6px}
+.act-h.sub{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);color:var(--red-ink)}
+.act-auto{font-size:13.5px;line-height:1.5;color:var(--ink-2);background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:10px 13px;margin:0 0 14px}
+.actlist{display:flex;flex-direction:column;gap:12px}
+.actrow{display:grid;grid-template-columns:350px 1fr;align-items:center;gap:16px}
+.actwhat{font-size:13px;line-height:1.45;color:var(--ink-2)}
+.act-foot{font-size:12px;color:var(--muted);margin-top:14px}
+.pbtn{--g1:#1ea7ff;--g2:#6d4dff;--glow:rgba(79,108,255,.45);
+  appearance:none;border:none;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  padding:13px 24px;border-radius:999px;color:#fff;font-size:15px;font-weight:800;letter-spacing:-.005em;white-space:normal;text-align:center;line-height:1.2;
+  background:linear-gradient(90deg,var(--g1),var(--g2));
+  box-shadow:0 8px 20px -6px var(--glow),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+.pbtn .pbtn-ic{font-size:17px;line-height:1}
+.pbtn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 14px 30px -6px var(--glow),inset 0 1px 0 rgba(255,255,255,.3)}
+.pbtn:active{transform:translateY(0);box-shadow:0 5px 12px -5px var(--glow)}
+.pbtn:focus-visible{outline:3px solid var(--g2);outline-offset:3px}
+.pbtn:disabled{cursor:default;transform:none;filter:none}
+.pbtn.blue{--g1:#1ea7ff;--g2:#6d4dff;--glow:rgba(79,108,255,.45)}
+.pbtn.chase{--g1:#fbbf24;--g2:#ea580c;--glow:rgba(234,88,12,.42)}
+.pbtn.green{--g1:#34d399;--g2:#059669;--glow:rgba(5,150,105,.42)}
+.pbtn.gray{--g1:#94a3b8;--g2:#475569;--glow:rgba(71,85,105,.4)}
+.pbtn.dark{--g1:#475569;--g2:#0f172a;--glow:rgba(15,23,42,.42)}
+.pbtn.red{--g1:#ff3b3b;--g2:#c40000;--glow:rgba(255,0,0,.55);font-size:15.5px;letter-spacing:.01em;animation:emgpulse 1.6s ease-in-out infinite}
+.pbtn.red .pbtn-ic{font-size:19px}
+@keyframes emgpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,40,40,.55),0 8px 20px -6px rgba(255,0,0,.55)}50%{box-shadow:0 0 0 8px rgba(255,40,40,0),0 8px 20px -6px rgba(255,0,0,.55)}}
+.pbtn.arm{outline:3px solid var(--g2);outline-offset:3px;animation:none}
+.pbtn.done{--g1:#34d399;--g2:#059669;--glow:rgba(5,150,105,.42);animation:none}
+@media (max-width:720px){
+  .actrow{grid-template-columns:1fr;gap:6px}
+  .actpanel{padding:15px 14px}
+}
