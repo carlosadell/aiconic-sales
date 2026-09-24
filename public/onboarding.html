@@ -202,8 +202,8 @@
     DATA.forEach(function(ph, i){
       var loom = ph.loom ? '<a class="loom" href="'+esc(ph.loom.url)+'" target="_blank" rel="noopener">&#9658; '+esc(ph.loom.label)+'</a>' : '';
       var done = secDone(ph);
-      out += '<section class="sec'+(i===0?" open":"")+(done?" done":"")+'" data-si="'+i+'">'+
-        '<button class="sec-head" type="button" aria-expanded="'+(i===0?"true":"false")+'">'+
+      out += '<section class="sec'+(done?" done":"")+'" data-si="'+i+'">'+
+        '<button class="sec-head" type="button" aria-expanded="false">'+
           '<span class="sec-n">'+(done?"&#10003;":(i+1))+'</span>'+
           '<span class="sec-headmain"><span class="sec-title">'+esc(ph.title)+'</span><span class="sec-desc">'+esc(ph.desc)+'</span></span>'+
           '<span class="sec-meta"><span class="sec-count" data-si="'+i+'">'+secCount(ph)+' / '+ph.tasks.length+'</span><span class="chev">&rsaquo;</span></span>'+
