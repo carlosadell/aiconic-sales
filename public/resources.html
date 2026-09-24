@@ -11,14 +11,14 @@
 <style>
   :root{
     --bg:#eef1f6; --card:#ffffff; --card-2:#fafbfd;
-    --ink:#0f1826; --ink-2:#46526a; --muted:#7c8699;
+    --ink:#0f1826; --ink-2:#3a4559; --muted:#5b6679;
     --border:#e2e7ef; --line:#c7d0de;
     --blue:#2563eb; --blue-ink:#1e40af; --blue-soft:#eaf0ff;
-    --amber:#d97706; --amber-ink:#92400e; --amber-soft:#fdf2e3;
+    --amber:#b45309; --amber-ink:#92400e; --amber-soft:#fdf2e3;
     --red:#dc2626; --red-ink:#991b1b;
-    --green:#16a34a; --green-ink:#166534; --green-soft:#eaf7ee;
+    --green:#15803d; --green-ink:#166534; --green-soft:#eaf7ee;
     --violet:#7c3aed; --violet-ink:#5b21b6; --violet-soft:#f3efff;
-    --teal:#0d9488; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
+    --teal:#0f766e; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
     --slate:#64748b; --slate-ink:#46526a; --slate-soft:#eef2f8;
     --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.14);
     --radius:16px;
@@ -29,7 +29,7 @@
   .wrap{max-width:none;margin:0 auto;padding:6px 0 48px}
 
   /* Header */
-  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 12px}
+  .eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 12px}
   h1{font-size:clamp(28px,5vw,40px);font-weight:800;line-height:1.12;margin:0 0 16px;letter-spacing:-.02em;text-wrap:balance}
   .lede{font-size:16.5px;color:var(--ink-2);margin:0;max-width:66ch}
   .watch{display:inline-flex;align-items:center;gap:9px;margin:24px 0 0;font-size:14px;font-weight:700;color:var(--blue-ink);text-decoration:none;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:11px;padding:11px 18px}
@@ -73,7 +73,7 @@
   .caution{display:flex;align-items:flex-start;gap:9px;margin:0 0 18px;padding:11px 14px;background:var(--amber-soft);border:1px solid #f2d9ac;border-radius:11px;font-size:13px;color:var(--amber-ink);font-weight:600;line-height:1.5}
   .caution .ico{flex:0 0 auto;font-size:13px;line-height:1.3}
   dl.rows{display:grid;grid-template-columns:120px 1fr;gap:14px 20px;margin:0;font-size:14.5px}
-  dl.rows dt{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+  dl.rows dt{color:var(--ink);font-weight:800;font-size:13.5px;padding-top:1px}
   dl.rows dd{margin:0;color:var(--ink);line-height:1.55}
   .entry{display:flex;flex-wrap:wrap;gap:8px 10px}
   .entry .e{font-size:13px;color:var(--ink);line-height:1.5}
@@ -101,12 +101,18 @@
     dl.rows dt{padding-top:14px}
     dl.rows dt:first-of-type{padding-top:0}
   }
+  .tag{font-size:13px;letter-spacing:0;text-transform:none}
+  .trig{font-size:12px;letter-spacing:0;text-transform:none}
+  .eyebrow{font-size:14px;letter-spacing:0;text-transform:none}
+  dl.rows dt{font-size:14.5px}
+  .entry .e{font-size:14.5px}
+  .foot{font-size:13.5px;color:var(--ink-2)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <p class="eyebrow">Communications Playbook</p>
+  <p class="eyebrow">Communications playbook</p>
   <h1>Get booked leads to show up</h1>
   <p class="lede">This page shows you how to turn a booking into a lead who actually attends, and it shows you exactly what the CRM sends on its own so your messages work with it, never against it.</p>
   <a class="watch" href="https://www.loom.com/share/4d1ed7c35b3043d3bec4e56a09134c0a" target="_blank" rel="noopener">&#9658; Watch the walkthrough</a>
@@ -154,7 +160,7 @@
       <div class="sec-num">2</div>
       <div class="sec-title">
         <h2>What the system sends</h2>
-        <p>There are three reminder workflows, one per call. Each one handles both a cancellation and a no show inside a single workflow, so the lead always gets the right message. One extra workflow covers the case where you have to move an intro yourself.</p>
+        <p>There are three reminder workflows, one per call. Each one handles both a cancellation and a no show inside a single workflow, so the lead always gets the right message.</p>
       </div>
     </div>
 
@@ -163,14 +169,12 @@
       <!-- Intro -->
       <div class="card" style="--edge:var(--blue)">
         <div class="top">
-          <span class="tag">Sending Intro Reminders (FUP)</span>
-          <span class="trig auto">Automatic on cancel</span>
-          <span class="trig manual">By hand for a no show</span>
+          <span class="tag">Sending Intro Reminders</span>
+          <span class="trig auto">Starts on its own</span>
         </div>
         <h3>The intro call</h3>
-        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
         <dl class="rows">
-          <dt>Entry</dt><dd class="entry"><span class="e"><b>Automatic:</b> a cancelled intro lands here on its own, the CRM moves them.</span><span class="e"><b>By hand:</b> a no show is moved here by you.</span></dd>
+          <dt>Entry</dt><dd class="entry"><span class="e">A salesperson taps <b>No show</b> on the intro card, or the lead cancels the intro.</span></dd>
           <dt>They get</dt><dd>Reminder emails and texts asking them to book a new intro.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The intro booking page.</dd>
@@ -181,53 +185,32 @@
       <!-- Interview -->
       <div class="card" style="--edge:var(--teal)">
         <div class="top">
-          <span class="tag" style="--edge:var(--teal)">Sending Interview Reminders (FUP)</span>
-          <span class="trig auto">Automatic on cancel</span>
-          <span class="trig manual">By hand to start</span>
+          <span class="tag" style="--edge:var(--teal)">Sending Interview Reminders</span>
+          <span class="trig auto">Starts on its own</span>
         </div>
         <h3>The interview</h3>
-        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
         <dl class="rows">
-          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand:</b> use it when someone qualified on the intro but did not book their interview, or cancelled or did not show for it.</span><span class="e"><b>Automatic:</b> a cancel is caught on its own.</span></dd>
+          <dt>Entry</dt><dd class="entry"><span class="e">A salesperson taps <b>Qualified, interview not booked</b> on the intro card or <b>No show</b> on the interview card, or the lead cancels the interview.</span></dd>
           <dt>They get</dt><dd>Reminder emails and texts asking them to book the interview.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The interview booking calendar.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book.</span> The moment they book they move to Interview Booked. If they go quiet, move them to Not Qualified.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Interview Booked on their own. If they never book, they move to Never Rescheduled.</dd>
         </dl>
       </div>
 
       <!-- Review -->
       <div class="card" style="--edge:var(--violet)">
         <div class="top">
-          <span class="tag" style="--edge:var(--violet)">Sending Review Reminders (FUP)</span>
-          <span class="trig auto">Automatic on cancel</span>
-          <span class="trig manual">By hand to start</span>
+          <span class="tag" style="--edge:var(--violet)">Sending Review Reminders</span>
+          <span class="trig auto">Starts on its own</span>
         </div>
         <h3>The review call</h3>
-        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
         <dl class="rows">
-          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand:</b> use it when someone had their interview but has not booked their review call, or cancelled or did not show.</span><span class="e"><b>Automatic:</b> a cancel is caught on its own.</span></dd>
+          <dt>Entry</dt><dd class="entry"><span class="e">A salesperson taps <b>Qualified, review not booked</b> on the interview card or <b>No show</b> on the review card, or the lead cancels the review.</span></dd>
           <dt>They get</dt><dd>Reminder emails and texts asking them to book the review call.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The review call booking page.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Review Booked on their own.</dd>
-        </dl>
-      </div>
-
-      <!-- Emergency -->
-      <div class="card" style="--edge:var(--amber)">
-        <div class="top">
-          <span class="tag" style="--edge:var(--amber)">Sending Emergency Intro Reminders (FUP)</span>
-          <span class="trig manual">By hand, emergency only</span>
-        </div>
-        <h3>You have to move an intro</h3>
-        <div class="caution"><span class="ico">&#9888;</span><span>This stage starts sending the moment a lead is moved into it. Marked FUP.</span></div>
-        <dl class="rows">
-          <dt>Entry</dt><dd class="entry"><span class="e"><b>By hand only:</b> use it when you, the salesperson, have to move an intro call. This is not a normal step.</span></dd>
-          <dt>They get</dt><dd>Messages that own the change on our side and ask the lead to rebook.</dd>
-          <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
-          <dt>Link used</dt><dd>The intro booking page.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> The moment they book, they leave on their own.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Review Booked on their own. If they never book, they move to Never Rescheduled.</dd>
         </dl>
       </div>
 
@@ -240,14 +223,14 @@
       <div class="sec-num">3</div>
       <div class="sec-title">
         <h2>Coordinate your own outreach with the automatic messages</h2>
-        <p>The moment you move a lead into a stage, the CRM starts sending emails and texts in your name. Your job is to add to what went out, never to contradict or repeat it.</p>
+        <p>The moment a lead lands in a stage, the CRM starts sending emails and texts in your name. Your job is to add to what went out, never to contradict or repeat it.</p>
       </div>
     </div>
 
     <div class="coord">
       <p>Before you send anything yourself, <b>check what already went out.</b> You can see it on the lead card in Daily Outreach or in the sequences above. If you skip this, the lead can get a message from you that clashes with what the system just sent, and that makes us look careless.</p>
       <p>Do not copy the automatic message word for word. Do not fire a manual message on the same day one is already going out unless yours adds something new. When you add a note or a personal message, make it different and specific to them.</p>
-      <p>Each sequence runs day 0, 1, 3 and 5, then stops, and after that it is on you. The moment a lead books, move them to the right stage so the reminders stop, otherwise they keep getting nudged after they have already booked.</p>
+      <p>Each sequence runs day 0, 1, 3 and 5, then stops. The moment a lead books, they move to the right stage on their own and the reminders stop.</p>
     </div>
   </section>
 

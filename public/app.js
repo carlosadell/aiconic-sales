@@ -123,6 +123,9 @@ async function load(){
     const r = await fetch("/api/leads",{cache:"no-store"});
     const d = await r.json();
     if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
+    // The emergency stage is internal only. It never shows in the toolkit.
+    d.stages = (d.stages||[]).filter(x=>!/emergency|sorry/i.test(String(x.name||"")));
+    d.leads = (d.leads||[]).filter(l=>l.status!=="rescheduling");
     DATA = d;
     render(d);
     s.className="status-pill live";
@@ -175,84 +178,78 @@ function stageDetail(s){
   const st = s.status;
   const t = String(s.name||"").toLowerCase();
   if(st==="survey") return {
-    what:"People who filled in the qualification form on the website and qualified, but have not booked their intro call yet.",
-    use:"Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
-    system:"Nothing automatic sends from here. It is a holding stage until they book.",
-    next:"When they book an intro call, they move to Intro Booked on their own.",
+    what:"People who submitted the survey and qualified, but have not booked their intro call yet.",
+    how:"They land here on their own when they submit the survey and qualify.",
+    you:"Reach out and send them the intro booking link. The booking links are in the Links tab.",
+    next:"When they book their intro call, they move to Intro Booked on their own.",
   };
   if(st==="booked"){
     if(/interview/.test(t)) return {
-      what:"The lead booked their interview. This is an upcoming call, so it also shows in the Daily Outreach tab.",
-      use:"Prepare, reach out, and get them to show up. During the interview, book their review call there and then.",
-      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
-      next:"After the interview, if they do not book the review, move them to Sending Review Reminders. If they do not show, move them to Sending Interview Reminders.",
+      what:"The lead has an interview booked. The call shows in the Daily Outreach tab.",
+      how:"They land here on their own when they book the interview. The CRM sends the confirmation and the reminders before the call.",
+      you:"Reach out so they show up. During the interview, book their review call there and then. After the call, open their card and tap the button that matches what happened.",
+      next:[["Booked the review on the call","Review Booked, on its own. Do nothing."],["No show","Sending Interview Reminders"],["Qualified, review not booked","Sending Review Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
     };
     if(/review/.test(t)) return {
-      what:"The lead booked their review call. This is an upcoming call, so it also shows in the Daily Outreach tab.",
-      use:"Prepare and reach out so they show up.",
-      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
-      next:"After the review, move them to Client Won if they buy, or Baking if they need more time.",
+      what:"The lead has a review call booked. The call shows in the Daily Outreach tab.",
+      how:"They land here on their own when they book the review. The CRM sends the confirmation and the reminders before the call.",
+      you:"Reach out so they show up. After the call, open their card and tap the button that matches what happened.",
+      next:[["No show","Sending Review Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
     };
     return {
-      what:"The lead booked their first call. This is an upcoming call, so it also shows in the Daily Outreach tab.",
-      use:"Prepare and reach out so they show up. Confirm the time and get a real reply.",
-      system:"Automatic. The lead lands here on their own when they book, and the CRM sends the confirmation and reminders.",
-      next:"If they qualify but do not book the interview on the call, move them to Sending Interview Reminders. If they do not show, move them to Sending Intro Reminders. If they are not a fit, move them to Not Qualified.",
+      what:"The lead has an intro call booked. The call shows in the Daily Outreach tab.",
+      how:"They land here on their own when they book the intro. The CRM sends the confirmation and the reminders before the call.",
+      you:"Reach out so they show up. On the call, if they qualify, book their interview there and then. After the call, open their card and tap the button that matches what happened.",
+      next:[["Booked the interview on the call","Interview Booked, on its own. Do nothing."],["No show","Sending Intro Reminders"],["Qualified, interview not booked","Sending Interview Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
     };
   }
   if(st==="noshow") return {
-    what:"The rebooking lane for the intro call. A cancelled intro lands here on its own. For a no show, you move the lead here by hand.",
-    use:"Moving a lead here starts the reminders asking them to book a new intro. Reach out on every channel too.",
-    system:"A reminder stage. The cancel messages and the no show messages are separate inside the one workflow, so each person gets the right one.",
-    next:"The moment they book, they leave on their own. If they never rebook, they move to Never Rescheduled.",
-  };
-  if(st==="rescheduling") return {
-    what:"Emergency only. Use this when the salesperson has to move an intro call. It is not a normal step.",
-    use:"Moving a lead here starts the reminders asking them to rebook, owning the change on our side.",
-    system:"A reminder stage. The messages start the moment you move someone in.",
-    next:"The moment they book a new time, they leave this stage on their own.",
+    what:"People who missed or cancelled their intro call. The CRM is sending them reminder emails and texts asking them to book a new intro.",
+    how:"They land here when a salesperson taps No show on the intro card, or on their own when they cancel the intro.",
+    you:"Nothing to tap. You can also reach out yourself and send them the intro booking link.",
+    next:"When they book a new intro, they move to Intro Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
   };
   if(st==="bookinginterview") return {
-    what:"People who qualified on the intro but have not booked their interview yet.",
-    use:"Move a lead here to start the reminders asking them to book. Follow up on every channel too.",
-    system:"A reminder stage. The messages start the moment you move someone in.",
-    next:"The moment they book, they move to Interview Booked on their own. If they go quiet, move them to Not Qualified.",
+    what:"People who need to book their interview. The CRM is sending them reminder emails and texts asking them to book it.",
+    how:"They land here when a salesperson taps Qualified, interview not booked on the intro card, or No show on the interview card, or on their own when they cancel the interview.",
+    you:"Nothing to tap. You can also reach out yourself and send them the interview booking link.",
+    next:"When they book the interview, they move to Interview Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
   };
   if(st==="bookingreview") return {
-    what:"People who had their interview but have not booked their review call yet.",
-    use:"Move a lead here to start the reminders. Follow up by hand and get the review booked within the week.",
-    system:"A reminder stage. The messages start the moment you move someone in.",
-    next:"The moment they book, they move to Review Booked on their own.",
-  };
-  if(st==="clientwon") return {
-    what:"These leads became clients. Nothing goes out from here and there is nothing to chase.",
-    use:"Open a lead to look back at the account, what we sent, and the notes and Fathom links from previous calls.",
-    system:"Manual. No automation runs from here.",
-    next:"This is the end of the sales pipeline. They are a client now.",
+    what:"People who need to book their review call. The CRM is sending them reminder emails and texts asking them to book it.",
+    how:"They land here when a salesperson taps Qualified, review not booked on the interview card, or No show on the review card, or on their own when they cancel the review.",
+    you:"Nothing to tap. You can also reach out yourself and help them book it.",
+    next:"When they book the review, they move to Review Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
   };
   if(st==="baking") return {
-    what:"Leads you are nurturing. Not clients yet, and no automation runs from here.",
-    use:"Keep them warm. Open a lead to review their history and reach out when the timing is right.",
-    system:"Manual. You move people here by hand.",
-    next:"When the timing is right, move them back to the right call stage.",
+    what:"People who are interested but not ready yet.",
+    how:"They land here when a salesperson taps Nurture for later on a call card.",
+    you:"Nothing to tap. Open a lead to review their history and previous call notes.",
+    next:"They stay here until they are ready to take the next step.",
+  };
+  if(st==="clientwon") return {
+    what:"People who became clients.",
+    how:"They land here when a salesperson taps Won the client on a call card.",
+    you:"Nothing to do. Open a lead to look back at the account and the notes from previous calls.",
+    next:"This is the end of the sales pipeline. They are a client now.",
   };
   if(st==="notqualified") return {
-    what:"Leads taken out of the process because they were not a fit, or because the team cancelled on them. They only land here on purpose.",
-    use:"Open a lead to review who was dropped and read their previous call notes.",
-    system:"Manual. Nothing sends from here.",
-    next:"Reach back only if something has genuinely changed.",
+    what:"People who are not a fit. All messages to them stop.",
+    how:"They land here when a salesperson taps Not a fit on a call card.",
+    you:"Nothing to do. Open a lead to review their previous call notes.",
+    next:"This is the end of the line.",
   };
   if(st==="neverrescheduled") return {
-    what:"Leads who went through the rebooking reminders and never booked a new time. This is the end of the line for a lost booking.",
-    use:"Open a lead to review the history. Reach back only if something has genuinely changed.",
-    system:"Automatic. The CRM moves people here after the reminders run out with no rebooking.",
-    next:"End of the line unless something genuinely changes.",
+    what:"People who went through the reminders and never booked.",
+    how:"They land here on their own when the reminders run out without a booking.",
+    you:"Nothing to do. Open a lead to review their history.",
+    next:"This is the end of the line.",
   };
   return {
     what:"A stage in the pipeline.",
-    use:"Open a lead to see their details and history.",
-    system:s.auto?"The CRM moves people here automatically.":"You move people here by hand.",
-    next:"Move them on when the next step is clear.",
+    how:"The CRM moves people here.",
+    you:"Open a lead to see their details and history.",
+    next:"They move on when the next step happens.",
   };
 }
 
@@ -284,14 +281,6 @@ function renderFilters(){
 function renderDocs(){
   const box=el("pipedocs"); if(!box) return;
   box.innerHTML =
-    '<div class="infocard">'+
-      '<h3>How to read the board</h3>'+
-      '<div class="legendrow">'+
-        '<span class="legchip"><span class="lc-tag auto">Automatic</span> the CRM moves people in on its own</span>'+
-        '<span class="legchip"><span class="lc-tag manual">By hand</span> you move people in from a lead card</span>'+
-      '</div>'+
-      '<p class="ip" style="margin-top:13px">A stage marked <b>(FUP)</b> starts reminder emails and texts the moment you move a lead into it, so only move a lead in when that is what you want.</p>'+
-    '</div>'+
     '<div class="infocard">'+
       '<h3>What a red flag means</h3>'+
       '<p class="ip">A red flag on a lead means reaching them needs a look first: no phone on file so the automatic SMS could not be sent, an SMS that failed, or a bounced email. It never means skip the lead. You still reach out, you just know which channel is most likely to land. For the messages behind each stage, see the <b>Communications</b> tab.</p>'+
@@ -390,7 +379,6 @@ function pipeMainRow(s, num){
     '<div class="pfcard">'+
       (emoji?'<span class="pf-emoji">'+esc(emoji)+'</span>':'')+
       '<span class="pf-name">'+esc(cleanStage(s.name))+'</span>'+
-      '<span class="pf-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span>'+
       '<span class="pf-count">'+n+'</span><span class="pf-people">'+(n===1?"lead":"leads")+'</span>'+
       '<span class="pf-go">&rsaquo;</span>'+
     '</div>';
@@ -407,7 +395,6 @@ function pipeSubRow(s){
     '<span class="pfsub-when">'+esc(laneWhen(s))+'</span>'+
     (emoji?'<span class="pf-emoji sm">'+esc(emoji)+'</span>':'')+
     '<span class="pf-name">'+esc(cleanStage(s.name))+'</span>'+
-    '<span class="pf-tag '+(s.auto?"auto":"manual")+'">'+(s.auto?"Automatic":"By hand")+'</span>'+
     '<span class="pf-count">'+n+'</span><span class="pf-people">'+(n===1?"lead":"leads")+'</span>'+
     '<span class="pf-go">&rsaquo;</span>';
   row.addEventListener("click",()=>openStageSheet(s));
@@ -447,22 +434,19 @@ function openStageSheet(s){
   const list=stageLeads(s.id);
   const d=stageDetail(s);
   const emoji=stageEmoji(s.name);
-  const tagCls=s.auto?"auto":"manual";
-  const tagTxt=s.auto?"Automatic, the CRM moves people here":"By hand, you move people here";
-  const isFup=/\(fup\)/i.test(s.name)||/reminder/i.test(s.name);
-  const fup=isFup?'<div class="sd-fup"><b>This is a reminder stage.</b> The moment a lead lands here, the reminder emails and texts start, so only move someone in when that is what you want.</div>':"";
   const secs=[
     ["What this stage is", d.what],
-    ["How you use it", d.use],
-    ["How the system works with it", d.system],
+    ["How they get here", d.how],
+    ["What you do", d.you],
     ["Where they go next", d.next],
-  ].map(x=>'<div class="sd-sec"><div class="sd-h">'+x[0]+'</div><p>'+esc(x[1])+'</p></div>').join("");
+  ].map(x=>'<div class="sd-sec"><div class="sd-h">'+x[0]+'</div>'+(Array.isArray(x[1])
+      ? '<div class="sd-map">'+x[1].map(r=>'<div class="sd-mrow"><span class="sd-btn">'+esc(r[0])+'</span><span class="sd-arr">&rarr;</span><span class="sd-dest">'+esc(r[1])+'</span></div>').join("")+'</div>'
+      : '<p>'+esc(x[1])+'</p>')+'</div>').join("");
   sheet.innerHTML=
-    '<div class="sh"><div><h2>'+(emoji?esc(emoji)+" ":"")+esc(cleanStage(s.name))+'</h2>'+
-      '<div class="role"><span class="sd-tag '+tagCls+'">'+esc(tagTxt)+'</span></div></div>'+
+    '<div class="sh"><div><h2>'+(emoji?esc(emoji)+" ":"")+esc(cleanStage(s.name))+'</h2></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body stagesheet">'+
-      secs+fup+
+      secs+
       '<div class="dohead">Who is here now <span class="cnt">'+list.length+'</span></div>'+
       '<div id="stagerows"></div>'+
     '</div>';
@@ -495,11 +479,10 @@ function actionPlan(l){
     won:{label:"Won the client", tag:"won", tone:"green", icon:"🏆", what:"They signed. Moves them to Client Won."},
     baking:{label:"Nurture for later", tag:"baking", tone:"gray", icon:"🌱", what:"Interested but not ready yet. Moves them to Baking with no reminders."},
     nq:{label:"Not a fit", tag:"not-qualified", tone:"dark", icon:"⛔", what:"Moves them to Not Qualified and stops all messages."},
-    emergency:{label:"Emergency, move the call", tag:"emergency-intro", tone:"red", icon:"🚨", what:"Only if you truly cannot make the call. Sends an apology and asks them to pick a new time."},
   };
   if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq,B.won]};
   if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.noBookReview,B.baking,B.nq,B.won]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq,B.won], before:[B.emergency]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq,B.won]};
   return null; // Client Won, Not Qualified, Never Rescheduled are end stages
 }
 
@@ -802,10 +785,9 @@ function openSheet(l){
     '<div class="body">'+
       (l.status==="noshow"?'<div class="nshead">In the rebooking lane. Give them an easy way back in.</div>':"")+
       (l.status==="cancelled"?'<div class="nshead cancel">Cancelled their call. Still in the system, reach out and give them an easy way to rebook.</div>':"")+
-      (l.status==="rescheduling"?'<div class="nshead resched">We are getting this person to book a new time. Reach out on every channel and send the booking link.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
-      (l.status==="survey"?'<div class="nshead book">Qualified through the form but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
+      (l.status==="survey"?'<div class="nshead book">Submitted the survey and qualified, but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
@@ -818,9 +800,7 @@ function openSheet(l){
       actionButtons(l)+
       (l.status==="bookinginterview"||l.status==="bookingreview"||isRef ? "" : rebookRow(l))+
       (showSent ? sentBlock(l) : "")+
-      (l.status==="rescheduling"
-        ? (rescheduleBlock(l)+notesBlock(l))
-        : l.status==="bookinginterview"
+      (l.status==="bookinginterview"
         ? (interviewBlock(l)+notesBlock(l))
         : l.status==="bookingreview"
         ? (reviewBlock(l)+notesBlock(l))
@@ -828,7 +808,7 @@ function openSheet(l){
         ? (referenceBlock(l)+notesBlock(l))
         : ('<div class="dohead">'+doHead+'</div>'+
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
-           channelBlocks(l)+notesBlock(l)+rescheduleBlock(l)))+
+           channelBlocks(l)+notesBlock(l)))+
       prepBlock(l)+
     '</div>';
   el("scrim").classList.add("open");

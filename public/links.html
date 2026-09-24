@@ -11,13 +11,13 @@
 <style>
   :root{
     --bg:#eef1f6; --card:#ffffff; --card-2:#fafbfd;
-    --ink:#0f1826; --ink-2:#46526a; --muted:#7c8699;
+    --ink:#0f1826; --ink-2:#3a4559; --muted:#5b6679;
     --border:#e2e7ef; --line:#c7d0de;
     --blue:#2563eb; --blue-ink:#1e40af; --blue-soft:#eaf0ff;
-    --amber:#d97706; --amber-ink:#92400e; --amber-soft:#fdf2e3;
-    --green:#16a34a; --green-ink:#166534; --green-soft:#eaf7ee;
+    --amber:#b45309; --amber-ink:#92400e; --amber-soft:#fdf2e3;
+    --green:#15803d; --green-ink:#166534; --green-soft:#eaf7ee;
     --violet:#7c3aed; --violet-ink:#5b21b6; --violet-soft:#f3efff;
-    --teal:#0d9488; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
+    --teal:#0f766e; --teal-ink:#0f766e; --teal-soft:#e9fbf6;
     --slate:#64748b; --slate-ink:#46526a; --slate-soft:#eef2f8;
     --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.14);
     --radius:14px;
@@ -26,7 +26,7 @@
   *{box-sizing:border-box}
   body{margin:0;background:transparent;color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:none;margin:0 auto;padding:6px 0 48px}
-  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 10px}
+  .eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-ink);margin:0 0 10px}
   h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em}
   .lede{font-size:16.5px;color:var(--ink-2);margin:0 0 8px;max-width:70ch}
 
@@ -49,6 +49,9 @@
   .callout b{font-weight:700}
   .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
   @media (max-width:560px){ .grid{grid-template-columns:1fr} }
+  .eyebrow{font-size:14px;letter-spacing:0;text-transform:none}
+  .lk-note{font-size:13.5px;color:var(--ink-2)}
+  .foot{font-size:13.5px;color:var(--ink-2)}
 </style>
 </head>
 <body>

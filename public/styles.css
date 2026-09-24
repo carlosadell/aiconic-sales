@@ -1,6 +1,6 @@
 :root{
   --bg:#eef1f6; --card:#ffffff;
-  --ink:#0f1826; --ink-2:#46526a; --muted:#7c8699;
+  --ink:#0f1826; --ink-2:#3a4559; --muted:#5b6679;
   --border:#e2e7ef; --line:#c7d0de;
   --blue:#2563eb; --blue-ink:#1e40af; --blue-soft:#eaf0ff;
   --amber:#d97706; --amber-ink:#92400e; --amber-soft:#fdf2e3;
@@ -323,3 +323,38 @@ a.linkrow-lbl:hover{text-decoration:underline}
   .actrow{grid-template-columns:1fr;gap:6px}
   .actpanel{padding:15px 14px}
 }
+.sd-map{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+.sd-mrow{display:grid;grid-template-columns:230px 20px 1fr;align-items:center;font-size:14px}
+.sd-btn{font-weight:700;color:var(--ink)}
+.sd-arr{color:var(--muted)}
+.sd-dest{color:var(--ink-2)}
+@media (max-width:720px){.sd-mrow{grid-template-columns:1fr;gap:1px}.sd-arr{display:none}.sd-dest::before{content:"Goes to ";color:var(--muted)}}
+
+/* ---- Readable titles everywhere (Sep 2026). No small faded caps for headings. ---- */
+.eyebrow{font-size:12.5px;color:var(--blue-ink)}
+.sd-sec .sd-h{font-size:15px;font-weight:800;letter-spacing:-.005em;text-transform:none;color:var(--ink);margin:0 0 6px}
+.sd-sec p{color:var(--ink-2);font-size:14.5px;line-height:1.6}
+.act-h{font-size:17px;letter-spacing:-.01em;text-transform:none;color:var(--ink);margin:0 0 8px}
+.act-h.sub{color:var(--ink)}
+.dayhead-d{font-size:16px;letter-spacing:-.01em;text-transform:none}
+.pfclosed-h,.curstage .cs-l{font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.verdict .why{font-size:13.5px;letter-spacing:0;text-transform:none;opacity:1}
+.kv .k{font-weight:600}
+.hint{font-size:12.5px}
+.act-foot{font-size:13px}
+.ctype,.sent-h .ch,.appt .ch,.tagstatus{font-size:12px}
+.badge,.channel .tag,.btn.tiny{font-size:12px}
+.btn.solid,.calllog,.channel .tag.sms{background:#15803d;border-color:#15803d}
+.channel .tag.also{background:#b45309}
+.row .go,.pf-go,.row .co .mdot{color:var(--muted)}
+.ctype,.sent-h .ch,.appt .ch,.tagstatus{font-size:12.5px;letter-spacing:0;text-transform:none}
+.eyebrow{font-size:14px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--blue-ink)}
+.kv .k{color:var(--ink-2);font-weight:600;font-size:14px}
+.pf-people{font-size:13.5px;color:var(--ink-2);font-weight:600}
+.dayhead-c{font-size:13.5px;color:var(--ink-2);font-weight:600}
+.act-foot{font-size:14px;color:var(--ink-2)}
+.linkrow-lbl{font-size:14px;letter-spacing:0;text-transform:none}
+.sent-h .when{font-size:13px;color:var(--ink-2)}
+.hint{font-size:13.5px;color:var(--ink-2)}
+.foot{font-size:13.5px;color:var(--ink-2)}
+.pf-tag,.pfsub-when,.sd-tag,.legchip .lc-tag,.stagechip .sc-l,.pfclosed-h{text-transform:none;letter-spacing:0;font-size:12.5px}
