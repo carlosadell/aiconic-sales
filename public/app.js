@@ -179,77 +179,56 @@ function stageDetail(s){
   const t = String(s.name||"").toLowerCase();
   if(st==="survey") return {
     what:"People who submitted the survey and qualified, but have not booked their intro call yet.",
-    how:"They land here on their own when they submit the survey and qualify.",
-    you:"Reach out and send them the intro booking link. The booking links are in the Links tab.",
-    next:"When they book their intro call, they move to Intro Booked on their own.",
+    how:"They land here on their own when they submit the survey on the funnel landing page and qualify.",
+    you:"Reach out personally, send them the intro booking link, and find out why they did not book.",
   };
   if(st==="booked"){
-    if(/interview/.test(t)) return {
-      what:"The lead has an interview booked. The call shows in the Daily Outreach tab.",
-      how:"They land here on their own when they book the interview. The CRM sends the confirmation and the reminders before the call.",
-      you:"Reach out so they show up. During the interview, book their review call there and then. After the call, open their card and tap the button that matches what happened.",
-      next:[["Booked the review on the call","Review Booked, on its own. Do nothing."],["No show","Sending Interview Reminders"],["Qualified, review not booked","Sending Review Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
-    };
-    if(/review/.test(t)) return {
-      what:"The lead has a review call booked. The call shows in the Daily Outreach tab.",
-      how:"They land here on their own when they book the review. The CRM sends the confirmation and the reminders before the call.",
-      you:"Reach out so they show up. After the call, open their card and tap the button that matches what happened.",
-      next:[["No show","Sending Review Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
-    };
+    const call = /interview/.test(t) ? "interview" : /review/.test(t) ? "review call" : "intro call";
     return {
-      what:"The lead has an intro call booked. The call shows in the Daily Outreach tab.",
-      how:"They land here on their own when they book the intro. The CRM sends the confirmation and the reminders before the call.",
-      you:"Reach out so they show up. On the call, if they qualify, book their interview there and then. After the call, open their card and tap the button that matches what happened.",
-      next:[["Booked the interview on the call","Interview Booked, on its own. Do nothing."],["No show","Sending Intro Reminders"],["Qualified, interview not booked","Sending Interview Reminders"],["Nurture for later","Baking/Nurturing"],["Not a fit","Not Qualified"],["Won the client","Client Won"]],
+      what:"The lead has their "+call+" booked. The call shows in the Daily Outreach tab.",
+      how:"They land here on their own when they book the "+call+".",
+      you:"Reach out before the call so they show up. After the call, tap the button on their card that matches what happened.",
     };
   }
   if(st==="noshow") return {
-    what:"People who missed or cancelled their intro call. The CRM is sending them reminder emails and texts asking them to book a new intro.",
+    what:"People who missed or cancelled their intro call. The CRM is sending them reminders to book a new one.",
     how:"They land here when a salesperson taps No show on the intro card, or on their own when they cancel the intro.",
-    you:"Nothing to tap. You can also reach out yourself and send them the intro booking link.",
-    next:"When they book a new intro, they move to Intro Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
+    you:"Reach out to them personally if you have not yet, so they end up booking the intro call.",
   };
   if(st==="bookinginterview") return {
-    what:"People who need to book their interview. The CRM is sending them reminder emails and texts asking them to book it.",
-    how:"They land here when a salesperson taps Qualified, interview not booked on the intro card, or No show on the interview card, or on their own when they cancel the interview.",
-    you:"Nothing to tap. You can also reach out yourself and send them the interview booking link.",
-    next:"When they book the interview, they move to Interview Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
+    what:"People who need to book their interview. The CRM is sending them reminders to book it.",
+    how:"They land here when a salesperson taps Qualified, interview not booked or No show, or on their own when they cancel the interview.",
+    you:"Reach out to them personally if you have not yet, so they end up booking the interview.",
   };
   if(st==="bookingreview") return {
-    what:"People who need to book their review call. The CRM is sending them reminder emails and texts asking them to book it.",
-    how:"They land here when a salesperson taps Qualified, review not booked on the interview card, or No show on the review card, or on their own when they cancel the review.",
-    you:"Nothing to tap. You can also reach out yourself and help them book it.",
-    next:"When they book the review, they move to Review Booked on their own. If the reminders run out and they never book, they move to Never Rescheduled on their own.",
+    what:"People who need to book their review call. The CRM is sending them reminders to book it.",
+    how:"They land here when a salesperson taps Qualified, review not booked or No show, or on their own when they cancel the review.",
+    you:"Reach out to them personally if you have not yet, so they end up booking the review call.",
   };
   if(st==="baking") return {
-    what:"People who are interested but not ready yet.",
+    what:"People who are interested but need more information or more nurturing, and are not ready yet.",
     how:"They land here when a salesperson taps Nurture for later on a call card.",
-    you:"Nothing to tap. Open a lead to review their history and previous call notes.",
-    next:"They stay here until they are ready to take the next step.",
+    you:"Follow up with them, or make sure the right person on the team does. Some of them need Carlos to give feedback or reach out. Every lead here needs a clear next step and someone who owns it.",
   };
   if(st==="clientwon") return {
     what:"People who became clients.",
     how:"They land here when a salesperson taps Won the client on a call card.",
-    you:"Nothing to do. Open a lead to look back at the account and the notes from previous calls.",
-    next:"This is the end of the sales pipeline. They are a client now.",
+    you:"Nothing.",
   };
   if(st==="notqualified") return {
     what:"People who are not a fit. All messages to them stop.",
     how:"They land here when a salesperson taps Not a fit on a call card.",
-    you:"Nothing to do. Open a lead to review their previous call notes.",
-    next:"This is the end of the line.",
+    you:"Nothing.",
   };
   if(st==="neverrescheduled") return {
-    what:"People who went through the reminders and never booked.",
+    what:"People who went through all the reminders and never booked again.",
     how:"They land here on their own when the reminders run out without a booking.",
-    you:"Nothing to do. Open a lead to review their history.",
-    next:"This is the end of the line.",
+    you:"Reach out later on to see if they want to book a call again.",
   };
   return {
     what:"A stage in the pipeline.",
     how:"The CRM moves people here.",
     you:"Open a lead to see their details and history.",
-    next:"They move on when the next step happens.",
   };
 }
 
@@ -436,9 +415,8 @@ function openStageSheet(s){
   const emoji=stageEmoji(s.name);
   const secs=[
     ["What this stage is", d.what],
-    ["How they get here", d.how],
-    ["What you do", d.you],
-    ["Where they go next", d.next],
+    ["How leads get here", d.how],
+    ["What you should do", d.you],
   ].map(x=>'<div class="sd-sec"><div class="sd-h">'+x[0]+'</div>'+(Array.isArray(x[1])
       ? '<div class="sd-map">'+x[1].map(r=>'<div class="sd-mrow"><span class="sd-btn">'+esc(r[0])+'</span><span class="sd-arr">&rarr;</span><span class="sd-dest">'+esc(r[1])+'</span></div>').join("")+'</div>'
       : '<p>'+esc(x[1])+'</p>')+'</div>').join("");
