@@ -553,11 +553,11 @@ function channelBlocks(l){
         '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
         '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
     }else if(ch==="email"){
-      out.push('<div class="channel"><div class="top"><span class="tag mail">Email</span><b>Personal email from our business inbox</b></div>'+
+      out.push('<div class="channel"><div class="top"><span class="tag mail">Email</span><b>Personal email through the CRM</b></div>'+
         '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
         '<textarea class="box editable msg-body" rows="7">'+esc(m.email.body)+'</textarea>'+
-        '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div>'+
-        '<div class="hint">Edit anything you like, then copy. Send from our business inbox, not the CRM email.</div></div>');
+        ''+emailSendRow(l)+''+
+        '<div class="hint">Edit anything you like, then send. It goes out under your name through the CRM, and their reply lands in the CRM conversation.</div></div>');
     }
   });
   return out.join("");
@@ -614,7 +614,7 @@ function rescheduleBlock(l){
   blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">Email</span><b>Email them</b></div>'+
     '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
     '<textarea class="box editable msg-body" rows="9">'+esc(m.email.body)+'</textarea>'+
-    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+    ''+emailSendRow(l)+'</div>');
   if(l.status==="rescheduling"){
     return '<div class="dohead">Get them to book a new time</div>'+
       '<div class="rwarn resched"><b>They are waiting on a new time.</b> Follow up on every channel you can, SMS, LinkedIn, and email, and send them the booking link. The moment they book, move them back to their call stage. If they go quiet, move them to Not Qualified.</div>'+
@@ -656,7 +656,7 @@ function interviewBlock(l){
   blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">Email</span><b>Email them</b></div>'+
     '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
     '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
-    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+    ''+emailSendRow(l)+'</div>');
   return '<div class="dohead">Get them to book the interview</div>'+blocks.join("");
 }
 
@@ -691,7 +691,7 @@ function reviewBlock(l){
   blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">Email</span><b>Email them</b></div>'+
     '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
     '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
-    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>');
+    ''+emailSendRow(l)+'</div>');
   return '<div class="dohead">Get them to book the review call</div>'+blocks.join("");
 }
 
@@ -703,6 +703,13 @@ function linkCard(cls, lbl, note, url){
       '<a class="linkrow-lbl" href="'+esc(url)+'" target="_blank" rel="noopener">'+lbl+' &rsaquo;</a>'+
       '<button class="btn tiny" data-act="copy" data-text="'+esc(url)+'">Copy link</button></div>'+
     '<div class="hint">'+note+'</div></div>';
+}
+// Send button under every email draft. The email goes out through the CRM,
+// under the rep's own name on our sending domain.
+function emailSendRow(l){
+  if(!l.email) return '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div><div class="hint">No email on file for this lead.</div>';
+  return '<div class="btnrow"><button class="btn solid" data-act="email" data-id="'+esc(l.contactId)+'" data-rep="'+esc(l.repName||"")+'">Send email via the CRM</button>'+
+    '<button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div>';
 }
 function rebookRow(l){
   const out = [];
@@ -870,6 +877,20 @@ el("sheet").addEventListener("click", async (e)=>{
     b.textContent="Sending..."; b.disabled=true;
     try{
       const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
+      const d=await r.json();
+      if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
+      else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
+    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
+    return;
+  }
+  if(act==="email"){
+    const ch=b.closest(".channel");
+    const subj=ch?ch.querySelector(".msg-subject"):null, ta=ch?ch.querySelector(".msg-body"):null;
+    const subject=subj?subj.value.trim():"", text=ta?ta.value:"";
+    if(!subject||!text.trim()){ b.textContent="Add a subject and message first"; setTimeout(()=>{b.textContent="Send email via the CRM";},1800); return; }
+    b.textContent="Sending..."; b.disabled=true;
+    try{
+      const r=await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,subject,body:text,repName:b.dataset.rep})});
       const d=await r.json();
       if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
