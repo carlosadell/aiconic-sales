@@ -47,6 +47,7 @@
     <button type="button" class="toptab" data-view="pipeline">Pipeline</button>
     <button type="button" class="toptab" data-view="links">Links</button>
     <button type="button" class="toptab on" data-view="calls">Daily Outreach</button>
+    <button type="button" class="toptab" data-view="msg">Message a contact</button>
   </nav>
 
   <div id="view-comms" hidden>
@@ -68,6 +69,14 @@
     <div id="pipedocs"></div>
     <div id="pipetools"></div>
     <div id="board"></div>
+  </div>
+
+  <div id="view-msg" hidden>
+    <h2 class="calls-h">Message a contact</h2>
+    <p class="viewlede">Find anyone in the CRM, see the recent texts and emails with them, and text or email them from here. Everything you send goes out under your name and is saved as a note on their CRM card.</p>
+    <div class="mc-search"><input id="mc-q" type="search" placeholder="Search by name, email or phone" autocomplete="off"></div>
+    <div id="mc-results" class="mc-results"></div>
+    <div id="mc-contact" class="mc-contact" hidden></div>
   </div>
 
   <div id="view-calls">
@@ -96,7 +105,7 @@
 <script>
 (function(){
   var tabs=document.querySelectorAll(".toptab");
-  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls"),onb:document.getElementById("view-onb"),links:document.getElementById("view-links"),pipeline:document.getElementById("view-pipeline")};
+  var views={comms:document.getElementById("view-comms"),calls:document.getElementById("view-calls"),onb:document.getElementById("view-onb"),links:document.getElementById("view-links"),pipeline:document.getElementById("view-pipeline"),msg:document.getElementById("view-msg")};
   var frames={comms:document.getElementById("commsframe"),onb:document.getElementById("onbframe"),links:document.getElementById("linksframe")};
   function sizeFrame(f){
     if(!f) return;
@@ -122,5 +131,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/auth.js"></script>
 <script src="/app.js"></script>
+<script src="/msg.js"></script>
 </body>
 </html>
