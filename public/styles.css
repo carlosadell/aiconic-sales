@@ -389,3 +389,27 @@ a.linkrow-lbl:hover{text-decoration:underline}
 .btn.send.arm{outline:3px solid #f59e0b;outline-offset:2px}
 .btn.send.done{background:#15803d;border-color:#15803d}
 .chan .subjrow{display:flex;align-items:center;gap:10px}.subj-lbl{font-size:13.5px;font-weight:700;color:var(--ink)}
+/* Sign in */
+body.locked .wrap{display:none}
+.authgate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--bg)}
+.authgate[hidden]{display:none}
+.au-card{width:100%;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px 26px;box-shadow:0 14px 34px -18px rgba(16,24,40,.35)}
+.au-h{font-size:26px;font-weight:800;letter-spacing:-.01em;margin:6px 0 6px;color:var(--ink)}
+.au-sub{font-size:14px;color:var(--ink-2);margin:0 0 18px;line-height:1.5}
+.au-row{display:block;margin-bottom:14px}
+.au-row[hidden]{display:none}
+.au-row span{display:block;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.au-row input{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.au-row input:focus{outline:3px solid var(--blue-soft);border-color:var(--blue)}
+.au-go{width:100%;font:inherit;font-size:15px;font-weight:800;color:#fff;background:var(--blue);border:none;border-radius:999px;padding:12px 18px;cursor:pointer;margin-top:4px}
+.au-go:disabled{opacity:.6;cursor:default}
+.au-msg{font-size:14px;line-height:1.5;margin-top:12px}
+.au-msg.err{color:var(--red-ink)}
+.au-msg.ok{color:var(--green-ink)}
+.au-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+.au-link{background:none;border:none;padding:0;font:inherit;font-size:14px;font-weight:700;color:var(--blue-ink);cursor:pointer}
+.au-link[hidden]{display:none}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mebar{font-size:14px;color:var(--ink-2)}
+.mebar b{color:var(--ink)}
+.mebar .au-link{margin-left:10px}

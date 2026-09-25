@@ -1,0 +1,112 @@
+// Sign in for the Sales Toolkit. Only Aiconic emails (@aiconichub.com or
+// @aiconichub.ai) can sign up or sign in. Every call to /api/ carries the
+// signed-in person's token, and the server checks it again.
+(function(){
+  var SUPABASE_URL = "https://unbednxvxdwozjtqzwgq.supabase.co";
+  var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuYmVkbnh2eGR3b3pqdHF6d2dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTg0NzEsImV4cCI6MjEwNTg3NDQ3MX0.OmYSRyx7-2qtwaw4zxygyQDTLZ5DpX1DZbuLrk15wP8";
+  var ALLOWED = ["aiconichub.com","aiconichub.ai"];
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  window.SB = sb;
+  window.ME = null;
+
+  function allowed(email){ var d=String(email||"").trim().toLowerCase().split("@")[1]||""; return ALLOWED.indexOf(d)>-1; }
+  function $(id){ return document.getElementById(id); }
+
+  // Every /api/ call carries the token. A 401 or 403 from the server sends you back to sign in.
+  var rawFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init){
+    var url = typeof input==="string" ? input : (input && input.url) || "";
+    if(url.indexOf("/api/")===0){
+      init = init || {};
+      var s = (await sb.auth.getSession()).data.session;
+      var h = new Headers(init.headers || {});
+      if(s) h.set("Authorization","Bearer "+s.access_token);
+      init.headers = h;
+      var r = await rawFetch(input, init);
+      if(r.status===401){ showLogin("Your session expired. Please sign in again."); }
+      return r;
+    }
+    return rawFetch(input, init);
+  };
+
+  var mode = "signin"; // signin | signup | reset | newpass
+  function setMode(m, msg, isErr){
+    mode = m;
+    $("au-title").textContent = m==="signup" ? "Create your account" : m==="reset" ? "Reset your password" : m==="newpass" ? "Choose a new password" : "Sign in";
+    $("au-email-row").hidden = (m==="newpass");
+    $("au-pass-row").hidden = (m==="reset");
+    $("au-pass-label").textContent = m==="newpass" ? "New password" : "Password";
+    $("au-go").textContent = m==="signup" ? "Create account" : m==="reset" ? "Send reset link" : m==="newpass" ? "Save new password" : "Sign in";
+    $("au-to-signup").hidden = (m!=="signin");
+    $("au-to-reset").hidden = (m!=="signin");
+    $("au-to-signin").hidden = (m==="signin");
+    msgOut(msg||"", isErr);
+  }
+  function msgOut(t, isErr){ var el=$("au-msg"); el.textContent=t; el.className="au-msg"+(t?(isErr?" err":" ok"):""); }
+  function showLogin(msg){
+    document.body.classList.add("locked");
+    $("authgate").hidden = false;
+    if(mode!=="newpass") setMode("signin", msg||"", !!msg);
+  }
+
+  async function enter(){
+    var s = (await sb.auth.getSession()).data.session;
+    if(!s){ showLogin(); return; }
+    if(!allowed(s.user.email)){ await sb.auth.signOut(); showLogin("Use your Aiconic email (@aiconichub.com or @aiconichub.ai)."); return; }
+    try{
+      var r = await rawFetch("/api/send-email",{ headers:{ Authorization:"Bearer "+s.access_token } });
+      var d = await r.json();
+      if(!r.ok){ await sb.auth.signOut(); showLogin(d.error||"You do not have access."); return; }
+      window.ME = d;
+    }catch(_){ window.ME = { name: s.user.email, email: s.user.email, domain: "", from: "" }; }
+    $("authgate").hidden = true;
+    document.body.classList.remove("locked");
+    $("mebar").innerHTML = 'Signed in as <b>'+(window.ME.name||s.user.email).replace(/</g,"&lt;")+'</b> <button type="button" id="signout" class="au-link">Sign out</button>';
+    $("signout").addEventListener("click", async function(){ await sb.auth.signOut(); location.reload(); });
+    if(window.startApp) window.startApp();
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    $("au-form").addEventListener("submit", async function(e){
+      e.preventDefault();
+      var email = $("au-email").value.trim().toLowerCase();
+      var pass = $("au-pass").value;
+      if(mode!=="newpass" && !allowed(email)){ msgOut("Use your Aiconic email (@aiconichub.com or @aiconichub.ai).", true); return; }
+      var btn=$("au-go"); btn.disabled=true;
+      try{
+        if(mode==="signin"){
+          var r1 = await sb.auth.signInWithPassword({ email: email, password: pass });
+          if(r1.error){ msgOut(/confirm/i.test(r1.error.message) ? "Confirm your email first. Check your inbox for the link." : "Wrong email or password.", true); }
+          else { await enter(); }
+        }else if(mode==="signup"){
+          if(pass.length<8){ msgOut("Use at least 8 characters for your password.", true); }
+          else{
+            var r2 = await sb.auth.signUp({ email: email, password: pass, options:{ emailRedirectTo: location.origin } });
+            if(r2.error) msgOut(r2.error.message, true);
+            else setMode("signin", "Check your inbox and click the link to confirm your email. Then sign in here.", false);
+          }
+        }else if(mode==="reset"){
+          var r3 = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+          if(r3.error) msgOut(r3.error.message, true);
+          else setMode("signin", "If that email has an account, a reset link is on its way.", false);
+        }else if(mode==="newpass"){
+          if(pass.length<8){ msgOut("Use at least 8 characters for your password.", true); }
+          else{
+            var r4 = await sb.auth.updateUser({ password: pass });
+            if(r4.error) msgOut(r4.error.message, true);
+            else { mode="signin"; await enter(); }
+          }
+        }
+      }finally{ btn.disabled=false; }
+    });
+    $("au-to-signup").addEventListener("click", function(){ setMode("signup"); });
+    $("au-to-reset").addEventListener("click", function(){ setMode("reset"); });
+    $("au-to-signin").addEventListener("click", function(){ setMode("signin"); });
+    sb.auth.onAuthStateChange(function(ev){
+      if(ev==="PASSWORD_RECOVERY"){ document.body.classList.add("locked"); $("authgate").hidden=false; setMode("newpass"); }
+    });
+    setMode("signin");
+    // Give the link in a confirm or reset email a moment to sign the person in.
+    setTimeout(function(){ if(mode!=="newpass") enter(); }, 60);
+  });
+})();

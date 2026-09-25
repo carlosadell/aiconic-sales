@@ -10,6 +10,7 @@
 // Rescheduled) are built lightweight from the opportunity itself, so the page
 // stays fast even as those stages fill up.
 
+const { requireUser } = require("../lib/auth");
 const {
   searchOpportunities,
   getPipeline,
@@ -56,6 +57,8 @@ function sourceOf(attributions, contact, tags) {
 }
 
 module.exports = async (req, res) => {
+  const who = await requireUser(req, res);
+  if (!who) return;
   if (!process.env.GHL_TOKEN || !process.env.GHL_LOCATION_ID) {
     res.status(500).json({ error: "Server is missing GHL_TOKEN or GHL_LOCATION_ID." });
     return;

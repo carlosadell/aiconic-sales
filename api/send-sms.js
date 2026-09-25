@@ -1,10 +1,14 @@
 // POST /api/send-sms   body: { contactId, message }
 // Sends an SMS to the lead through GoHighLevel. The token stays on the server.
 
+const { requireUser } = require("../lib/auth");
+const { addNote } = require("../lib/ghl");
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";
 
 module.exports = async (req, res) => {
+  const who = await requireUser(req, res);
+  if (!who) return;
   if (req.method !== "POST") {
     res.status(405).json({ error: "Use POST." });
     return;
@@ -45,6 +49,7 @@ module.exports = async (req, res) => {
       res.status(502).json({ error: data.message || `GHL ${r.status}` });
       return;
     }
+    try { await addNote(contactId, `Text sent from the sales toolkit by ${who.name} (${who.email}):\n\n${message}`, who.ghlUserId); } catch (_) {}
     res.status(200).json({ ok: true, messageId: data.messageId || data.id || null });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });

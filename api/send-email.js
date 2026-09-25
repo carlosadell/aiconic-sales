@@ -1,9 +1,12 @@
-// POST /api/send-email   body: { contactId, subject, body, repName }
+// POST /api/send-email   body: { contactId, subject, body }
+// GET  /api/send-email   -> { domain, name, email, from } for the signed-in person
 // Sends an email to the lead through GoHighLevel, from the rep's own name on
 // our GHL sending domain (for example "Maria Cruz <maria@DOMAIN>"). The email
 // and any reply land in the contact's conversation in the CRM. The token stays
 // on the server.
 
+const { requireUser } = require("../lib/auth");
+const { addNote } = require("../lib/ghl");
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";
 // The sending domain is read live from the GHL custom value "Sending Domain
@@ -43,6 +46,8 @@ function localPart(name) {
 }
 
 module.exports = async (req, res) => {
+  const who = await requireUser(req, res);
+  if (!who) return;
   if (!process.env.GHL_TOKEN) {
     res.status(500).json({ error: "Server is missing GHL_TOKEN." });
     return;
@@ -55,7 +60,8 @@ module.exports = async (req, res) => {
   };
   // GET returns the sending domain, so the lead card can show the real From address.
   if (req.method === "GET") {
-    res.status(200).json({ domain: await sendingDomain(headers) });
+    const d = await sendingDomain(headers);
+    res.status(200).json({ domain: d, name: who.name, email: who.email, from: `${localPart(who.name)}@${d}` });
     return;
   }
   if (req.method !== "POST") {
@@ -66,15 +72,15 @@ module.exports = async (req, res) => {
   if (!body || typeof body === "string") {
     try { body = JSON.parse(body || "{}"); } catch (_) { body = {}; }
   }
-  const { contactId, subject, repName } = body;
+  const { contactId, subject } = body;
   const text = body.body;
   if (!contactId || !subject || !text) {
     res.status(400).json({ error: "contactId, subject and body are required." });
     return;
   }
-  const rep = repName && !/unassigned/i.test(repName) ? String(repName).trim() : "Aiconic";
+  // The sender is always the person signed in, so nobody can send as someone else.
   const domain = await sendingDomain(headers);
-  const emailFrom = `${rep} <${localPart(rep === "Aiconic" ? "" : rep)}@${domain}>`;
+  const emailFrom = `${who.name} <${localPart(who.name)}@${domain}>`;
 
   try {
     const r = await fetch(`${BASE}/conversations/messages`, {
@@ -87,6 +93,7 @@ module.exports = async (req, res) => {
       res.status(502).json({ error: data.message || `GHL ${r.status}` });
       return;
     }
+    try { await addNote(contactId, `Email sent from the sales toolkit by ${who.name} (${who.email}).\nSubject: ${subject}\n\n${text}`, who.ghlUserId); } catch (_) {}
     res.status(200).json({ ok: true, from: emailFrom, messageId: data.messageId || data.id || null });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });

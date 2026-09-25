@@ -4,9 +4,12 @@
 // sequence. This is the only way the sales toolkit moves a lead, so a slip cannot
 // fire the wrong sequence. The browser never sees the GHL token.
 
-const { addTag } = require("../lib/ghl");
+const { requireUser } = require("../lib/auth");
+const { addTag, addNote } = require("../lib/ghl");
 
 module.exports = async (req, res) => {
+  const who = await requireUser(req, res);
+  if (!who) return;
   if (req.method !== "POST") {
     res.status(405).json({ ok: false, error: "POST only" });
     return;
@@ -27,6 +30,7 @@ module.exports = async (req, res) => {
       return;
     }
     await addTag(contactId, tag);
+    try { await addNote(contactId, `Tagged "${tag}" from the sales toolkit by ${who.name} (${who.email}).`, who.ghlUserId); } catch (_) {}
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(502).json({ ok: false, error: String(e.message || e) });

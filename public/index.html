@@ -21,9 +21,25 @@
   #commsframe,#onbframe,#linksframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
 </style>
 </head>
-<body>
+<body class="locked">
+<div id="authgate" class="authgate" hidden>
+  <form id="au-form" class="au-card" autocomplete="on">
+    <div class="eyebrow">Sales team &middot; Aiconic</div>
+    <h1 class="au-h" id="au-title">Sign in</h1>
+    <p class="au-sub">Only Aiconic team emails can sign in: @aiconichub.com or @aiconichub.ai.</p>
+    <label class="au-row" id="au-email-row"><span>Work email</span><input id="au-email" type="email" autocomplete="email" placeholder="you@aiconichub.com" required></label>
+    <label class="au-row" id="au-pass-row"><span id="au-pass-label">Password</span><input id="au-pass" type="password" autocomplete="current-password" minlength="8"></label>
+    <button type="submit" id="au-go" class="au-go">Sign in</button>
+    <div id="au-msg" class="au-msg"></div>
+    <div class="au-links">
+      <button type="button" id="au-to-signup" class="au-link">New here? Create an account</button>
+      <button type="button" id="au-to-reset" class="au-link">Forgot your password?</button>
+      <button type="button" id="au-to-signin" class="au-link" hidden>Back to sign in</button>
+    </div>
+  </form>
+</div>
 <div class="wrap">
-  <div class="eyebrow">Sales team &middot; Aiconic</div>
+  <div class="topline"><div class="eyebrow">Sales team &middot; Aiconic</div><div id="mebar" class="mebar"></div></div>
   <h1 class="pagetitle">Sales Toolkit</h1>
   <nav class="toptabs">
     <button type="button" class="toptab" data-view="onb">Onboarding</button>
@@ -103,6 +119,8 @@
   });
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/auth.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

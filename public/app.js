@@ -542,7 +542,8 @@ function sentBlock(l){
 // message goes, who it comes from, and what happens when you press the button.
 let SEND_DOMAIN = "";
 function fromAddr(l){
-  const rep = (l.repName && !/unassigned/i.test(l.repName)) ? l.repName : "Aiconic";
+  if(window.ME && window.ME.from) return esc(window.ME.from);
+  const rep = (window.ME && window.ME.name) || "Aiconic";
   const first = rep==="Aiconic" ? "team" : String(rep).trim().split(/\s+/)[0].normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
   return first+'@<span class="from-domain">'+esc(SEND_DOMAIN||"our sending domain")+'</span>';
 }
@@ -791,8 +792,8 @@ function openSheet(l){
   el("scrim").classList.add("open");
   // Show the real sending address on the email card.
   const fillDomain=()=>sheet.querySelectorAll(".from-domain").forEach(x=>{x.textContent=SEND_DOMAIN;});
+  if(!SEND_DOMAIN && window.ME && window.ME.domain) SEND_DOMAIN=window.ME.domain;
   if(SEND_DOMAIN) fillDomain();
-  else fetch("/api/send-email").then(r=>r.json()).then(d=>{ if(d&&d.domain){ SEND_DOMAIN=d.domain; fillDomain(); } }).catch(()=>{});
   // Size the editable boxes after the modal is visible, otherwise the text is
   // measured while hidden (height 0) and the box shows only a clipped line or two.
   const autosize = ()=>{
@@ -906,4 +907,5 @@ el("sheet").addEventListener("click", async (e)=>{
 el("scrim").addEventListener("click",e=>{ if(e.target===el("scrim")) closeSheet(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSheet(); });
 el("refresh").addEventListener("click", load);
-load();
+// Starts once the person is signed in (see auth.js).
+window.startApp = function(){ if(window._appStarted) return; window._appStarted = true; load(); };

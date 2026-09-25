@@ -2,11 +2,14 @@
 // Moves a deal to a new stage in GoHighLevel, so a rep never has to open the CRM.
 // The token stays on the server.
 
+const { requireUser } = require("../lib/auth");
 const BASE = "https://services.leadconnectorhq.com";
 const VERSION = "2021-07-28";
 const PIPELINE_ID = process.env.GHL_PIPELINE_ID || "5BuQSSclHrkgv7OW99od";
 
 module.exports = async (req, res) => {
+  const who = await requireUser(req, res);
+  if (!who) return;
   if (req.method !== "POST") {
     res.status(405).json({ error: "Use POST." });
     return;
