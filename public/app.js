@@ -192,32 +192,32 @@ function stageDetail(s){
   }
   if(st==="noshow") return {
     what:"People who missed or cancelled their intro call. The CRM is sending them reminders to book a new one.",
-    how:"They land here when a salesperson taps No show on the intro card, or on their own when they cancel the intro.",
+    how:"They land here when a salesperson taps No Show/Book Later on the intro card, or on their own when they cancel the intro.",
     you:"Reach out to them personally if you have not yet, so they end up booking the intro call.",
   };
   if(st==="bookinginterview") return {
     what:"People who need to book their interview. The CRM is sending them reminders to book it.",
-    how:"They land here when a salesperson taps Qualified, interview not booked or No show, or on their own when they cancel the interview.",
+    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the intro card or No Show/Book Later on the interview card, or on their own when they cancel the interview.",
     you:"Reach out to them personally if you have not yet, so they end up booking the interview.",
   };
   if(st==="bookingreview") return {
     what:"People who need to book their review call. The CRM is sending them reminders to book it.",
-    how:"They land here when a salesperson taps Qualified, review not booked or No show, or on their own when they cancel the review.",
+    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the interview card or No Show/Book Later on the review card, or on their own when they cancel the review.",
     you:"Reach out to them personally if you have not yet, so they end up booking the review call.",
   };
   if(st==="baking") return {
     what:"People who are interested but need more information or more nurturing, and are not ready yet.",
-    how:"They land here when a salesperson taps Nurture for later on a call card.",
+    how:"They land here when a salesperson taps Baking/Nurturing on a call card or on a lead in the Pipeline tab.",
     you:"Follow up with them, or make sure the right person on the team does. Some of them need Carlos to give feedback or reach out. Every lead here needs a clear next step and someone who owns it.",
   };
   if(st==="clientwon") return {
     what:"People who became clients.",
-    how:"They land here when a salesperson taps Won the client on a call card.",
+    how:"They land here when someone taps Client Won on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
   if(st==="notqualified") return {
-    what:"People who are not a fit. All messages to them stop.",
-    how:"They land here when a salesperson taps Not a fit on a call card.",
+    what:"People who do not qualify. All messages to them stop.",
+    how:"They land here when someone taps Not Qualified on a call card, or Not Qualified or Cancel the call on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
   if(st==="neverrescheduled") return {
@@ -268,7 +268,7 @@ function renderDocs(){
 
 // One lead row, used in both views. showRep puts the salesperson in the meta
 // line (the board and the upcoming list mix reps, so you want to see whose it is).
-function rowEl(l, showRep){
+function rowEl(l, showRep, ctx){
   const row=document.createElement("div");
   row.className="row"+(l.flagged?"":" calm");
   const day=dayLabel(l.appointment && l.appointment.at, l.timezone);
@@ -282,7 +282,7 @@ function rowEl(l, showRep){
   row.innerHTML='<span class="dotmark '+dotCls+'"></span>'+
     '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
     badge+'<span class="go">&rsaquo;</span>';
-  row.addEventListener("click",()=>openSheet(l));
+  row.addEventListener("click",()=>openSheet(l, ctx));
   return row;
 }
 
@@ -430,7 +430,7 @@ function openStageSheet(s){
     '</div>';
   const rowsBox=sheet.querySelector("#stagerows");
   if(!list.length){ rowsBox.innerHTML='<div class="stage-empty">Nobody here right now.</div>'; }
-  else{ const rows=document.createElement("div"); rows.className="rows"; list.forEach(l=>rows.appendChild(rowEl(l,true))); rowsBox.appendChild(rows); }
+  else{ const rows=document.createElement("div"); rows.className="rows"; list.forEach(l=>rows.appendChild(rowEl(l,true,"pipeline"))); rowsBox.appendChild(rows); }
   el("scrim").classList.add("open");
 }
 
@@ -442,30 +442,40 @@ function openStageSheet(s){
 // The action buttons that move a lead. Stages move automatically and cannot be
 // moved by hand from the toolkit. The next call is normally booked during the
 // call, and then the lead moves on its own. These buttons are only for when
-// something did not happen: a no show, the next call not booked, not a fit, or
+// something did not happen: a no show, the next call not booked, not qualified, or
 // an emergency. Each button adds one tag, and the tag triggers the matching
 // workflow in the CRM. Each card only shows the buttons for its own call.
-function actionPlan(l){
+function actionPlan(l, ctx){
   const s=l.status, st=l.stage||"";
   const isInterview=/interview/i.test(st), isReview=/review/i.test(st);
+  // Button text matches the stage names in the pipeline.
   const B={
-    noshowIntro:{label:"No show", tag:"noshow-intro", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the intro call."},
-    noBookInterview:{label:"Qualified, interview not booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
-    noshowInterview:{label:"No show", tag:"noshow-interview", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the interview."},
-    noBookReview:{label:"Qualified, review not booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
-    noshowReview:{label:"No show", tag:"noshow-review", tone:"chase", icon:"🔁", what:"They did not turn up. Starts the reminders asking them to rebook the review."},
-    won:{label:"Won the client", tag:"won", tone:"green", icon:"🏆", what:"They signed. Moves them to Client Won."},
-    baking:{label:"Nurture for later", tag:"baking", tone:"gray", icon:"🌱", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
-    nq:{label:"Not a fit", tag:"not-qualified", tone:"dark", icon:"⛔", what:"Moves them to Not Qualified and stops all messages."},
+    noshowIntro:{label:"No Show/Book Later", tag:"noshow-intro", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the intro call at another time. Starts the reminders asking them to rebook the intro call."},
+    noBookInterview:{label:"Qualified Next Call Not Booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
+    noshowInterview:{label:"No Show/Book Later", tag:"noshow-interview", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the interview at another time. Starts the reminders asking them to rebook the interview."},
+    noBookReview:{label:"Qualified Next Call Not Booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
+    noshowReview:{label:"No Show/Book Later", tag:"noshow-review", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the review at another time. Starts the reminders asking them to rebook the review."},
+    baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
+    nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Moves them to Not Qualified and stops all messages."},
+    cancel:{label:"Cancel the call", tag:"not-qualified", tone:"dark", icon:"🚫", what:"The call is off. Moves them to Not Qualified and stops all messages."},
+    won:{label:"Client Won", tag:"won", tone:"green", icon:"🔥", what:"They signed. Moves them to Client Won."},
   };
-  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq,B.won]};
-  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.noBookReview,B.baking,B.nq,B.won]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq,B.won]};
-  return null; // Client Won, Not Qualified, Never Rescheduled are end stages
+  if(ctx==="pipeline"){
+    const list=[];
+    if(s==="booked") list.push(B.cancel);
+    if(s!=="notqualified") list.push(B.nq);
+    if(s!=="baking") list.push(B.baking);
+    if(s!=="clientwon") list.push(B.won);
+    return {title:"Move this lead", auto:"Only for closing out a lead. The day to day call buttons are on the cards in Daily Outreach.", after:list};
+  }
+  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq]};
+  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.noBookReview,B.baking,B.nq]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq]};
+  return null; // other stages: the closing buttons live on the Pipeline tab
 }
 
-function actionButtons(l){
-  const p=actionPlan(l);
+function actionButtons(l, ctx){
+  const p=actionPlan(l, ctx);
   if(!p) return "";
   const row=a=>'<div class="actrow">'+
     '<button type="button" class="pbtn '+a.tone+'" data-act="tag" data-tag="'+esc(a.tag)+'" data-id="'+esc(l.contactId)+'" data-label="'+esc(a.label)+'">'+
@@ -485,7 +495,7 @@ function referenceBlock(l){
     baking: "This lead is being nurtured. Not a client yet, and no automation runs from here. Use this card to look back at their details and previous call notes, and reach out when the timing is right.",
     neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
     clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
-    notqualified: "This lead was taken out of the process as not a fit. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
+    notqualified: "This lead was taken out of the process as not qualified. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
   };
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
 }
@@ -504,7 +514,7 @@ function prepBlock(l){
 
 // Every link a rep might need for this lead, in one place: the lead's own
 // reschedule link, the three booking links, and the call scripts.
-const REVIEW_BOOKING = "https://links.aiconichub.ai/widget/booking/EkNg9CbinOGLYq4LDtfP";
+const REVIEW_BOOKING = "https://app.aiconichub.ai/leads-engine-review";
 function linksBlock(l){
   const L = l.links||{};
   const rows = [];
@@ -757,7 +767,7 @@ async function loadNotes(contactId){
   }
 }
 
-function openSheet(l){
+function openSheet(l, ctx){
   const sheet = el("sheet");
   const flagBox = l.flagged
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
@@ -786,7 +796,7 @@ function openSheet(l){
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
            channelBlocks(l)))+
       linksBlock(l)+
-      actionButtons(l)+
+      actionButtons(l, ctx)+
       notesBlock(l)+
     '</div>';
   el("scrim").classList.add("open");

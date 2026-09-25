@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Links</title>
-<link rel="icon" type="image/webp" href="/silver-dollar-sign-free-png.webp">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -30,49 +32,47 @@
   h1{font-size:clamp(27px,5vw,38px);font-weight:800;line-height:1.13;margin:0 0 14px;letter-spacing:-.02em}
   .lede{font-size:16.5px;color:var(--ink-2);margin:0 0 8px;max-width:70ch}
 
-  h2{font-size:clamp(20px,3.4vw,26px);font-weight:800;letter-spacing:-.01em;color:var(--ink);margin:44px 0 6px;padding-top:22px;border-top:1px solid var(--border)}
-  .h2-sub{font-size:14px;color:var(--ink-2);margin:0 0 16px;max-width:66ch}
-
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:12px}
-  .lk{display:flex;flex-direction:column;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px 17px;box-shadow:var(--shadow);border-left:3px solid var(--edge,var(--blue))}
-  .lk-main{min-width:0}
-  a.lk-label{display:inline-block;font-size:15px;font-weight:800;color:var(--ink);text-decoration:none;letter-spacing:-.01em;border-bottom:1.5px solid color-mix(in srgb,var(--edge,var(--blue)) 32%,transparent)}
-  a.lk-label:hover{border-bottom-color:var(--edge,var(--blue))}
-  .lk-note{font-size:12.5px;color:var(--muted);margin-top:3px}
-  .lk-act{display:flex;gap:8px;margin-top:auto}
-  .lk-open{font-size:12.5px;font-weight:700;color:var(--edge,var(--blue-ink));text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:7px 13px;background:#fff;white-space:nowrap}
-  .lk-open:hover{border-color:var(--line)}
-  .copy{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 13px;cursor:pointer;white-space:nowrap}
-  .copy:hover{border-color:var(--line)}
+  h2{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 2px}
+  .h2-sub{font-size:13.5px;color:var(--ink-2);margin:0 0 10px}
+  .sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr));gap:16px;margin-top:18px;align-items:start}
+  .sec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 8px;box-shadow:var(--shadow)}
+  .list{display:flex;flex-direction:column}
+  .lk{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
+  .lk:first-child{border-top:none}
+  .lk-dot{width:8px;height:8px;border-radius:50%;background:var(--edge,var(--blue));flex:none}
+  .lk-main{min-width:0;flex:1}
+  a.lk-label{font-size:14.5px;font-weight:700;color:var(--ink);text-decoration:none}
+  a.lk-label:hover{color:var(--blue-ink);text-decoration:underline}
+  .lk-note{font-size:12.5px;color:var(--ink-2);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lk-act{display:flex;gap:6px;flex:none}
+  .lk-open,.copy{font-family:inherit;font-size:12px;font-weight:700;border:1px solid var(--border);border-radius:7px;padding:5px 10px;background:#fff;white-space:nowrap;cursor:pointer;text-decoration:none}
+  .lk-open{color:var(--blue-ink)}
+  .copy{color:var(--ink-2)}
+  .lk-open:hover,.copy:hover{border-color:var(--line)}
   .copy.done{color:var(--green-ink);border-color:#bfe6c9;background:var(--green-soft)}
-  .callout{margin:20px 0 0;padding:13px 17px;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:12px;font-size:14px;color:var(--ink)}
+  .callout{margin:16px 0 0;padding:11px 15px;background:var(--blue-soft);border:1px solid #d5e1fb;border-radius:12px;font-size:14px;color:var(--ink)}
   .callout b{font-weight:700}
-  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
-  @media (max-width:560px){ .grid{grid-template-columns:1fr} }
+  .foot{margin-top:22px;font-size:13.5px;color:var(--ink-2)}
   .eyebrow{font-size:14px;letter-spacing:0;text-transform:none}
-  .lk-note{font-size:13.5px;color:var(--ink-2)}
-  .foot{font-size:13.5px;color:var(--ink-2)}
+  @media (max-width:560px){ .lk-note{white-space:normal} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">Sales team &middot; Aiconic</div>
   <h1>Links</h1>
-  <p class="lede">Every shared link in one place. Booking links have a Copy button, since you send those to leads. The links tied to a single lead, their contact card and their own reschedule link, stay on that lead's card in Daily Outreach.</p>
+  <p class="lede">Every shared link in one place. The links tied to a single lead, like their contact card and their own reschedule link, stay on that lead's card in Daily Outreach.</p>
 
   <div class="callout"><b>Always send these exact booking links.</b> Never a different or personal link that could break or confuse the lead.</div>
 
-  <h2>Booking links</h2>
-  <p class="h2-sub">Send these to leads. Use the Copy button so you send the exact link.</p>
-  <div class="grid" id="g-book"></div>
-
-  <h2>Scripts and trackers</h2>
-  <p class="h2-sub">Open these before and during a call, and log every call you take.</p>
-  <div class="grid" id="g-scripts"></div>
-
-  <h2>Systems and tools</h2>
-  <p class="h2-sub">Where the work happens day to day.</p>
-  <div class="grid" id="g-systems"></div>
+  <div class="sections">
+    <div class="sec"><h2>Booking links for leads</h2><p class="h2-sub">Send these to leads. Use Copy so you send the exact link.</p><div class="list" id="g-book"></div></div>
+    <div class="sec"><h2>Book a call with the team</h2><p class="h2-sub">Calendars for booking time with someone on our team.</p><div class="list" id="g-team"></div></div>
+    <div class="sec"><h2>Share with leads and clients</h2><p class="h2-sub">Pages and guides you can send.</p><div class="list" id="g-share"></div></div>
+    <div class="sec"><h2>Scripts and trackers</h2><p class="h2-sub">Open these before and during a call, and log every call you take.</p><div class="list" id="g-scripts"></div></div>
+    <div class="sec"><h2>Systems and tools</h2><p class="h2-sub">Where the work happens day to day.</p><div class="list" id="g-systems"></div></div>
+    <div class="sec"><h2>Affiliate links</h2><p class="h2-sub">Our HighLevel referral links.</p><div class="list" id="g-aff"></div></div>
+  </div>
 
   <p class="foot">Missing a link, or one has moved? Tell the team so we fix it here for everyone, instead of passing around a personal copy.</p>
 </div>
@@ -82,8 +82,20 @@
   var DATA = {
     "g-book": [
       {edge:"blue", label:"Intro call, LinkedIn leads", url:"https://app.aiconichub.ai/leads-engine-lkdn", note:"For leads that came in from LinkedIn.", copy:true},
-      {edge:"teal", label:"Interview call", url:"https://app.aiconichub.ai/leads-engine-interview", note:"The hour we turn into a full Leads Engine, for free.", copy:true},
-      {edge:"violet", label:"Review call", url:"https://links.aiconichub.ai/widget/booking/EkNg9CbinOGLYq4LDtfP", note:"The call at the end, to review what we built.", copy:true}
+      {edge:"teal", label:"Leads Engine interview", url:"https://app.aiconichub.ai/leads-engine-interview", note:"The hour we turn into a full Leads Engine, for free.", copy:true},
+      {edge:"violet", label:"Leads Engine review", url:"https://app.aiconichub.ai/leads-engine-review", note:"The call at the end, to review what we built.", copy:true}
+    ],
+    "g-team": [
+      {edge:"blue", label:"Book with Carlos", url:"https://app.aiconichub.ai/30connect", note:"Carlos's personal calendar.", copy:true},
+      {edge:"blue", label:"Book with Sheine", url:"https://app.aiconichub.ai/team-manager", note:"Team manager.", copy:true},
+      {edge:"blue", label:"Book with John", url:"https://app.aiconichub.ai/cto-connect", note:"CTO.", copy:true},
+      {edge:"blue", label:"Book with RJ", url:"https://app.aiconichub.ai/connect-with-rj", note:"", copy:true}
+    ],
+    "g-share": [
+      {edge:"teal", label:"Leads Engine funnel", url:"https://aiconichub.ai/leadsengine", note:"The funnel leads come through. Open it to see what a lead saw.", copy:true},
+      {edge:"teal", label:"One pager", url:"https://www.app.aiconichub.ai/one-pager", note:"What Aiconic does, on one page.", copy:true},
+      {edge:"teal", label:"Aiconic email guide", url:"https://emailguide.aiconichub.ai", note:"", copy:true},
+      {edge:"teal", label:"Customer portal", url:"https://portal.aiconichub.ai/", note:"Where our clients log in.", copy:true}
     ],
     "g-scripts": [
       {edge:"violet", label:"Intro call script", url:"https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit", note:"The Leads Engine discovery call script."},
@@ -93,24 +105,25 @@
     ],
     "g-systems": [
       {edge:"slate", label:"Open the CRM", url:"https://app.theiconicceo.com/", note:"GoHighLevel. Opens your pipeline and contacts."},
-      {edge:"slate", label:"Conversifi, LinkedIn chats", url:"https://conversifi.io/dashboard", note:"Read a lead's LinkedIn conversations before you reach out."},
-      {edge:"blue", label:"Leads Engine funnel", url:"https://aiconichub.ai/leadsengine", note:"The funnel leads come through. Open it to see what a lead saw."}
+      {edge:"slate", label:"Conversifi, LinkedIn chats", url:"https://conversifi.io/dashboard", note:"Read a lead's LinkedIn conversations before you reach out."}
+    ],
+    "g-aff": [
+      {edge:"amber", label:"HighLevel certification program", url:"https://www.gohighlevel.com/certifications?fp_ref=kayros-consuling-ltd94", note:"", copy:true},
+      {edge:"amber", label:"HighLevel general SaaS", url:"https://www.gohighlevel.com/?fp_ref=kayros-consuling-ltd46", note:"", copy:true}
     ]
   };
 
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
 
   function row(it){
-    var copyBtn = it.copy ? '<button type="button" class="copy" data-copy="'+esc(it.url)+'">Copy link</button>' : '';
+    var copyBtn = it.copy ? '<button type="button" class="copy" data-copy="'+esc(it.url)+'">Copy</button>' : '';
     return '<div class="lk" style="--edge:var(--'+esc(it.edge)+')">'+
+      '<span class="lk-dot"></span>'+
       '<div class="lk-main">'+
         '<a class="lk-label" href="'+esc(it.url)+'" target="_blank" rel="noopener">'+esc(it.label)+'</a>'+
         (it.note ? '<div class="lk-note">'+esc(it.note)+'</div>' : '')+
       '</div>'+
-      '<div class="lk-act">'+
-        copyBtn+
-        '<a class="lk-open" href="'+esc(it.url)+'" target="_blank" rel="noopener">Open &rsaquo;</a>'+
-      '</div>'+
+      '<div class="lk-act">'+copyBtn+'<a class="lk-open" href="'+esc(it.url)+'" target="_blank" rel="noopener">Open</a></div>'+
     '</div>';
   }
 

@@ -5,9 +5,18 @@
   var SUPABASE_URL = "https://unbednxvxdwozjtqzwgq.supabase.co";
   var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuYmVkbnh2eGR3b3pqdHF6d2dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTg0NzEsImV4cCI6MjEwNTg3NDQ3MX0.OmYSRyx7-2qtwaw4zxygyQDTLZ5DpX1DZbuLrk15wP8";
   var ALLOWED = ["aiconichub.com","aiconichub.ai"];
+  // A password reset link lands here with "type=recovery" in the address (or
+  // our own "reset=1" marker). Read it before Supabase clears the address, so
+  // the person always gets the "choose a new password" screen.
+  var RECOVERY = /type=recovery/.test(location.hash) || /[?&]reset=1/.test(location.search);
+  var domReady = false;
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   window.SB = sb;
   window.ME = null;
+  // Listen right away, so the reset event is never missed.
+  sb.auth.onAuthStateChange(function(ev){
+    if(ev==="PASSWORD_RECOVERY"){ RECOVERY = true; if(domReady) showNewPass(); }
+  });
 
   function allowed(email){ var d=String(email||"").trim().toLowerCase().split("@")[1]||""; return ALLOWED.indexOf(d)>-1; }
   function $(id){ return document.getElementById(id); }
@@ -40,30 +49,53 @@
     $("au-to-signup").hidden = (m!=="signin");
     $("au-to-reset").hidden = (m!=="signin");
     $("au-to-signin").hidden = (m==="signin");
+    $("au-to-signin").textContent = m==="newpass" ? "Cancel" : "Back to sign in";
+    $("au-email").required = (m!=="newpass");
+    $("au-pass").setAttribute("autocomplete", (m==="signup"||m==="newpass") ? "new-password" : "current-password");
+    $("au-pass").value = "";
     msgOut(msg||"", isErr);
   }
   function msgOut(t, isErr){ var el=$("au-msg"); el.textContent=t; el.className="au-msg"+(t?(isErr?" err":" ok"):""); }
+  function clearResetUrl(){
+    try{ if(/reset=1|type=recovery/.test(location.search+location.hash)) history.replaceState(null, "", location.pathname); }catch(_){}
+  }
+  function showNewPass(msg){
+    document.body.classList.add("locked");
+    $("authgate").hidden = false;
+    setMode("newpass", msg || "Choose a new password for your account. You will use it to sign in from now on.", false);
+    setTimeout(function(){ try{ $("au-pass").focus(); }catch(_){} }, 50);
+  }
   function showLogin(msg){
     document.body.classList.add("locked");
     $("authgate").hidden = false;
     if(mode!=="newpass") setMode("signin", msg||"", !!msg);
   }
 
+  function setMebar(name){
+    $("mebar").innerHTML = 'Signed in as <b>'+String(name||"").replace(/</g,"&lt;")+'</b> <button type="button" id="chpass" class="au-link">Change password</button> <button type="button" id="signout" class="au-link">Sign out</button>';
+    $("signout").addEventListener("click", async function(){ await sb.auth.signOut(); location.reload(); });
+    $("chpass").addEventListener("click", function(){ showNewPass("Type your new password and save it."); });
+  }
+
+  // Opens the toolkit straight away and checks the person with the server in
+  // the background, so nobody stares at a blank page while it runs.
   async function enter(){
     var s = (await sb.auth.getSession()).data.session;
     if(!s){ showLogin(); return; }
     if(!allowed(s.user.email)){ await sb.auth.signOut(); showLogin("Use your Aiconic email (@aiconichub.com or @aiconichub.ai)."); return; }
+    var email = s.user.email;
+    window.ME = window.ME || { name: email.split("@")[0], email: email, domain: "", from: "" };
+    $("authgate").hidden = true;
+    document.body.classList.remove("locked");
+    setMebar(window.ME.name);
+    if(window.startApp) window.startApp();
     try{
       var r = await rawFetch("/api/send-email",{ headers:{ Authorization:"Bearer "+s.access_token } });
       var d = await r.json();
       if(!r.ok){ await sb.auth.signOut(); showLogin(d.error||"You do not have access."); return; }
       window.ME = d;
-    }catch(_){ window.ME = { name: s.user.email, email: s.user.email, domain: "", from: "" }; }
-    $("authgate").hidden = true;
-    document.body.classList.remove("locked");
-    $("mebar").innerHTML = 'Signed in as <b>'+(window.ME.name||s.user.email).replace(/</g,"&lt;")+'</b> <button type="button" id="signout" class="au-link">Sign out</button>';
-    $("signout").addEventListener("click", async function(){ await sb.auth.signOut(); location.reload(); });
-    if(window.startApp) window.startApp();
+      setMebar(d.name||email);
+    }catch(_){}
   }
 
   document.addEventListener("DOMContentLoaded", function(){
@@ -76,7 +108,12 @@
       try{
         if(mode==="signin"){
           var r1 = await sb.auth.signInWithPassword({ email: email, password: pass });
-          if(r1.error){ msgOut(/confirm/i.test(r1.error.message) ? "Confirm your email first. Check your inbox for the link." : "Wrong email or password.", true); }
+          if(r1.error){
+            var em = String(r1.error.message||"");
+            msgOut(/confirm/i.test(em) ? "Confirm your email first. Check your inbox for the link."
+              : /invalid login/i.test(em) ? "That email and password do not match. If you are not sure of your password, click Forgot your password below and set a new one."
+              : em, true);
+          }
           else { await enter(); }
         }else if(mode==="signup"){
           if(pass.length<8){ msgOut("Use at least 8 characters for your password.", true); }
@@ -86,27 +123,30 @@
             else setMode("signin", "Check your inbox and click the link to confirm your email. Then sign in here.", false);
           }
         }else if(mode==="reset"){
-          var r3 = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+          var r3 = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/?reset=1" });
           if(r3.error) msgOut(r3.error.message, true);
-          else setMode("signin", "If that email has an account, a reset link is on its way.", false);
+          else setMode("signin", "If that email has an account, a reset link is on its way. Open it on this computer and you will be asked to choose a new password.", false);
         }else if(mode==="newpass"){
           if(pass.length<8){ msgOut("Use at least 8 characters for your password.", true); }
           else{
             var r4 = await sb.auth.updateUser({ password: pass });
-            if(r4.error) msgOut(r4.error.message, true);
-            else { mode="signin"; await enter(); }
+            if(r4.error) msgOut(/session/i.test(r4.error.message) ? "This reset link has expired. Click Cancel, then Forgot your password to get a new one." : r4.error.message, true);
+            else { RECOVERY = false; clearResetUrl(); mode = "signin"; await enter(); }
           }
         }
       }finally{ btn.disabled=false; }
     });
     $("au-to-signup").addEventListener("click", function(){ setMode("signup"); });
     $("au-to-reset").addEventListener("click", function(){ setMode("reset"); });
-    $("au-to-signin").addEventListener("click", function(){ setMode("signin"); });
-    sb.auth.onAuthStateChange(function(ev){
-      if(ev==="PASSWORD_RECOVERY"){ document.body.classList.add("locked"); $("authgate").hidden=false; setMode("newpass"); }
+    $("au-to-signin").addEventListener("click", function(){
+      if(mode==="newpass"){ RECOVERY = false; clearResetUrl(); mode = "signin"; enter(); }
+      else setMode("signin");
     });
+    $("au-form").noValidate = true;
+    domReady = true;
     setMode("signin");
-    // Give the link in a confirm or reset email a moment to sign the person in.
-    setTimeout(function(){ if(mode!=="newpass") enter(); }, 60);
+    // Coming from a reset link: ask for the new password, never sign straight in.
+    if(RECOVERY){ showNewPass(); return; }
+    setTimeout(function(){ if(!RECOVERY && mode!=="newpass") enter(); }, 60);
   });
 })();
