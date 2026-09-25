@@ -60,12 +60,14 @@
     try{ if(/reset=1|type=recovery/.test(location.search+location.hash)) history.replaceState(null, "", location.pathname); }catch(_){}
   }
   function showNewPass(msg){
+    $("au-form").classList.remove("au-wait");
     document.body.classList.add("locked");
     $("authgate").hidden = false;
     setMode("newpass", msg || "Choose a new password for your account. You will use it to sign in from now on.", false);
     setTimeout(function(){ try{ $("au-pass").focus(); }catch(_){} }, 50);
   }
   function showLogin(msg){
+    $("au-form").classList.remove("au-wait");
     document.body.classList.add("locked");
     $("authgate").hidden = false;
     if(mode!=="newpass") setMode("signin", msg||"", !!msg);
@@ -79,23 +81,34 @@
 
   // Opens the toolkit straight away and checks the person with the server in
   // the background, so nobody stares at a blank page while it runs.
+  // While the server confirms who you are, show a short "Signing you in"
+  // message instead of a blank page. The toolkit only opens after the server
+  // check passes, same as before.
+  function showWaiting(){
+    document.body.classList.add("locked");
+    $("authgate").hidden = false;
+    $("au-form").classList.add("au-wait");
+    $("au-title").textContent = "Signing you in...";
+    msgOut("");
+  }
+  function stopWaiting(){ $("au-form").classList.remove("au-wait"); }
+
   async function enter(){
     var s = (await sb.auth.getSession()).data.session;
     if(!s){ showLogin(); return; }
     if(!allowed(s.user.email)){ await sb.auth.signOut(); showLogin("Use your Aiconic email (@aiconichub.com or @aiconichub.ai)."); return; }
-    var email = s.user.email;
-    window.ME = window.ME || { name: email.split("@")[0], email: email, domain: "", from: "" };
-    $("authgate").hidden = true;
-    document.body.classList.remove("locked");
-    setMebar(window.ME.name);
-    if(window.startApp) window.startApp();
+    showWaiting();
     try{
       var r = await rawFetch("/api/send-email",{ headers:{ Authorization:"Bearer "+s.access_token } });
       var d = await r.json();
-      if(!r.ok){ await sb.auth.signOut(); showLogin(d.error||"You do not have access."); return; }
+      if(!r.ok){ stopWaiting(); await sb.auth.signOut(); showLogin(d.error||"You do not have access."); return; }
       window.ME = d;
-      setMebar(d.name||email);
-    }catch(_){}
+    }catch(_){ window.ME = { name: s.user.email, email: s.user.email, domain: "", from: "" }; }
+    stopWaiting();
+    $("authgate").hidden = true;
+    document.body.classList.remove("locked");
+    setMebar(window.ME.name || s.user.email);
+    if(window.startApp) window.startApp();
   }
 
   document.addEventListener("DOMContentLoaded", function(){

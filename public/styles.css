@@ -449,3 +449,4 @@ body.locked .wrap{display:none}
 .mc-contact .chan{margin-top:10px}
 @media (max-width:560px){.mc-msg{max-width:94%}.mc-contact{padding:16px}}
 .mc-contact .box{font-size:14px;background:#f7f9fc;border:1px solid var(--border);border-radius:10px;padding:11px 13px;line-height:1.55;white-space:pre-wrap}
+.au-form.au-wait .au-row,.au-card.au-wait .au-row,.au-card.au-wait .au-go,.au-card.au-wait .au-links,.au-card.au-wait .au-msg{display:none}
