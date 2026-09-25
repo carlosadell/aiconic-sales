@@ -367,3 +367,25 @@ a.linkrow-lbl:hover{text-decoration:underline}
 #sheet .body:not(.stagesheet) > .dohead:first-of-type{margin-top:6px}
 .subhead{font-size:15px;font-weight:800;color:var(--ink);margin:20px 0 8px}
 .linkrow{margin-bottom:10px}
+/* Channel cards: each one says where it goes and whether it sends from here */
+.chan{border:1px solid var(--border);border-left:6px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;background:#fff}
+.chan-sms{border-left-color:#15803d}
+.chan-email{border-left-color:var(--blue)}
+.chan-li{border-left-color:#b45309;background:#fffdf8}
+.chan.off{opacity:.8}
+.chan-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.chan-ic{font-size:20px;line-height:1}
+.chan-name{font-size:16px;font-weight:800;color:var(--ink)}
+.chan-mode{margin-left:auto;font-size:12.5px;font-weight:800;border-radius:999px;padding:4px 11px}
+.chan-mode.send{color:#166534;background:#e7f6ec;border:1px solid #b9e3c6}
+.chan-mode.self{color:#92400e;background:#fdf2e3;border:1px solid #f2d9ac}
+.chan-how{font-size:14px;line-height:1.5;color:var(--ink-2);margin:0 0 10px}
+.chan-how b{color:var(--ink)}
+.chan .subjrow{margin-bottom:8px}
+.chan .subj-input{width:100%}
+.btn.send{color:#fff;font-weight:800}
+.btn.send.sms{background:#15803d;border-color:#15803d}
+.btn.send.email{background:var(--blue);border-color:var(--blue)}
+.btn.send.arm{outline:3px solid #f59e0b;outline-offset:2px}
+.btn.send.done{background:#15803d;border-color:#15803d}
+.chan .subjrow{display:flex;align-items:center;gap:10px}.subj-lbl{font-size:13.5px;font-weight:700;color:var(--ink)}

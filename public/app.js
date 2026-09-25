@@ -537,30 +537,43 @@ function sentBlock(l){
   return '<div class="dohead">What the lead already received</div><div class="sent">'+email+sms+'</div>';
 }
 
+// One clear card per channel. Text and email send from here through the CRM;
+// LinkedIn is copied and sent by the rep. Each card says exactly where the
+// message goes, who it comes from, and what happens when you press the button.
+let SEND_DOMAIN = "";
+function fromAddr(l){
+  const rep = (l.repName && !/unassigned/i.test(l.repName)) ? l.repName : "Aiconic";
+  const first = rep==="Aiconic" ? "team" : String(rep).trim().split(/\s+/)[0].normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  return first+'@<span class="from-domain">'+esc(SEND_DOMAIN||"our sending domain")+'</span>';
+}
+function chanCard(kind, l, m){
+  if(kind==="sms"){
+    if(!l.phone) return '<div class="chan chan-sms off"><div class="chan-top"><span class="chan-ic">💬</span><span class="chan-name">Text message</span></div><div class="chan-how">No phone number on file, so no text can be sent.</div></div>';
+    return '<div class="chan chan-sms"><div class="chan-top"><span class="chan-ic">💬</span><span class="chan-name">Text message</span><span class="chan-mode send">Sends from here</span></div>'+
+      '<div class="chan-how">Goes to <b>'+esc(l.phone)+'</b> as a text from our CRM number. It sends when you confirm, and their reply lands in the CRM conversation.</div>'+
+      '<textarea class="box editable msg-sms" rows="5">'+esc(m.sms)+'</textarea>'+
+      '<div class="btnrow"><button class="btn send sms" data-act="sms" data-id="'+esc(l.contactId)+'" data-label="Send this text">Send this text</button>'+
+      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>';
+  }
+  if(kind==="email"){
+    if(!l.email) return '<div class="chan chan-email off"><div class="chan-top"><span class="chan-ic">✉️</span><span class="chan-name">Email</span></div><div class="chan-how">No email on file, so no email can be sent.</div></div>';
+    return '<div class="chan chan-email"><div class="chan-top"><span class="chan-ic">✉️</span><span class="chan-name">Email</span><span class="chan-mode send">Sends from here</span></div>'+
+      '<div class="chan-how">Goes to <b>'+esc(l.email)+'</b> from <b>'+fromAddr(l)+'</b>. It sends when you click the button below, and when the customer replies you will see it in their CRM card and in your business Gmail. You can also send the email directly from your business Gmail instead.</div>'+
+      '<div class="subjrow"><span class="subj-lbl">Subject</span><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"></div>'+
+      '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
+      '<div class="btnrow"><button class="btn send email" data-act="email" data-id="'+esc(l.contactId)+'" data-rep="'+esc(l.repName||"")+'" data-label="Send this email">Send this email</button>'+
+      '<button class="btn" data-act="copy" data-field="msg-body">Copy email body</button></div></div>';
+  }
+  return '<div class="chan chan-li"><div class="chan-top"><span class="chan-ic">🔗</span><span class="chan-name">LinkedIn</span><span class="chan-mode self">You send this yourself</span></div>'+
+    '<div class="chan-how">The toolkit doesn\'t send LinkedIn messages directly. Copy the text and send it from Conversifi or from your own LinkedIn profile, along with a connection request if you are not connected to the lead yet.</div>'+
+    '<textarea class="box editable msg-note" rows="4">'+esc(m.note)+'</textarea>'+
+    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy text</button>'+
+    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversifi</a></div></div>';
+}
+
 function channelBlocks(l){
   const m = messages(l);
-  const out = [];
-  l.channels.forEach(ch=>{
-    if(ch==="sms"){
-      out.push('<div class="channel"><div class="top"><span class="tag sms">SMS</span><b>Personal SMS through the CRM</b></div>'+
-        '<textarea class="box editable msg-sms" rows="4">'+esc(m.sms)+'</textarea>'+
-        '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
-        '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div>'+
-        '<div class="hint">Edit the message if you like, then send. Goes to '+esc(l.phone)+' through the CRM.</div></div>');
-    }else if(ch==="linkedin"){
-      out.push('<div class="channel"><div class="top"><span class="tag also">LinkedIn</span><b>Message or connection request</b></div>'+
-        '<textarea class="box editable msg-note" rows="3">'+esc(m.note)+'</textarea>'+
-        '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
-        '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
-    }else if(ch==="email"){
-      out.push('<div class="channel"><div class="top"><span class="tag mail">Email</span><b>Personal email through the CRM</b></div>'+
-        '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
-        '<textarea class="box editable msg-body" rows="7">'+esc(m.email.body)+'</textarea>'+
-        ''+emailSendRow(l)+''+
-        '<div class="hint">Edit anything you like, then send. It goes out under your name through the CRM, and their reply lands in the CRM conversation.</div></div>');
-    }
-  });
-  return out.join("");
+  return l.channels.map(ch=>chanCard(ch==="linkedin"?"linkedin":ch, l, m)).join("");
 }
 
 // Reschedule messages. This is NOT a routine option. Rescheduling is only for a
@@ -610,7 +623,7 @@ function rescheduleBlock(l){
   blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
     '<textarea class="box editable msg-note" rows="5">'+esc(m.note)+'</textarea>'+
     '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
-    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
+    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversifi</a></div></div>');
   blocks.push('<div class="channel reschedule"><div class="top"><span class="tag resc">Email</span><b>Email them</b></div>'+
     '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
     '<textarea class="box editable msg-body" rows="9">'+esc(m.email.body)+'</textarea>'+
@@ -642,22 +655,7 @@ function interviewText(l){
 
 function interviewBlock(l){
   const m = interviewText(l);
-  const blocks = [];
-  if(l.phone){
-    blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">SMS</span><b>Text them</b></div>'+
-      '<textarea class="box editable msg-sms" rows="6">'+esc(m.sms)+'</textarea>'+
-      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
-      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
-  }
-  blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
-    '<textarea class="box editable msg-note" rows="6">'+esc(m.note)+'</textarea>'+
-    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
-    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
-  blocks.push('<div class="channel book"><div class="top"><span class="tag bookint">Email</span><b>Email them</b></div>'+
-    '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
-    '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
-    ''+emailSendRow(l)+'</div>');
-  return '<div class="dohead">Get them to book the interview</div>'+blocks.join("");
+  return '<div class="dohead">Get them to book the interview</div>'+chanCard("sms",l,m)+chanCard("linkedin",l,m)+chanCard("email",l,m);
 }
 
 // Messages for people who had their interview but have not booked their review
@@ -677,22 +675,7 @@ function reviewText(l){
 
 function reviewBlock(l){
   const m = reviewText(l);
-  const blocks = [];
-  if(l.phone){
-    blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">SMS</span><b>Text them</b></div>'+
-      '<textarea class="box editable msg-sms" rows="6">'+esc(m.sms)+'</textarea>'+
-      '<div class="btnrow"><button class="btn solid" data-act="sms" data-id="'+esc(l.contactId)+'">Send SMS via the CRM</button>'+
-      '<button class="btn" data-act="copy" data-field="msg-sms">Copy text</button></div></div>');
-  }
-  blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">LinkedIn</span><b>Message them on LinkedIn</b></div>'+
-    '<textarea class="box editable msg-note" rows="6">'+esc(m.note)+'</textarea>'+
-    '<div class="btnrow"><button class="btn" data-act="copy" data-field="msg-note">Copy note</button>'+
-    '<a class="btn" href="'+esc(l.links.conversify)+'" target="_blank" rel="noopener">Open Conversify</a></div></div>');
-  blocks.push('<div class="channel review"><div class="top"><span class="tag bookrev">Email</span><b>Email them</b></div>'+
-    '<div class="subjrow"><input class="subj-input msg-subject" value="'+esc(m.email.subject)+'"><button class="btn tiny" data-act="copy" data-field="msg-subject">Copy subject</button></div>'+
-    '<textarea class="box editable msg-body" rows="8">'+esc(m.email.body)+'</textarea>'+
-    ''+emailSendRow(l)+'</div>');
-  return '<div class="dohead">Get them to book the review call</div>'+blocks.join("");
+  return '<div class="dohead">Get them to book the review call</div>'+chanCard("sms",l,m)+chanCard("linkedin",l,m)+chanCard("email",l,m);
 }
 
 // The lead's own reschedule link, pulled from their the CRM confirmation
@@ -806,6 +789,10 @@ function openSheet(l){
       notesBlock(l)+
     '</div>';
   el("scrim").classList.add("open");
+  // Show the real sending address on the email card.
+  const fillDomain=()=>sheet.querySelectorAll(".from-domain").forEach(x=>{x.textContent=SEND_DOMAIN;});
+  if(SEND_DOMAIN) fillDomain();
+  else fetch("/api/send-email").then(r=>r.json()).then(d=>{ if(d&&d.domain){ SEND_DOMAIN=d.domain; fillDomain(); } }).catch(()=>{});
   // Size the editable boxes after the modal is visible, otherwise the text is
   // measured while hidden (height 0) and the box shows only a clipped line or two.
   const autosize = ()=>{
@@ -869,30 +856,28 @@ el("sheet").addEventListener("click", async (e)=>{
     setTimeout(()=>{ b.textContent=old; b.classList.remove("done"); },1500);
     return;
   }
-  if(act==="sms"){
-    const contactId=b.dataset.id;
-    const ta=b.closest(".channel").querySelector(".msg-sms");
-    const message=ta ? ta.value : "";
-    if(!message.trim()){ b.textContent="Type a message first"; setTimeout(()=>{b.textContent="Send SMS via the CRM";},1600); return; }
+  if(act==="sms" || act==="email"){
+    const card=b.closest(".chan");
+    const label=b.dataset.label||"Send";
+    const ta=card?card.querySelector(act==="sms"?".msg-sms":".msg-body"):null;
+    const text=ta?ta.value:"";
+    const subjEl=card?card.querySelector(".msg-subject"):null;
+    const subject=subjEl?subjEl.value.trim():"";
+    if(!text.trim() || (act==="email" && !subject)){ b.textContent=act==="email"?"Add a subject and message first":"Type a message first"; setTimeout(()=>{b.textContent=label;},1800); return; }
+    // First tap arms the button, second tap sends. Stops accidental sends.
+    if(!b.classList.contains("arm")){
+      b.classList.add("arm"); b.textContent="Tap again to send";
+      clearTimeout(b._t); b._t=setTimeout(()=>{ b.classList.remove("arm"); b.textContent=label; },4000);
+      return;
+    }
+    clearTimeout(b._t); b.classList.remove("arm");
     b.textContent="Sending..."; b.disabled=true;
     try{
-      const r=await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,message})});
+      const r = act==="sms"
+        ? await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,message:text})})
+        : await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,subject,body:text,repName:b.dataset.rep})});
       const d=await r.json();
-      if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
-      else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
-    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
-    return;
-  }
-  if(act==="email"){
-    const ch=b.closest(".channel");
-    const subj=ch?ch.querySelector(".msg-subject"):null, ta=ch?ch.querySelector(".msg-body"):null;
-    const subject=subj?subj.value.trim():"", text=ta?ta.value:"";
-    if(!subject||!text.trim()){ b.textContent="Add a subject and message first"; setTimeout(()=>{b.textContent="Send email via the CRM";},1800); return; }
-    b.textContent="Sending..."; b.disabled=true;
-    try{
-      const r=await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,subject,body:text,repName:b.dataset.rep})});
-      const d=await r.json();
-      if(r.ok && d.ok){ b.textContent="Sent"; b.classList.add("done"); }
+      if(r.ok && d.ok){ b.textContent=act==="sms"?"Text sent":"Email sent"; b.classList.add("done"); }
       else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
     }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
     return;

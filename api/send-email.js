@@ -43,12 +43,23 @@ function localPart(name) {
 }
 
 module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Use POST." });
-    return;
-  }
   if (!process.env.GHL_TOKEN) {
     res.status(500).json({ error: "Server is missing GHL_TOKEN." });
+    return;
+  }
+  const headers = {
+    Authorization: `Bearer ${process.env.GHL_TOKEN}`,
+    Version: VERSION,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  // GET returns the sending domain, so the lead card can show the real From address.
+  if (req.method === "GET") {
+    res.status(200).json({ domain: await sendingDomain(headers) });
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Use POST." });
     return;
   }
   let body = req.body;
@@ -61,12 +72,6 @@ module.exports = async (req, res) => {
     res.status(400).json({ error: "contactId, subject and body are required." });
     return;
   }
-  const headers = {
-    Authorization: `Bearer ${process.env.GHL_TOKEN}`,
-    Version: VERSION,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
   const rep = repName && !/unassigned/i.test(repName) ? String(repName).trim() : "Aiconic";
   const domain = await sendingDomain(headers);
   const emailFrom = `${rep} <${localPart(rep === "Aiconic" ? "" : rep)}@${domain}>`;
