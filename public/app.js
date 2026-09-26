@@ -500,6 +500,107 @@ function referenceBlock(l){
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
 }
 
+// ---- Book next call ----
+let CURRENT_LEAD = null;
+let BOOK_CONFIG_PROMISE = null;
+function loadBookConfig(){
+  if(!BOOK_CONFIG_PROMISE){
+    BOOK_CONFIG_PROMISE = fetch("/api/book-config",{cache:"no-store"})
+      .then(r=>r.json())
+      .catch(()=>({interview:false, review:false}));
+  }
+  return BOOK_CONFIG_PROMISE;
+}
+let TZ_NAMES = null;
+function tzNames(){
+  if(!TZ_NAMES){
+    try{ TZ_NAMES = Intl.supportedValuesOf("timeZone"); }
+    catch(_){ TZ_NAMES = ["UTC"]; }
+  }
+  return TZ_NAMES;
+}
+function defaultTz(l){
+  if(l.timezone) return l.timezone;
+  try{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }catch(_){ return "UTC"; }
+}
+function todayStr(){
+  return new Date().toLocaleDateString("en-CA", {year:"numeric",month:"2-digit",day:"2-digit"});
+}
+function slotLabel(iso, tz){
+  try{ return new Date(iso).toLocaleTimeString([], { hour:"numeric", minute:"2-digit", timeZone: tz }); }
+  catch(_){ return new Date(iso).toLocaleTimeString(); }
+}
+function bookPanelHtml(l){
+  return '<div class="bookbox" id="bookbox" data-contact="'+esc(l.contactId)+'" data-calltype="" data-tz="'+esc(defaultTz(l))+'" data-date="" data-slot="">'+
+    '<div class="booktoggle" id="booktoggle"><span class="hint">Loading call types...</span></div>'+
+    '<div class="bookrow"><span class="lbl">Customer time zone</span>'+
+      '<div class="tzbox"><input type="text" class="tzinput" id="tzinput" value="'+esc(defaultTz(l))+'" autocomplete="off" placeholder="Search time zones...">'+
+      '<div class="tzlist" id="tzlist" hidden></div></div></div>'+
+    '<div class="bookrow"><span class="lbl">Day</span><input type="date" class="dateinput" id="bookdate" min="'+todayStr()+'"></div>'+
+    '<div class="bookrow" id="bookslots"><span class="lbl">Open slots</span><div class="slotempty">Pick a call type and a day to see open slots.</div></div>'+
+    '<div class="btnrow"><button type="button" class="btn solid bookgo" data-act="book" data-label="Book" disabled>Book</button></div>'+
+    '<div class="bookmsg" id="bookmsg"></div>'+
+  '</div>';
+}
+function bookCallBlock(l){
+  return '<div class="dohead">Book next call</div>'+bookPanelHtml(l);
+}
+function renderTzList(query){
+  const list = el("tzlist"); if(!list) return;
+  const q = String(query||"").trim().toLowerCase();
+  const names = tzNames().filter(n=>!q || n.toLowerCase().includes(q)).slice(0,60);
+  if(!names.length){ list.innerHTML='<div class="slotempty">No match</div>'; list.hidden=false; return; }
+  list.innerHTML = names.map(n=>'<button type="button" class="tzopt" data-act="tzpick" data-tz="'+esc(n)+'">'+esc(n.replace(/_/g," "))+'</button>').join("");
+  list.hidden = false;
+}
+function refreshSlots(){
+  const box = el("bookbox"); if(!box) return;
+  const callType = box.dataset.calltype;
+  const tz = box.dataset.tz;
+  const date = box.dataset.date;
+  const slotsBox = el("bookslots");
+  const goBtn = box.querySelector(".bookgo");
+  box.dataset.slot = "";
+  if(goBtn) goBtn.disabled = true;
+  if(!slotsBox) return;
+  if(!callType || !date || !tz){
+    slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotempty">Pick a call type and a day to see open slots.</div>';
+    return;
+  }
+  slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotempty">Loading...</div>';
+  const params = new URLSearchParams({ callType, date, tz });
+  fetch("/api/book-slots?"+params.toString(),{cache:"no-store"})
+    .then(r=>r.json().then(d=>({ok:r.ok, d})))
+    .then(({ok,d})=>{
+      if(!ok) throw new Error(d.error||"Could not load slots.");
+      const slots = d.slots||[];
+      if(!slots.length){ slotsBox.innerHTML='<span class="lbl">Open slots</span><div class="slotempty">No open slots that day.</div>'; return; }
+      slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotgrid">'+
+        slots.map(s=>'<button type="button" class="slotbtn" data-act="slotpick" data-slot="'+esc(s)+'">'+esc(slotLabel(s,tz))+'</button>').join("")+
+        '</div>';
+    })
+    .catch(e=>{ slotsBox.innerHTML='<span class="lbl">Open slots</span><div class="slotempty">Could not load slots: '+esc(e.message)+'</div>'; });
+}
+function renderBooked(startTime, tz){
+  const box = el("bookbox"); if(!box) return;
+  const when = new Date(startTime).toLocaleString([], { dateStyle:"full", timeStyle:"short", timeZone: tz });
+  box.innerHTML = '<div class="bookdone">Booked for <b>'+esc(when)+'</b> ('+esc(tz)+').</div>'+
+    '<div class="btnrow"><button type="button" class="btn" data-act="bookagain">Book another call</button></div>';
+}
+function initBookPanel(){
+  const wrap = el("booktoggle"); if(!wrap) return;
+  loadBookConfig().then(cfg=>{
+    const wrapNow = el("booktoggle"); if(!wrapNow) return;
+    const opts = [
+      {key:"interview", label:"Interview", ok:cfg.interview},
+      {key:"review", label:"Review", ok:cfg.review},
+    ];
+    wrapNow.innerHTML = opts.map(o=>
+      '<button type="button" class="booktype" data-act="booktype" data-type="'+o.key+'"'+(o.ok?"":" disabled")+'>'+o.label+'</button>'
+    ).join("") + (opts.some(o=>!o.ok) ? '<span class="hint">'+opts.filter(o=>!o.ok).map(o=>o.label+" is not set up yet").join(", ")+'</span>' : "");
+  });
+}
+
 function prepBlock(l){
   const src = '<div class="srcnote"><b>'+esc(l.source)+'.</b> '+esc(l.sourceCheck)+'</div>';
   return '<div class="dohead">This lead</div>'+
@@ -768,6 +869,7 @@ async function loadNotes(contactId){
 }
 
 function openSheet(l, ctx){
+  CURRENT_LEAD = l;
   const sheet = el("sheet");
   const flagBox = l.flagged
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
@@ -788,6 +890,7 @@ function openSheet(l, ctx){
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
       prepBlock(l)+
+      bookCallBlock(l)+
       (showSent ? sentBlock(l) : "")+
       (l.status==="bookinginterview" ? interviewBlock(l)
         : l.status==="bookingreview" ? reviewBlock(l)
@@ -815,10 +918,17 @@ function openSheet(l, ctx){
   };
   requestAnimationFrame(autosize);
   loadNotes(l.contactId);
+  initBookPanel();
 }
 function closeSheet(){ el("scrim").classList.remove("open"); }
 
 el("sheet").addEventListener("change", async (e)=>{
+  const dateInput = e.target.closest("#bookdate");
+  if(dateInput){
+    const box = el("bookbox");
+    if(box){ box.dataset.date = dateInput.value; refreshSlots(); }
+    return;
+  }
   const sel = e.target.closest(".stagesel"); if(!sel) return;
   const opp = sel.dataset.opp;
   const pipelineStageId = sel.value;
@@ -835,10 +945,74 @@ el("sheet").addEventListener("change", async (e)=>{
   finally{ sel.disabled = false; }
 });
 
+el("sheet").addEventListener("input", (e)=>{
+  const tzIn = e.target.closest("#tzinput");
+  if(!tzIn) return;
+  renderTzList(tzIn.value);
+});
+el("sheet").addEventListener("focus", (e)=>{
+  const tzIn = e.target.closest && e.target.closest("#tzinput");
+  if(!tzIn) return;
+  renderTzList(tzIn.value);
+}, true);
+document.addEventListener("click", (e)=>{
+  const list = el("tzlist"); if(!list || list.hidden) return;
+  if(!e.target.closest(".tzbox")) list.hidden = true;
+});
+
 el("sheet").addEventListener("click", async (e)=>{
   const b = e.target.closest("button"); if(!b) return;
   const act = b.dataset.act;
   if(act==="close"){ closeSheet(); return; }
+  if(act==="booktype"){
+    if(b.disabled) return;
+    const box = el("bookbox"); if(!box) return;
+    box.dataset.calltype = b.dataset.type;
+    box.querySelectorAll(".booktype").forEach(x=>x.classList.toggle("on", x===b));
+    refreshSlots();
+    return;
+  }
+  if(act==="tzpick"){
+    const box = el("bookbox"); if(!box) return;
+    box.dataset.tz = b.dataset.tz;
+    const input = el("tzinput"); if(input) input.value = b.dataset.tz;
+    const list = el("tzlist"); if(list) list.hidden = true;
+    refreshSlots();
+    return;
+  }
+  if(act==="slotpick"){
+    const box = el("bookbox"); if(!box) return;
+    box.dataset.slot = b.dataset.slot;
+    box.querySelectorAll(".slotbtn").forEach(x=>x.classList.toggle("on", x===b));
+    const goBtn = box.querySelector(".bookgo"); if(goBtn) goBtn.disabled = false;
+    return;
+  }
+  if(act==="bookagain"){
+    const box = el("bookbox"); if(!box || !CURRENT_LEAD) return;
+    box.outerHTML = bookPanelHtml(CURRENT_LEAD);
+    initBookPanel();
+    return;
+  }
+  if(act==="book"){
+    const box = el("bookbox"); if(!box) return;
+    const contactId = box.dataset.contact, callType = box.dataset.calltype, tz = box.dataset.tz, slot = box.dataset.slot;
+    if(!callType || !slot) return;
+    if(!b.classList.contains("arm")){
+      b.classList.add("arm"); b.textContent="Tap again to confirm";
+      clearTimeout(b._t); b._t=setTimeout(()=>{ b.classList.remove("arm"); b.textContent=b.dataset.label||"Book"; },4000);
+      return;
+    }
+    clearTimeout(b._t); b.classList.remove("arm");
+    b.textContent="Booking..."; b.disabled=true;
+    const msg = el("bookmsg");
+    try{
+      const r = await fetch("/api/book-appointment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId, callType, startTime:slot, timezone:tz})});
+      const d = await r.json();
+      if(r.ok && d.ok){ renderBooked(slot, tz); }
+      else{ b.disabled=false; b.textContent=b.dataset.label||"Book"; if(msg){ msg.textContent="That did not go through: "+(d.error||"try again")+"."; msg.className="bookmsg bad"; } }
+    }catch(e){ b.disabled=false; b.textContent=b.dataset.label||"Book"; if(msg){ msg.textContent="That did not go through, try again."; msg.className="bookmsg bad"; } }
+    return;
+  }
   if(act==="tag"){
     const lbl=b.querySelector(".pbtn-l");
     const what=b.closest(".actrow") ? b.closest(".actrow").querySelector(".actwhat") : null;
