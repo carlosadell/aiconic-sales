@@ -450,3 +450,33 @@ body.locked .wrap{display:none}
 @media (max-width:560px){.mc-msg{max-width:94%}.mc-contact{padding:16px}}
 .mc-contact .box{font-size:14px;background:#f7f9fc;border:1px solid var(--border);border-radius:10px;padding:11px 13px;line-height:1.55;white-space:pre-wrap}
 .au-form.au-wait .au-row,.au-card.au-wait .au-row,.au-card.au-wait .au-go,.au-card.au-wait .au-links,.au-card.au-wait .au-msg{display:none}
+
+/* ---- Book next call panel (Sep 2026) ---- */
+.bookbox{background:#f7f9fc;border:1px solid var(--border);border-radius:16px;padding:18px 20px 20px;margin:4px 0 18px}
+.booktoggle{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.booktype{border:1px solid var(--border);background:#fff;color:var(--ink-2);font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
+.booktype:hover{border-color:#c8d5ec}
+.booktype.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.booktype:disabled{cursor:default;opacity:.55}
+.booktype:disabled:hover{border-color:var(--border)}
+.bookrow{margin-bottom:14px}
+.bookrow .lbl{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tzbox{position:relative}
+.tzinput{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+.tzinput:focus{outline:none;border-color:var(--blue)}
+.tzlist{position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 24px -10px rgba(16,24,40,.3);z-index:5}
+.tzlist[hidden]{display:none}
+.tzopt{display:block;width:100%;text-align:left;border:none;background:none;font-family:inherit;font-size:13.5px;color:var(--ink);padding:9px 13px;cursor:pointer}
+.tzopt:hover,.tzopt.hi{background:var(--blue-soft)}
+.dateinput{font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+.slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:4px}
+.slotbtn{border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-weight:700;font-size:13px;padding:9px 8px;border-radius:9px;cursor:pointer}
+.slotbtn:hover{border-color:var(--blue)}
+.slotbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.slotempty{font-size:13px;color:var(--muted);padding:6px 2px}
+.bookgo{margin-top:14px}
+.bookmsg{font-size:13px;margin-top:10px}
+.bookmsg.bad{color:var(--red-ink)}
+.bookdone{background:var(--green-soft);border:1px solid #bfe6c9;color:var(--green-ink);border-radius:14px;padding:16px 18px;font-size:14px;line-height:1.6}
+.bookdone b{color:var(--green-ink)}
+@media (max-width:720px){.slotgrid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}}
