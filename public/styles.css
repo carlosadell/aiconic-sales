@@ -488,3 +488,5 @@ body.locked .wrap{display:none}
 .bookgo:disabled{background:#cfd6e2;border-color:#cfd6e2;color:#fff;cursor:default}
 .bookgo.arm{outline:3px solid #f59e0b;outline-offset:2px}
 .booktype.fixed{cursor:default;display:inline-block}
+.tzselect{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.tzselect:focus{outline:none;border-color:var(--blue)}

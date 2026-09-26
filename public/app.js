@@ -546,9 +546,8 @@ const BOOK_DAYS_SHOWN = 4;
 function bookPanelHtml(l){
   return '<div class="bookbox" id="bookbox" data-contact="'+esc(l.contactId)+'" data-calltype="'+esc(nextCallType(l))+'" data-tz="'+esc(defaultTz(l))+'" data-slot="">'+
     '<div class="bookrow"><span class="lbl">Call to book</span><div class="booktoggle" id="booktoggle"><span class="hint">Loading...</span></div></div>'+
-    '<div class="bookrow"><span class="lbl">Show times in the lead\'s time zone</span>'+
-      '<div class="tzbox"><input type="text" class="tzinput" id="tzinput" value="'+esc(defaultTz(l))+'" autocomplete="off" placeholder="Search time zones, for example New York">'+
-      '<div class="tzlist" id="tzlist" hidden></div></div></div>'+
+    '<div class="bookrow"><span class="lbl">Time zone for the times below</span>'+
+      tzSelectHtml(l)+'</div>'+
     '<div class="bookrow" id="bookslots"><span class="lbl">Pick a time</span><div class="slotempty">Choose the call above to see the open times.</div></div>'+
     '<div class="btnrow"><button type="button" class="btn solid bookgo" data-act="book" data-label="Pick a time first" disabled>Pick a time first</button></div>'+
     '<div class="bookmsg" id="bookmsg"></div>'+
@@ -556,6 +555,30 @@ function bookPanelHtml(l){
 }
 // Only the next call can be booked: intro leads book the interview, interview
 // leads book the review. Any other stage shows no booking panel.
+// Time zone picker: the lead's own zone first, then the common ones by name,
+// then every other zone. Changing it reloads the open times in that zone.
+const COMMON_TZ = [
+  ["America/New_York","US Eastern (New York)"],["America/Chicago","US Central (Chicago)"],["America/Denver","US Mountain (Denver)"],
+  ["America/Phoenix","US Arizona (Phoenix)"],["America/Los_Angeles","US Pacific (Los Angeles)"],["America/Anchorage","US Alaska"],["Pacific/Honolulu","US Hawaii"],
+  ["America/Toronto","Canada Eastern (Toronto)"],["America/Vancouver","Canada Pacific (Vancouver)"],["America/Mexico_City","Mexico City"],["America/Cancun","Cancun"],
+  ["America/Bogota","Bogota"],["America/Sao_Paulo","Sao Paulo"],["America/Asuncion","Asuncion"],["America/Argentina/Buenos_Aires","Buenos Aires"],
+  ["Europe/London","UK (London)"],["Europe/Dublin","Ireland (Dublin)"],["Europe/Lisbon","Portugal (Lisbon)"],["Europe/Madrid","Spain (Madrid)"],
+  ["Europe/Paris","France (Paris)"],["Europe/Berlin","Germany (Berlin)"],["Europe/Amsterdam","Netherlands (Amsterdam)"],["Europe/Athens","Greece (Athens)"],
+  ["Europe/Istanbul","Turkey (Istanbul)"],["Europe/Moscow","Moscow"],["Asia/Tbilisi","Georgia (Tbilisi)"],["Asia/Yerevan","Armenia (Yerevan)"],["Asia/Dubai","Dubai"],
+  ["Asia/Kolkata","India"],["Asia/Singapore","Singapore"],["Asia/Manila","Philippines (Manila)"],["Asia/Tokyo","Japan (Tokyo)"],
+  ["Australia/Perth","Australia Perth"],["Australia/Brisbane","Australia Brisbane"],["Australia/Sydney","Australia Sydney"],["Pacific/Auckland","New Zealand (Auckland)"],
+];
+function tzSelectHtml(l){
+  const cur = defaultTz(l);
+  const common = COMMON_TZ.map(x=>x[0]);
+  const opt = (v,t)=>'<option value="'+esc(v)+'"'+(v===cur?" selected":"")+'>'+esc(t)+'</option>';
+  const rest = tzNames().filter(n=>common.indexOf(n)===-1);
+  return '<select class="tzselect" id="tzselect" aria-label="Time zone">'+
+    (common.indexOf(cur)===-1 ? '<optgroup label="Lead\'s time zone">'+opt(cur, cur.replace(/_/g," "))+'</optgroup>' : "")+
+    '<optgroup label="Common time zones">'+COMMON_TZ.map(x=>opt(x[0], x[1]+(x[0]===l.timezone?"  (lead's time zone)":""))).join("")+'</optgroup>'+
+    '<optgroup label="All time zones">'+rest.filter(n=>n!==cur).map(n=>opt(n, n.replace(/_/g," "))).join("")+'</optgroup>'+
+  '</select>';
+}
 function bookCallBlock(l){
   if(!nextCallType(l)) return "";
   return '<div class="dohead">Book next call</div>'+bookPanelHtml(l);
@@ -929,7 +952,6 @@ function openSheet(l, ctx){
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
       prepBlock(l)+
-      bookCallBlock(l)+
       (showSent ? sentBlock(l) : "")+
       (l.status==="bookinginterview" ? interviewBlock(l)
         : l.status==="bookingreview" ? reviewBlock(l)
@@ -938,6 +960,7 @@ function openSheet(l, ctx){
            '<div class="hint" style="margin:-6px 0 12px">Confirm the call a few hours or a day before, and keep going until they reply and say they will be there.</div>'+
            channelBlocks(l)))+
       linksBlock(l)+
+      (ctx==="pipeline" ? "" : bookCallBlock(l))+
       actionButtons(l, ctx)+
       notesBlock(l)+
     '</div>';
@@ -962,6 +985,12 @@ function openSheet(l, ctx){
 function closeSheet(){ el("scrim").classList.remove("open"); }
 
 el("sheet").addEventListener("change", async (e)=>{
+  const tzSel = e.target.closest("#tzselect");
+  if(tzSel){
+    const box = el("bookbox");
+    if(box){ box.dataset.tz = tzSel.value; refreshSlots(); }
+    return;
+  }
   const dateInput = e.target.closest("#bookdate");
   if(dateInput){
     const box = el("bookbox");
