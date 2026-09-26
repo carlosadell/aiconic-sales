@@ -460,7 +460,7 @@ body.locked .wrap{display:none}
 .booktype:disabled{cursor:default;opacity:.55}
 .booktype:disabled:hover{border-color:var(--border)}
 .bookrow{margin-bottom:14px}
-.bookrow .lbl{display:block;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.bookrow .lbl{display:block;font-size:14px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .tzbox{position:relative}
 .tzinput{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px}
 .tzinput:focus{outline:none;border-color:var(--blue)}
@@ -480,3 +480,11 @@ body.locked .wrap{display:none}
 .bookdone{background:var(--green-soft);border:1px solid #bfe6c9;color:var(--green-ink);border-radius:14px;padding:16px 18px;font-size:14px;line-height:1.6}
 .bookdone b{color:var(--green-ink)}
 @media (max-width:720px){.slotgrid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}}
+
+.slotday{margin:0 0 14px}
+.slotday-h{font-size:14px;font-weight:700;color:var(--ink-2);margin:0 0 7px}
+.slotmore{margin-top:2px}
+.bookgo{font-size:14px;padding:11px 16px}
+.bookgo:disabled{background:#cfd6e2;border-color:#cfd6e2;color:#fff;cursor:default}
+.bookgo.arm{outline:3px solid #f59e0b;outline-offset:2px}
+.booktype.fixed{cursor:default;display:inline-block}

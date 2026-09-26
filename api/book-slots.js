@@ -1,10 +1,12 @@
-// GET /api/book-slots?callType=interview|review&date=YYYY-MM-DD&tz=America/New_York
-// -> { slots: [ "2026-10-01T09:00:00-04:00", ... ] }
+// GET /api/book-slots?callType=interview|review&tz=America/New_York
+// -> { days: [ { date: "2026-10-01", slots: [ "2026-10-01T09:00:00-04:00", ... ] }, ... ] }
+//    the open times for the next 14 days, days with nothing open left out.
+// GET /api/book-slots?callType=...&date=YYYY-MM-DD&tz=... -> { slots: [...] } for one day.
 // Open slots for one calendar, one day, in the given time zone. This is the
 // only place that calls GHL for this feature; the token never reaches the browser.
 
 const { requireUser } = require("../lib/auth");
-const { calendarIdFor, getFreeSlots } = require("../lib/ghl");
+const { calendarIdFor, getFreeSlots, getFreeSlotsAhead } = require("../lib/ghl");
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,6 +29,20 @@ module.exports = async (req, res) => {
 
   if (!calendarId) {
     res.status(400).json({ error: "callType must be interview or review, and that calendar must be configured." });
+    return;
+  }
+  if (!tz) {
+    res.status(400).json({ error: "tz is required." });
+    return;
+  }
+  if (!date) {
+    try {
+      const days = await getFreeSlotsAhead(calendarId, tz, 14);
+      res.setHeader("Cache-Control", "no-store");
+      res.status(200).json({ days });
+    } catch (e) {
+      res.status(502).json({ error: String(e.message || e) });
+    }
     return;
   }
   if (!DATE_RE.test(date)) {

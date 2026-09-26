@@ -530,74 +530,113 @@ function slotLabel(iso, tz){
   try{ return new Date(iso).toLocaleTimeString([], { hour:"numeric", minute:"2-digit", timeZone: tz }); }
   catch(_){ return new Date(iso).toLocaleTimeString(); }
 }
+// The call to book next, from where the lead is now: after the intro comes the
+// interview, after the interview comes the review.
+function nextCallType(l){
+  const st=String(l.stage||"").toLowerCase();
+  if(l.status==="bookingreview" || (l.status==="booked" && /interview/.test(st))) return "review";
+  if(l.status==="bookinginterview" || (l.status==="booked" && /intro/.test(st))) return "interview";
+  return "";
+}
+function dayHead(dateStr){
+  try{ return new Date(dateStr+"T12:00:00Z").toLocaleDateString([], { weekday:"long", month:"long", day:"numeric", timeZone:"UTC" }); }
+  catch(_){ return dateStr; }
+}
+const BOOK_DAYS_SHOWN = 4;
 function bookPanelHtml(l){
-  return '<div class="bookbox" id="bookbox" data-contact="'+esc(l.contactId)+'" data-calltype="" data-tz="'+esc(defaultTz(l))+'" data-date="" data-slot="">'+
-    '<div class="booktoggle" id="booktoggle"><span class="hint">Loading call types...</span></div>'+
-    '<div class="bookrow"><span class="lbl">Customer time zone</span>'+
-      '<div class="tzbox"><input type="text" class="tzinput" id="tzinput" value="'+esc(defaultTz(l))+'" autocomplete="off" placeholder="Search time zones...">'+
+  return '<div class="bookbox" id="bookbox" data-contact="'+esc(l.contactId)+'" data-calltype="'+esc(nextCallType(l))+'" data-tz="'+esc(defaultTz(l))+'" data-slot="">'+
+    '<div class="bookrow"><span class="lbl">Call to book</span><div class="booktoggle" id="booktoggle"><span class="hint">Loading...</span></div></div>'+
+    '<div class="bookrow"><span class="lbl">Show times in the lead\'s time zone</span>'+
+      '<div class="tzbox"><input type="text" class="tzinput" id="tzinput" value="'+esc(defaultTz(l))+'" autocomplete="off" placeholder="Search time zones, for example New York">'+
       '<div class="tzlist" id="tzlist" hidden></div></div></div>'+
-    '<div class="bookrow"><span class="lbl">Day</span><input type="date" class="dateinput" id="bookdate" min="'+todayStr()+'"></div>'+
-    '<div class="bookrow" id="bookslots"><span class="lbl">Open slots</span><div class="slotempty">Pick a call type and a day to see open slots.</div></div>'+
-    '<div class="btnrow"><button type="button" class="btn solid bookgo" data-act="book" data-label="Book" disabled>Book</button></div>'+
+    '<div class="bookrow" id="bookslots"><span class="lbl">Pick a time</span><div class="slotempty">Choose the call above to see the open times.</div></div>'+
+    '<div class="btnrow"><button type="button" class="btn solid bookgo" data-act="book" data-label="Pick a time first" disabled>Pick a time first</button></div>'+
     '<div class="bookmsg" id="bookmsg"></div>'+
   '</div>';
 }
+// Only the next call can be booked: intro leads book the interview, interview
+// leads book the review. Any other stage shows no booking panel.
 function bookCallBlock(l){
+  if(!nextCallType(l)) return "";
   return '<div class="dohead">Book next call</div>'+bookPanelHtml(l);
 }
 function renderTzList(query){
   const list = el("tzlist"); if(!list) return;
-  const q = String(query||"").trim().toLowerCase();
+  const q = String(query||"").trim().toLowerCase().replace(/\s+/g,"_");
   const names = tzNames().filter(n=>!q || n.toLowerCase().includes(q)).slice(0,60);
   if(!names.length){ list.innerHTML='<div class="slotempty">No match</div>'; list.hidden=false; return; }
   list.innerHTML = names.map(n=>'<button type="button" class="tzopt" data-act="tzpick" data-tz="'+esc(n)+'">'+esc(n.replace(/_/g," "))+'</button>').join("");
   list.hidden = false;
 }
+function setBookButton(){
+  const box = el("bookbox"); if(!box) return;
+  const goBtn = box.querySelector(".bookgo"); if(!goBtn) return;
+  const slot = box.dataset.slot, tz = box.dataset.tz;
+  if(!slot){ goBtn.disabled = true; goBtn.dataset.label = "Pick a time first"; goBtn.textContent = goBtn.dataset.label; return; }
+  let when = slot;
+  try{ when = new Date(slot).toLocaleString([], { weekday:"long", month:"long", day:"numeric", hour:"numeric", minute:"2-digit", timeZone: tz }); }catch(_){}
+  const kind = box.dataset.calltype==="review" ? "review call" : "interview";
+  goBtn.disabled = false;
+  goBtn.dataset.label = "Book the "+kind+" for "+when;
+  goBtn.textContent = goBtn.dataset.label;
+}
+function renderSlotDays(){
+  const box = el("bookbox"); const slotsBox = el("bookslots"); if(!box || !slotsBox) return;
+  const days = box._days || [];
+  const tz = box.dataset.tz;
+  if(!days.length){ slotsBox.innerHTML = '<span class="lbl">Pick a time</span><div class="slotempty">No open times in the next two weeks. Check the calendar in the CRM.</div>'; return; }
+  const all = box.dataset.showall === "1";
+  const list = all ? days : days.slice(0, BOOK_DAYS_SHOWN);
+  slotsBox.innerHTML = '<span class="lbl">Pick a time</span>'+
+    list.map(d=>'<div class="slotday"><div class="slotday-h">'+esc(dayHead(d.date))+'</div><div class="slotgrid">'+
+      d.slots.map(s=>'<button type="button" class="slotbtn'+(s===box.dataset.slot?" on":"")+'" data-act="slotpick" data-slot="'+esc(s)+'">'+esc(slotLabel(s,tz))+'</button>').join("")+
+    '</div></div>').join("")+
+    (!all && days.length > BOOK_DAYS_SHOWN ? '<button type="button" class="btn slotmore" data-act="slotmore">Show more days</button>' : "");
+}
 function refreshSlots(){
   const box = el("bookbox"); if(!box) return;
   const callType = box.dataset.calltype;
   const tz = box.dataset.tz;
-  const date = box.dataset.date;
   const slotsBox = el("bookslots");
-  const goBtn = box.querySelector(".bookgo");
-  box.dataset.slot = "";
-  if(goBtn) goBtn.disabled = true;
+  box.dataset.slot = ""; box.dataset.showall = ""; box._days = [];
+  setBookButton();
   if(!slotsBox) return;
-  if(!callType || !date || !tz){
-    slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotempty">Pick a call type and a day to see open slots.</div>';
+  if(!callType || !tz){
+    slotsBox.innerHTML = '<span class="lbl">Pick a time</span><div class="slotempty">Choose the call above to see the open times.</div>';
     return;
   }
-  slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotempty">Loading...</div>';
-  const params = new URLSearchParams({ callType, date, tz });
+  slotsBox.innerHTML = '<span class="lbl">Pick a time</span><div class="slotempty">Loading the open times...</div>';
+  const my = (box._req = (box._req||0) + 1);
+  const params = new URLSearchParams({ callType, tz });
   fetch("/api/book-slots?"+params.toString(),{cache:"no-store"})
     .then(r=>r.json().then(d=>({ok:r.ok, d})))
     .then(({ok,d})=>{
-      if(!ok) throw new Error(d.error||"Could not load slots.");
-      const slots = d.slots||[];
-      if(!slots.length){ slotsBox.innerHTML='<span class="lbl">Open slots</span><div class="slotempty">No open slots that day.</div>'; return; }
-      slotsBox.innerHTML = '<span class="lbl">Open slots</span><div class="slotgrid">'+
-        slots.map(s=>'<button type="button" class="slotbtn" data-act="slotpick" data-slot="'+esc(s)+'">'+esc(slotLabel(s,tz))+'</button>').join("")+
-        '</div>';
+      if(my !== box._req) return;
+      if(!ok) throw new Error(d.error||"Could not load the open times.");
+      box._days = d.days || [];
+      renderSlotDays();
     })
-    .catch(e=>{ slotsBox.innerHTML='<span class="lbl">Open slots</span><div class="slotempty">Could not load slots: '+esc(e.message)+'</div>'; });
+    .catch(e=>{ if(my===box._req) slotsBox.innerHTML='<span class="lbl">Pick a time</span><div class="slotempty">Could not load the open times: '+esc(e.message)+'</div>'; });
 }
 function renderBooked(startTime, tz){
   const box = el("bookbox"); if(!box) return;
   const when = new Date(startTime).toLocaleString([], { dateStyle:"full", timeStyle:"short", timeZone: tz });
-  box.innerHTML = '<div class="bookdone">Booked for <b>'+esc(when)+'</b> ('+esc(tz)+').</div>'+
+  box.innerHTML = '<div class="bookdone">Booked for <b>'+esc(when)+'</b> ('+esc(tz.replace(/_/g," "))+'). The lead gets the confirmation from the CRM and moves stage on their own.</div>'+
     '<div class="btnrow"><button type="button" class="btn" data-act="bookagain">Book another call</button></div>';
 }
 function initBookPanel(){
   const wrap = el("booktoggle"); if(!wrap) return;
   loadBookConfig().then(cfg=>{
-    const wrapNow = el("booktoggle"); if(!wrapNow) return;
-    const opts = [
-      {key:"interview", label:"Interview", ok:cfg.interview},
-      {key:"review", label:"Review", ok:cfg.review},
-    ];
-    wrapNow.innerHTML = opts.map(o=>
-      '<button type="button" class="booktype" data-act="booktype" data-type="'+o.key+'"'+(o.ok?"":" disabled")+'>'+o.label+'</button>'
-    ).join("") + (opts.some(o=>!o.ok) ? '<span class="hint">'+opts.filter(o=>!o.ok).map(o=>o.label+" is not set up yet").join(", ")+'</span>' : "");
+    const wrapNow = el("booktoggle"); const box = el("bookbox"); if(!wrapNow || !box) return;
+    const type = box.dataset.calltype;
+    const label = type==="review" ? "Review call" : "Interview";
+    if(!cfg[type]){
+      box.dataset.calltype = "";
+      wrapNow.innerHTML = '<span class="hint">'+label+' booking is not set up yet.</span>';
+      return;
+    }
+    wrapNow.innerHTML = '<span class="booktype on fixed">'+label+'</span>';
+    refreshSlots();
   });
 }
 
@@ -984,7 +1023,12 @@ el("sheet").addEventListener("click", async (e)=>{
     const box = el("bookbox"); if(!box) return;
     box.dataset.slot = b.dataset.slot;
     box.querySelectorAll(".slotbtn").forEach(x=>x.classList.toggle("on", x===b));
-    const goBtn = box.querySelector(".bookgo"); if(goBtn) goBtn.disabled = false;
+    setBookButton();
+    return;
+  }
+  if(act==="slotmore"){
+    const box = el("bookbox"); if(!box) return;
+    box.dataset.showall = "1"; renderSlotDays();
     return;
   }
   if(act==="bookagain"){
@@ -998,7 +1042,7 @@ el("sheet").addEventListener("click", async (e)=>{
     const contactId = box.dataset.contact, callType = box.dataset.calltype, tz = box.dataset.tz, slot = box.dataset.slot;
     if(!callType || !slot) return;
     if(!b.classList.contains("arm")){
-      b.classList.add("arm"); b.textContent="Tap again to confirm";
+      b.classList.add("arm"); b.textContent="Tap again to book it";
       clearTimeout(b._t); b._t=setTimeout(()=>{ b.classList.remove("arm"); b.textContent=b.dataset.label||"Book"; },4000);
       return;
     }
