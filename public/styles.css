@@ -490,3 +490,11 @@ body.locked .wrap{display:none}
 .booktype.fixed{cursor:default;display:inline-block}
 .tzselect{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
 .tzselect:focus{outline:none;border-color:var(--blue)}
+.sendres{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+.sendres.ok{background:#e7f6ec;border:1.5px solid #86d19c;color:#14532d}
+.sendres.bad{background:#fdecec;border:1.5px solid #f3a5a5;color:#7f1d1d}
+.sendres-ic{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
+.sendres.ok .sendres-ic{background:#16a34a}
+.sendres.bad .sendres-ic{background:#dc2626}
+.sent-snip.sms{white-space:pre-wrap;word-break:break-word;font-size:13.5px;color:var(--ink)}
+.sent-snip.sms a{color:var(--blue-ink)}

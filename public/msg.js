@@ -148,14 +148,12 @@
       const r = isSms
         ? await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:current.id,message:text})})
         : await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:current.id,subject,body:text})});
-      const d = await r.json();
+      const d = await r.json().catch(()=>({}));
       if(r.ok && d.ok){
-        b.textContent = isSms ? "Text sent" : "Email sent"; b.classList.add("done");
-        ta.value = ""; if(subjEl) subjEl.value = "";
+        window.showSendResult({card, btn:b, label, kind:isSms?"sms":"email", ok:true, ta, subjEl});
         setTimeout(reloadThread, 1500);
-        setTimeout(()=>{ b.textContent = label; b.classList.remove("done"); b.disabled = false; },3000);
-      }else{ b.textContent = "Failed: "+(d.error||"try again"); b.disabled = false; }
-    }catch(_){ b.textContent = "Failed, try again"; b.disabled = false; }
+      }else{ window.showSendResult({card, btn:b, label, kind:isSms?"sms":"email", ok:false, error:d.error}); }
+    }catch(_){ window.showSendResult({card, btn:b, label, kind:isSms?"sms":"email", ok:false}); }
   }
 
   document.addEventListener("DOMContentLoaded", ()=>{

@@ -705,7 +705,7 @@ function sentBlock(l){
   const cls = st==="delivered"?"ok":(st==="failed"||st==="undelivered")?"bad":"muted";
   const sms = l.lastSms
     ? '<div class="sent-item"><div class="sent-h"><span class="ch">SMS</span><span class="tagstatus '+cls+'">'+esc(st)+'</span><span class="when">'+esc(ago(l.lastSms.at))+'</span></div>'+
-        '<div class="sent-snip">'+esc(l.lastSms.body)+'</div></div>'
+        '<div class="sent-snip sms">'+esc(l.lastSms.body).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')+'</div></div>'
     : '<div class="sent-item empty">No SMS '+(l.phone?"on record":"(no phone number)")+'</div>';
   return '<div class="dohead">What the lead already received</div><div class="sent">'+email+sms+'</div>';
 }
@@ -1028,6 +1028,32 @@ document.addEventListener("click", (e)=>{
   if(!e.target.closest(".tzbox")) list.hidden = true;
 });
 
+// After a text or email is sent: a clear green message in the card saying what
+// was sent, to whom and when, the box emptied, and the button ready for the
+// next one. If it failed: a clear red message and the text stays so nothing is lost.
+function showSendResult(o){
+  const card=o.card, b=o.btn;
+  b.disabled=false; b.classList.remove("done","arm"); b.textContent=o.label;
+  if(!card) return;
+  let box=card.querySelector(".sendres");
+  if(!box){ box=document.createElement("div"); box.className="sendres"; const row=b.closest(".btnrow"); (row||b).insertAdjacentElement("afterend", box); }
+  const what = o.kind==="sms" ? "Text" : "Email";
+  if(o.ok){
+    const toEl=card.querySelector(".chan-how b");
+    const to=toEl?toEl.textContent:"";
+    const at=new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    box.className="sendres ok";
+    box.innerHTML='<span class="sendres-ic">\u2713</span><div><b>'+what+' sent'+(to?' to '+esc(to):'')+' at '+esc(at)+'.</b> It is saved in their conversation in the CRM. The box is now empty so you can write the next one.</div>';
+    if(o.ta){ o.ta.value=""; o.ta.style.height="auto"; }
+    if(o.subjEl) o.subjEl.value="";
+  }else{
+    box.className="sendres bad";
+    box.innerHTML='<span class="sendres-ic">!</span><div><b>'+what+' not sent.</b> '+esc(String(o.error||"Something went wrong, try again.").trim().replace(/([^.!?])$/,"$1."))+' Your message is still in the box.</div>';
+  }
+  try{ box.scrollIntoView({behavior:"smooth", block:"nearest"}); }catch(_){}
+}
+window.showSendResult = showSendResult;
+
 el("sheet").addEventListener("click", async (e)=>{
   const b = e.target.closest("button"); if(!b) return;
   const act = b.dataset.act;
@@ -1115,8 +1141,8 @@ el("sheet").addEventListener("click", async (e)=>{
     return;
   }
   if(act==="sms" || act==="email"){
-    const card=b.closest(".chan");
-    const label=b.dataset.label||"Send";
+    const card=b.closest(".chan")||b.closest(".channel");
+    const label=b.dataset.label||(act==="sms"?"Send this text":"Send this email");
     const ta=card?card.querySelector(act==="sms"?".msg-sms":".msg-body"):null;
     const text=ta?ta.value:"";
     const subjEl=card?card.querySelector(".msg-subject"):null;
@@ -1134,10 +1160,10 @@ el("sheet").addEventListener("click", async (e)=>{
       const r = act==="sms"
         ? await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,message:text})})
         : await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId:b.dataset.id,subject,body:text,repName:b.dataset.rep})});
-      const d=await r.json();
-      if(r.ok && d.ok){ b.textContent=act==="sms"?"Text sent":"Email sent"; b.classList.add("done"); }
-      else{ b.textContent="Failed: "+(d.error||"try again"); b.disabled=false; }
-    }catch(_){ b.textContent="Failed, try again"; b.disabled=false; }
+      const d=await r.json().catch(()=>({}));
+      if(r.ok && d.ok) showSendResult({card, btn:b, label, kind:act, ok:true, ta, subjEl});
+      else showSendResult({card, btn:b, label, kind:act, ok:false, error:d.error});
+    }catch(_){ showSendResult({card, btn:b, label, kind:act, ok:false}); }
     return;
   }
   if(act==="savenote"){
