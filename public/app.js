@@ -192,17 +192,17 @@ function stageDetail(s){
   }
   if(st==="noshow") return {
     what:"People who missed or cancelled their intro call. The CRM is sending them reminders to book a new one.",
-    how:"They land here when a salesperson taps No Show/Book Later on the intro card, or on their own when they cancel the intro.",
+    how:"They land here when a salesperson taps No Show or Book Later on the intro card, or on their own when they cancel the intro.",
     you:"Reach out to them personally if you have not yet, so they end up booking the intro call.",
   };
   if(st==="bookinginterview") return {
     what:"People who need to book their interview. The CRM is sending them reminders to book it.",
-    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the intro card or No Show/Book Later on the interview card, or on their own when they cancel the interview.",
+    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the intro card or No Show or Book Later on the interview card, or on their own when they cancel the interview.",
     you:"Reach out to them personally if you have not yet, so they end up booking the interview.",
   };
   if(st==="bookingreview") return {
     what:"People who need to book their review call. The CRM is sending them reminders to book it.",
-    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the interview card or No Show/Book Later on the review card, or on their own when they cancel the review.",
+    how:"They land here when a salesperson taps Qualified Next Call Not Booked on the interview card or No Show or Book Later on the review card, or on their own when they cancel the review.",
     you:"Reach out to them personally if you have not yet, so they end up booking the review call.",
   };
   if(st==="baking") return {
@@ -450,11 +450,14 @@ function actionPlan(l, ctx){
   const isInterview=/interview/i.test(st), isReview=/review/i.test(st);
   // Button text matches the stage names in the pipeline.
   const B={
-    noshowIntro:{label:"No Show/Book Later", tag:"noshow-intro", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the intro call at another time. Starts the reminders asking them to rebook the intro call."},
+    noshowIntro:{label:"No Show", tag:"noshow-intro", tone:"chase", icon:"👻", what:"They did not turn up to the intro call. Starts the reminders asking them to rebook the intro call."},
+    booklaterIntro:{label:"Book Later", tag:"booklater-intro", tone:"chase", icon:"🔁", what:"They asked to move the intro call to another time. Starts the same reminders asking them to rebook the intro call."},
     noBookInterview:{label:"Qualified Next Call Not Booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
-    noshowInterview:{label:"No Show/Book Later", tag:"noshow-interview", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the interview at another time. Starts the reminders asking them to rebook the interview."},
+    noshowInterview:{label:"No Show", tag:"noshow-interview", tone:"chase", icon:"👻", what:"They did not turn up to the interview. Starts the reminders asking them to rebook the interview."},
+    booklaterInterview:{label:"Book Later", tag:"booklater-interview", tone:"chase", icon:"🔁", what:"They asked to move the interview to another time. Starts the same reminders asking them to rebook the interview."},
     noBookReview:{label:"Qualified Next Call Not Booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
-    noshowReview:{label:"No Show/Book Later", tag:"noshow-review", tone:"chase", icon:"🔁", what:"They did not turn up, or they asked to book the review at another time. Starts the reminders asking them to rebook the review."},
+    noshowReview:{label:"No Show", tag:"noshow-review", tone:"chase", icon:"👻", what:"They did not turn up to the review call. Starts the reminders asking them to rebook the review."},
+    booklaterReview:{label:"Book Later", tag:"booklater-review", tone:"chase", icon:"🔁", what:"They asked to move the review call to another time. Starts the same reminders asking them to rebook the review."},
     baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
     nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Moves them to Not Qualified and stops all messages."},
     cancel:{label:"Cancel the call", tag:"not-qualified", tone:"dark", icon:"🚫", what:"The call is off. Moves them to Not Qualified and stops all messages."},
@@ -468,9 +471,9 @@ function actionPlan(l, ctx){
     if(s!=="clientwon") list.push(B.won);
     return {title:"Move this lead", auto:"Only for closing out a lead. The day to day call buttons are on the cards in Daily Outreach.", after:list};
   }
-  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.baking,B.nq]};
-  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.noBookReview,B.baking,B.nq]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.noBookInterview,B.baking,B.nq]};
+  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.nq]};
+  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.nq]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.nq]};
   return null; // other stages: the closing buttons live on the Pipeline tab
 }
 
