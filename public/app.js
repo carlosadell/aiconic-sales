@@ -450,13 +450,13 @@ function actionPlan(l, ctx){
   const isInterview=/interview/i.test(st), isReview=/review/i.test(st);
   // Button text matches the stage names in the pipeline.
   const B={
-    noshowIntro:{label:"No Show", tag:"noshow-intro", tone:"chase", icon:"👻", what:"They did not turn up to the intro call. Starts the reminders asking them to rebook the intro call."},
+    noshowIntro:{label:"No Show", tag:"noshow-intro", tone:"noshow", icon:"👻", what:"They did not turn up to the intro call. Starts the reminders asking them to rebook the intro call."},
     booklaterIntro:{label:"Book Later", tag:"booklater-intro", tone:"chase", icon:"🔁", what:"They asked to move the intro call to another time. Starts the same reminders asking them to rebook the intro call."},
     noBookInterview:{label:"Qualified Next Call Not Booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
-    noshowInterview:{label:"No Show", tag:"noshow-interview", tone:"chase", icon:"👻", what:"They did not turn up to the interview. Starts the reminders asking them to rebook the interview."},
+    noshowInterview:{label:"No Show", tag:"noshow-interview", tone:"noshow", icon:"👻", what:"They did not turn up to the interview. Starts the reminders asking them to rebook the interview."},
     booklaterInterview:{label:"Book Later", tag:"booklater-interview", tone:"chase", icon:"🔁", what:"They asked to move the interview to another time. Starts the same reminders asking them to rebook the interview."},
     noBookReview:{label:"Qualified Next Call Not Booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
-    noshowReview:{label:"No Show", tag:"noshow-review", tone:"chase", icon:"👻", what:"They did not turn up to the review call. Starts the reminders asking them to rebook the review."},
+    noshowReview:{label:"No Show", tag:"noshow-review", tone:"noshow", icon:"👻", what:"They did not turn up to the review call. Starts the reminders asking them to rebook the review."},
     booklaterReview:{label:"Book Later", tag:"booklater-review", tone:"chase", icon:"🔁", what:"They asked to move the review call to another time. Starts the same reminders asking them to rebook the review."},
     baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
     nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Moves them to Not Qualified and stops all messages."},
