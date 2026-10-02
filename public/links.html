@@ -34,7 +34,11 @@
 
   h2{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 2px}
   .h2-sub{font-size:13.5px;color:var(--ink-2);margin:0 0 10px}
-  .sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr));gap:16px;margin-top:18px;align-items:start}
+  .sections{display:flex;flex-direction:column;gap:16px;margin-top:18px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 4px}
+  .sec-num{width:28px;height:28px;border-radius:8px;background:var(--blue-soft);color:var(--blue-ink);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .sec .h2-sub{margin-left:40px}
+  .sub{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
   .sec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 8px;box-shadow:var(--shadow)}
   .list{display:flex;flex-direction:column}
   .lk{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
@@ -66,12 +70,10 @@
   <div class="callout"><b>Always send these exact booking links.</b> Never a different or personal link that could break or confuse the lead.</div>
 
   <div class="sections">
-    <div class="sec"><h2>Booking links for leads</h2><p class="h2-sub">Send these to leads. Use Copy so you send the exact link.</p><div class="list" id="g-book"></div></div>
-    <div class="sec"><h2>Book a call with the team</h2><p class="h2-sub">Calendars for booking time with someone on our team.</p><div class="list" id="g-team"></div></div>
-    <div class="sec"><h2>Share with leads and clients</h2><p class="h2-sub">Pages and guides you can send.</p><div class="list" id="g-share"></div></div>
-    <div class="sec"><h2>Scripts and trackers</h2><p class="h2-sub">Open these before and during a call, and log every call you take.</p><div class="list" id="g-scripts"></div></div>
-    <div class="sec"><h2>Systems and tools</h2><p class="h2-sub">Where the work happens day to day.</p><div class="list" id="g-systems"></div></div>
-    <div class="sec"><h2>Affiliate links</h2><p class="h2-sub">Our HighLevel referral links.</p><div class="list" id="g-aff"></div></div>
+    <div class="sec"><div class="sec-head"><div class="sec-num">1</div><h2>Booking links</h2></div><p class="h2-sub">Use Copy so you always send the exact link.</p><div class="sub">For leads</div><div class="list" id="g-book"></div><div class="sub">Book a call with the team</div><div class="list" id="g-team"></div></div>
+    <div class="sec"><div class="sec-head"><div class="sec-num">2</div><h2>Scripts and tracker</h2></div><p class="h2-sub">Open these before and during a call, and log every call you take.</p><div class="list" id="g-scripts"></div></div>
+    <div class="sec"><div class="sec-head"><div class="sec-num">3</div><h2>Assets</h2></div><p class="h2-sub">Pages and guides you can send to leads and clients.</p><div class="list" id="g-share"></div></div>
+    <div class="sec"><div class="sec-head"><div class="sec-num">4</div><h2>Tools &amp; Affiliate links</h2></div><p class="h2-sub">Where the work happens day to day, and our HighLevel referral links.</p><div class="sub">Tools</div><div class="list" id="g-systems"></div><div class="sub">Affiliate links</div><div class="list" id="g-aff"></div></div>
   </div>
 
   <p class="foot">Missing a link, or one has moved? Tell the team so we fix it here for everyone, instead of passing around a personal copy.</p>
@@ -100,6 +102,7 @@
     "g-scripts": [
       {edge:"violet", label:"Intro call script", url:"https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit", note:"The Leads Engine discovery call script."},
       {edge:"violet", label:"Interview questions", url:"https://docs.google.com/document/d/1obuxJO9o69lKt3i52-iLLtScCgm1vzL9rdluUESggfY/edit", note:"The one hour interview questions."},
+      {edge:"violet", label:"Feedback from previous calls", url:"https://docs.google.com/document/d/13LSfoZxsRaVBttCKF4L1mxCAXMcrfa5a2bU8kTINhY0/edit", note:"Mistakes from past calls and what to do instead. Read it before your calls."},
       {edge:"amber", label:"Aiconic price list", url:"https://docs.google.com/document/d/1KlMicyc455yOXvf3j6wktIgc3XZdV5uC3glvPqAgzi8/edit", note:"What we charge, for when it comes up."},
       {edge:"green", label:"Intro Calls Tracker", url:"https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit", note:"Log every call you actually took, with your name on it."}
     ],
