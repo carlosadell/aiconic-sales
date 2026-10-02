@@ -118,7 +118,19 @@
     tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===v); });
     if(frames[v]){ requestAnimationFrame(function(){ sizeFrame(frames[v]); }); setTimeout(function(){ sizeFrame(frames[v]); },150); }
   }
-  tabs.forEach(function(t){ t.addEventListener("click", function(){ show(t.dataset.view); }); });
+  // Each tab has its own address, e.g. /#links or /#pipeline.
+  var slug={onb:"onboarding",comms:"communications",pipeline:"pipeline",links:"links",calls:"daily-outreach",msg:"message"};
+  var bySlug={}; for(var s in slug){ bySlug[slug[s]]=s; }
+  function viewFromHash(){ return bySlug[(location.hash||"").replace(/^#\/?/,"").toLowerCase()] || null; }
+  function go(v){
+    show(v);
+    var want="#"+slug[v];
+    if(location.hash!==want){ try{ history.pushState(null,"",location.pathname+location.search+want); }catch(_){ location.hash=want; } }
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ go(t.dataset.view); }); });
+  window.addEventListener("popstate", function(){ show(viewFromHash() || "calls"); });
+  window.addEventListener("hashchange", function(){ var v=viewFromHash(); if(v) show(v); });
+  (function(){ var v=viewFromHash(); if(v) show(v); })();
   for(var k in frames){ (function(f){ if(f) f.addEventListener("load", function(){ sizeFrame(f); }); })(frames[k]); }
   window.addEventListener("resize", function(){ for(var k in views){ if(views[k] && !views[k].hidden && frames[k]) sizeFrame(frames[k]); } });
   window.addEventListener("message", function(e){
@@ -126,7 +138,7 @@
     if(e.data.t==="commsHeight" && frames.comms && e.data.h>0){ frames.comms.style.height=(e.data.h+2)+"px"; }
     if(e.data.t==="onbHeight" && frames.onb && e.data.h>0){ frames.onb.style.height=(e.data.h+2)+"px"; }
     if(e.data.t==="linksHeight" && frames.links && e.data.h>0){ frames.links.style.height=(e.data.h+2)+"px"; }
-    if(e.data.t==="gotoView" && views[e.data.v]){ show(e.data.v); try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_){ window.scrollTo(0,0); } }
+    if(e.data.t==="gotoView" && views[e.data.v]){ go(e.data.v); try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(_){ window.scrollTo(0,0); } }
   });
 })();
 </script>
