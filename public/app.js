@@ -892,10 +892,7 @@ function notesBlock(l){
     '<div class="notes" id="notes"><div class="notes-loading">Loading notes...</div></div>'+
     '<textarea class="box notenew" id="notenew" rows="3" placeholder="Add a note from the call, saved straight to the CRM. Paste the Fathom recording link in here too..."></textarea>'+
     '<div class="btnrow"><button class="btn solid" data-act="savenote" data-id="'+esc(l.contactId)+'" data-user="'+esc(l.repId)+'">Save note</button></div>'+
-    '<div class="hint">Notes save to this contact in the CRM and show for everyone. Paste the Fathom recording link into a note after the call.</div>'+
-    '<div class="subhead">Log the call</div>'+
-    '<a class="calllog" href="https://docs.google.com/spreadsheets/d/1coBj8aCR7DF6qBaW5eL0Qam9sdaHKGsnTXSc2dx3DlU/edit" target="_blank" rel="noopener">Open the call log</a>'+
-    '<div class="hint" style="margin-bottom:16px">Log the call in the sheet only if you actually took it, and put your name on it. No-shows and calls you did not take are not logged.</div>';
+    '<div class="hint" style="margin-bottom:16px">Notes save to this contact in the CRM and show for everyone. Paste the Fathom recording link into a note after the call.</div>';
 }
 
 // Notes from the CRM can come back as rich text (HTML), for example the Fathom

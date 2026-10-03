@@ -19,6 +19,12 @@
   .toptab:hover{border-color:var(--line)}
   .toptab.on:hover{border-color:var(--blue)}
   @media (max-width:560px){.toptab{flex:1 1 auto;text-align:center;padding:10px 8px}}
+  .routine{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px 6px;margin:4px 0 20px;max-width:900px}
+  .routine h3{font-size:16px;font-weight:800;margin:0 0 8px;color:var(--ink)}
+  .routine ol{margin:0;padding-left:22px}
+  .routine li{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:0 0 10px;padding-left:4px}
+  .routine li b{color:var(--ink)}
+  .routine a{color:var(--blue-ink);font-weight:600}
   .calls-h{font-size:clamp(20px,4vw,26px);font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
   #commsframe,#onbframe,#linksframe{width:100%;height:600px;border:none;background:var(--bg);display:block;overflow:hidden}
 </style>
@@ -91,7 +97,17 @@
 
   <h2 class="calls-h">Upcoming calls</h2>
   <p class="viewlede">Every scheduled call coming up, soonest first. Tap a card to prepare, message the lead, and reach out so they show up. Follow-ups and every other stage live in the <b>Pipeline</b> tab.</p>
-  <a class="watch" href="https://www.loom.com/share/8b3106a9663e42758594e1a546fe522c" target="_blank" rel="noopener">&#9658; Watch the walkthrough</a>
+  <div class="routine">
+    <h3>Your daily routine</h3>
+    <ol>
+      <li><b>Check your email and your calendar.</b> Every morning, read the notifications in your business email. You get an email every time a lead books, cancels or reschedules a call, and every time a lead messages us back, with the details so you can reply. The <a href="#communications">Communications</a> tab explains each one. Then check that the events in your Google Calendar match the calls below and in the <a href="#pipeline">Pipeline</a> tab. Only open the CRM if something doesn't match or needs fixing.</li>
+      <li><b>Check every lead got their messages.</b> Open each card and check that the confirmation email and SMS went out. If a lead hasn't received them, find out why and fix it, or ask the team for help.</li>
+      <li><b>Reach out personally to every call in the next 24 hours.</b> Send a short personal message using the card's message button, business WhatsApp, LinkedIn through <a href="https://conversifi.io/dashboard" target="_blank" rel="noopener">Conversifi</a>, or email. Use their name and mention what they told us. This gets more people to show up and builds trust before the call.</li>
+      <li><b>Prepare before every call.</b> Look up their LinkedIn profile and website, and read everything said so far: the notes on their card, their emails and their LinkedIn chat in Conversifi. Open the <a href="https://docs.google.com/document/d/1CXYZJrlmfJxLXVL10Lg04sGHbqfFgve2FKqv0MyeWW8/edit" target="_blank" rel="noopener">intro call script</a> and the <a href="https://docs.google.com/document/d/13LSfoZxsRaVBttCKF4L1mxCAXMcrfa5a2bU8kTINhY0/edit" target="_blank" rel="noopener">Feedback from previous calls</a> doc, and have a world clock ready for time zones.</li>
+      <li><b>Before the call ends.</b> If they qualify, book the next call on their card in the Sales Toolkit while you are still on the call. If that isn't possible, give them the link to book it themselves from the <a href="#links">Links</a> tab. Then tap the button on the card that matches what happened, so the lead moves to the right stage of the pipeline. The script shows how, with screenshots.</li>
+      <li><b>After the call.</b> Add your call notes and the Fathom recording link on their card, send anything you promised on the call the same day, and send the team a short message confirming you took the call and what happened overall.</li>
+    </ol>
+  </div>
 
   <div id="dailytools"></div>
 
