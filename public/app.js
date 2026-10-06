@@ -244,6 +244,34 @@ function render(d){
 
 // One salesperson filter, shown in both the Daily Outreach and Pipeline tabs and
 // kept in sync. Changing either re-renders both.
+// Pipeline search: find any lead by name, email, phone or company, whatever
+// stage they are in. Kept outside render() so a data refresh keeps the query.
+let PIPE_Q="";
+function leadMatches(l,q){
+  const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hay=[l.name,l.email,l.company,l.repName,cleanStage(l.stage)].join(" ").toLowerCase();
+  const qDigits=q.replace(/\D/g,"");
+  const phoneHit=qDigits.length>=4 && String(l.phone||"").replace(/\D/g,"").includes(qDigits);
+  return phoneHit || words.every(w=>hay.includes(w));
+}
+function renderPipeSearch(){
+  const box=el("pipesearchres"), board=el("board"); if(!box||!board) return;
+  const q=PIPE_Q.trim();
+  if(!q){ box.innerHTML=""; box.hidden=true; board.hidden=false; return; }
+  board.hidden=true; box.hidden=false;
+  const hits=allLeads(DATA).filter(l=>leadMatches(l,q)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  box.innerHTML='<div class="dohead">'+(hits.length?hits.length+(hits.length===1?" lead found":" leads found"):"No lead matches")+'</div>';
+  if(!hits.length){ box.insertAdjacentHTML("beforeend",'<div class="stage-empty">Check the spelling, or try their email or phone number.</div>'); return; }
+  const rows=document.createElement("div"); rows.className="rows";
+  hits.forEach(l=>{
+    const r=rowEl(l,true,"pipeline");
+    const co=r.querySelector(".co");
+    if(co && l.stage) co.insertAdjacentHTML("beforeend",'<span class="mdot">&middot;</span><span class="src">'+esc(cleanStage(l.stage))+'</span>');
+    rows.appendChild(r);
+  });
+  box.appendChild(rows);
+}
+
 function repSelect(id){
   return '<div class="filterrow"><select class="repfilter" id="'+id+'" aria-label="Salesperson">'+
     '<option value="all"'+(REP==="all"?" selected":"")+'>All salespeople</option>'+
@@ -254,7 +282,12 @@ function renderFilters(){
   const dt=el("dailytools");
   if(dt){ dt.innerHTML=repSelect("dailyfilter"); const s=dt.querySelector("#dailyfilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); }); }
   const pt=el("pipetools");
-  if(pt){ pt.innerHTML=repSelect("pipefilter"); const s=pt.querySelector("#pipefilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); }); }
+  if(pt){
+    pt.innerHTML='<div class="pipesearch"><input type="search" id="pipesearch" placeholder="Search a lead by name, email, phone or company" autocomplete="off" aria-label="Search a lead"></div>'+repSelect("pipefilter")+'<div id="pipesearchres" hidden></div>';
+    const s=pt.querySelector("#pipefilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); });
+    const q=pt.querySelector("#pipesearch");
+    if(q){ q.value=PIPE_Q; q.addEventListener("input",e=>{ PIPE_Q=e.target.value; renderPipeSearch(); }); }
+  }
 }
 
 function renderDocs(){
@@ -404,6 +437,7 @@ function renderPipeline(){
   const flow=document.createElement("div"); flow.className="pipeflow";
   stages.forEach((s,i)=>flow.appendChild(pipeMainRow(s, i+1)));
   box.appendChild(flow);
+  renderPipeSearch();
 }
 
 // The stage card. Opens in the same sheet as a lead. Explains the stage in plain
