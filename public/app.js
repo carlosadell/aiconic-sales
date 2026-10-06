@@ -162,7 +162,7 @@ function cleanStage(name){
 const PIPE_BANDS = [
   { key:"path",  title:"The path to a client", sub:"The calls that move a deal forward, in order.", statuses:["survey","booked","clientwon"], arrows:true },
   { key:"chase", title:"Chase lanes", sub:"A missed, cancelled, or unbooked call waits here and gets reminders until they rebook.", statuses:["noshow","rescheduling","bookinginterview","bookingreview"], arrows:false },
-  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled"], arrows:false },
+  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled","lost"], arrows:false },
 ];
 
 // Pull the leading emoji out of a live stage name, if it has one.
@@ -218,6 +218,11 @@ function stageDetail(s){
   if(st==="notqualified") return {
     what:"People who do not qualify. All messages to them stop.",
     how:"They land here when someone taps Not Qualified on a call card, or Not Qualified or Cancel the call on a lead in the Pipeline tab.",
+    you:"Nothing.",
+  };
+  if(st==="lost") return {
+    what:"People who are not a good fit or decided not to go ahead. Not cancelled, not qualified out, not a client. All messages to them stop and they stay here.",
+    how:"They land here when someone taps Lost on a call card or on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
   if(st==="neverrescheduled") return {
@@ -311,7 +316,7 @@ function rowEl(l, showRep, ctx){
     showRep?'<span class="src">'+esc(l.repName)+'</span>':'<span class="src">'+esc(l.source)+'</span>',
   ].filter(Boolean).join('<span class="mdot">&middot;</span>');
   const badge=l.flagged?'<span class="badge red">'+esc(l.primaryFlag.label)+'</span>':"";
-  const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking")?"slate":"green";
+  const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking"||l.status==="lost")?"slate":"green";
   row.innerHTML='<span class="dotmark '+dotCls+'"></span>'+
     '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
     badge+'<span class="go">&rsaquo;</span>';
@@ -495,6 +500,7 @@ function actionPlan(l, ctx){
     baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
     nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Moves them to Not Qualified and stops all messages."},
     cancel:{label:"Cancel the call", tag:"not-qualified", tone:"dark", icon:"🚫", what:"The call is off. Moves them to Not Qualified and stops all messages."},
+    lost:{label:"Lost", tag:"lost", tone:"dark", icon:"😞", what:"Not a good fit or decided not to go ahead. Moves them to Lost, stops all messages, and they stay there."},
     won:{label:"Client Won", tag:"won", tone:"green", icon:"🔥", what:"They signed. Moves them to Client Won."},
   };
   if(ctx==="pipeline"){
@@ -502,11 +508,12 @@ function actionPlan(l, ctx){
     if(s==="booked") list.push(B.cancel);
     if(s!=="notqualified") list.push(B.nq);
     if(s!=="baking") list.push(B.baking);
+    if(s!=="lost") list.push(B.lost);
     if(s!=="clientwon") list.push(B.won);
     return {title:"Move this lead", auto:"Only for closing out a lead. The day to day call buttons are on the cards in Daily Outreach.", after:list};
   }
-  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.nq]};
-  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.nq]};
+  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.lost,B.nq]};
+  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.lost,B.nq]};
   if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.nq]};
   return null; // other stages: the closing buttons live on the Pipeline tab
 }
@@ -532,6 +539,7 @@ function referenceBlock(l){
     baking: "This lead is being nurtured. Not a client yet, and no automation runs from here. Use this card to look back at their details and previous call notes, and reach out when the timing is right.",
     neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
     clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
+    lost: "This lead was not a good fit or decided not to go ahead. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
     notqualified: "This lead was taken out of the process as not qualified. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
   };
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
@@ -971,7 +979,7 @@ function openSheet(l, ctx){
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
     : "";
   const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out everywhere you can to lift the show-up rate";
-  const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled");
+  const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled"||l.status==="lost");
   const showSent = (l.status==="booked"||l.status==="noshow"||l.status==="rescheduling"||l.status==="bookinginterview"||l.status==="bookingreview"||l.status==="cancelled");
   sheet.innerHTML =
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div></div>'+
@@ -983,6 +991,7 @@ function openSheet(l, ctx){
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
       (l.status==="survey"?'<div class="nshead book">Submitted the survey and qualified, but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
+      (l.status==="lost"?'<div class="nshead cancel">Lost. Not a good fit or decided not to go ahead. Reference only.</div>':"")+
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
       prepBlock(l)+
