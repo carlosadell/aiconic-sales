@@ -514,7 +514,7 @@ function actionPlan(l, ctx){
   }
   if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.lost,B.nq]};
   if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.lost,B.nq]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.nq]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.lost,B.nq]};
   return null; // other stages: the closing buttons live on the Pipeline tab
 }
 
