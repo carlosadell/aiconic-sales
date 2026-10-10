@@ -127,7 +127,9 @@ async function load(){
     d.stages = (d.stages||[]).filter(x=>!/emergency|sorry/i.test(String(x.name||"")));
     d.leads = (d.leads||[]).filter(l=>l.status!=="rescheduling");
     DATA = d;
+    (d.leads||[]).forEach(l=>{ if(l.timezone) l.tzChecked=true; });
     render(d);
+    fillTimezones();
     s.className="status-pill live";
     s.textContent = "Live from our CRM, "+new Date(d.generatedAt).toLocaleString();
   }catch(e){
@@ -304,6 +306,60 @@ function renderDocs(){
     '</div>';
 }
 
+// The lead's time zone in plain words, with the time it is there right now,
+// e.g. "Cancun time (EST), 9:14 AM now". Empty when the CRM has no time zone.
+function tzText(tz){
+  if(!tz) return "";
+  const city=String(tz).split("/").pop().replace(/_/g," ");
+  let abbr="", now="";
+  try{
+    const parts=new Intl.DateTimeFormat("en-US",{timeZone:tz,timeZoneName:"short"}).formatToParts(new Date());
+    const p=parts.find(x=>x.type==="timeZoneName"); abbr=p?p.value:"";
+    now=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:tz});
+  }catch(_){ return String(tz); }
+  return city+" time"+(abbr?" ("+abbr+")":"")+(now?", "+now+" now":"");
+}
+function tzRowHtml(l){
+  const t=tzText(l.timezone);
+  return t?esc(t):"";
+}
+function tzSheetText(l){
+  const t=tzText(l.timezone);
+  if(t) return "Time zone: "+t;
+  return l.tzChecked ? "Time zone: not saved in the CRM" : "Time zone: loading...";
+}
+
+// Some leads come from the pipeline read without a time zone. Ask the CRM for
+// those after the page loads, a few at a time, and fill them in on the rows and
+// on an open card without reloading anything.
+let TZ_RUN=0;
+async function fillTimezones(){
+  const run=++TZ_RUN;
+  const ids=[...new Set(allLeads(DATA).filter(l=>!l.timezone && l.contactId).map(l=>l.contactId))];
+  for(let i=0;i<ids.length;i+=20){
+    if(run!==TZ_RUN) return;
+    const batch=ids.slice(i,i+20);
+    let got={};
+    try{
+      const r=await fetch("/api/timezones?ids="+encodeURIComponent(batch.join(",")),{cache:"no-store"});
+      const d=await r.json();
+      if(r.ok) got=d.timezones||{};
+    }catch(_){}
+    if(run!==TZ_RUN) return;
+    allLeads(DATA).forEach(l=>{
+      if(!batch.includes(l.contactId)) return;
+      if(got[l.contactId]) l.timezone=got[l.contactId];
+      l.tzChecked=true;
+    });
+    batch.forEach(id=>{
+      const l=allLeads(DATA).find(x=>x.contactId===id);
+      if(!l) return;
+      document.querySelectorAll('.tzm[data-tzcid="'+id+'"]').forEach(n=>{ n.innerHTML=tzRowHtml(l); });
+      document.querySelectorAll('.tzline[data-tzcid="'+id+'"]').forEach(n=>{ n.textContent=tzSheetText(l); });
+    });
+  }
+}
+
 // One lead row, used in both views. showRep puts the salesperson in the meta
 // line (the board and the upcoming list mix reps, so you want to see whose it is).
 function rowEl(l, showRep, ctx){
@@ -318,7 +374,7 @@ function rowEl(l, showRep, ctx){
   const badge=l.flagged?'<span class="badge red">'+esc(l.primaryFlag.label)+'</span>':"";
   const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking"||l.status==="lost")?"slate":"green";
   row.innerHTML='<span class="dotmark '+dotCls+'"></span>'+
-    '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div></div>'+
+    '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div><div class="co tzm" style="margin-top:3px" data-tzcid="'+esc(l.contactId||"")+'">'+tzRowHtml(l)+'</div></div>'+
     badge+'<span class="go">&rsaquo;</span>';
   row.addEventListener("click",()=>openSheet(l, ctx));
   return row;
@@ -982,7 +1038,7 @@ function openSheet(l, ctx){
   const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled"||l.status==="lost");
   const showSent = (l.status==="booked"||l.status==="noshow"||l.status==="rescheduling"||l.status==="bookinginterview"||l.status==="bookingreview"||l.status==="cancelled");
   sheet.innerHTML =
-    '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div></div>'+
+    '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div><div class="role tzline" data-tzcid="'+esc(l.contactId||"")+'">'+esc(tzSheetText(l))+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
       (l.status==="noshow"?'<div class="nshead">In the rebooking lane. Give them an easy way back in.</div>':"")+
