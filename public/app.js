@@ -116,9 +116,13 @@ function messages(l){
 }
 
 async function load(){
-  const s = el("status");
-  s.className="status-pill"; s.textContent="Loading live data...";
-  el("refresh").disabled = true;
+  // The Daily Outreach and Pipeline tabs each have their own status pill and
+  // Refresh button. Both reload the same live data from the CRM.
+  const pills = ["status","status2"].map(el).filter(Boolean);
+  const btns = ["refresh","refresh2"].map(el).filter(Boolean);
+  const setPill = (cls, txt) => pills.forEach(s=>{ s.className=cls; s.textContent=txt; });
+  setPill("status-pill", "Loading live data...");
+  btns.forEach(b=>b.disabled=true);
   try{
     const r = await fetch("/api/leads",{cache:"no-store"});
     const d = await r.json();
@@ -130,13 +134,11 @@ async function load(){
     (d.leads||[]).forEach(l=>{ if(l.timezone) l.tzChecked=true; });
     render(d);
     fillTimezones();
-    s.className="status-pill live";
-    s.textContent = "Live from our CRM, "+new Date(d.generatedAt).toLocaleString();
+    setPill("status-pill live", "Live from our CRM, "+new Date(d.generatedAt).toLocaleString());
   }catch(e){
-    s.className="status-pill err";
-    s.textContent = "Could not load live data: "+e.message;
+    setPill("status-pill err", "Could not load live data: "+e.message);
   }finally{
-    el("refresh").disabled = false;
+    btns.forEach(b=>b.disabled=false);
   }
 }
 
@@ -1289,5 +1291,6 @@ el("sheet").addEventListener("click", async (e)=>{
 el("scrim").addEventListener("click",e=>{ if(e.target===el("scrim")) closeSheet(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSheet(); });
 el("refresh").addEventListener("click", load);
+if(el("refresh2")) el("refresh2").addEventListener("click", load);
 // Starts once the person is signed in (see auth.js).
 window.startApp = function(){ if(window._appStarted) return; window._appStarted = true; load(); };
