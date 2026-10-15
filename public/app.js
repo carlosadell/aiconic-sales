@@ -7,6 +7,7 @@ const el = (id) => document.getElementById(id);
 let DATA = null;
 let REP = "all";
 let REP_NAMES = [];
+let DAILY_MODE = "upcoming"; // "upcoming" or "past"
 
 function initials(n){ return (n||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -289,7 +290,13 @@ function repSelect(id){
 }
 function renderFilters(){
   const dt=el("dailytools");
-  if(dt){ dt.innerHTML=repSelect("dailyfilter"); const s=dt.querySelector("#dailyfilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); }); }
+  if(dt){
+    dt.innerHTML='<div class="tabgroup" style="margin:0 0 10px">'+
+      '<button type="button" class="tab'+(DAILY_MODE==="upcoming"?" on":"")+'" data-dmode="upcoming">Upcoming</button>'+
+      '<button type="button" class="tab'+(DAILY_MODE==="past"?" on":"")+'" data-dmode="past">Past (last 14 days)</button></div>'+repSelect("dailyfilter");
+    const s=dt.querySelector("#dailyfilter"); if(s) s.addEventListener("change",e=>{ REP=e.target.value; render(DATA); });
+    dt.querySelectorAll("[data-dmode]").forEach(b=>b.addEventListener("click",()=>{ DAILY_MODE=b.dataset.dmode; renderFilters(); renderDaily(); }));
+  }
   const pt=el("pipetools");
   if(pt){
     pt.innerHTML='<div class="pipesearch"><input type="search" id="pipesearch" placeholder="Search a lead by name, email, phone or company" autocomplete="off" aria-label="Search a lead"></div>'+repSelect("pipefilter")+'<div id="pipesearchres" hidden></div>';
@@ -394,13 +401,18 @@ function dayKey(iso, tz){
 function renderDaily(){
   const box=el("upcoming"); if(!box) return;
   const startToday=new Date(); startToday.setHours(0,0,0,0);
+  const past=DAILY_MODE==="past";
+  const pastFrom=startToday.getTime()-14*86400000;
+  // Past: the call date has gone by and the lead is still in that call's Booked
+  // stage (not moved after the call yet), newest first.
   let ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
-  ups=ups.filter(l=> new Date(l.appointment.at).getTime() >= startToday.getTime());
+  ups=ups.filter(l=>{ const t=new Date(l.appointment.at).getTime(); return past ? (t<startToday.getTime() && t>=pastFrom) : t>=startToday.getTime(); });
   if(REP!=="all") ups=ups.filter(l=>l.repName===REP);
-  ups.sort((a,b)=> new Date(a.appointment.at)-new Date(b.appointment.at));
+  ups.sort((a,b)=> past ? new Date(b.appointment.at)-new Date(a.appointment.at) : new Date(a.appointment.at)-new Date(b.appointment.at));
   box.innerHTML="";
   if(!ups.length){
-    box.innerHTML='<div class="empty-state">'+(REP!=="all"?esc(REP)+" has no upcoming calls right now.":"No upcoming calls right now.")+'</div>';
+    const what=past?"past calls waiting to be moved":"upcoming calls";
+    box.innerHTML='<div class="empty-state">'+(REP!=="all"?esc(REP)+" has no "+what+" right now.":"No "+what+" right now.")+'</div>';
     return;
   }
   const todayKey=dayKey(new Date().toISOString());
