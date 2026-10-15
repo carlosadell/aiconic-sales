@@ -371,14 +371,15 @@ async function fillTimezones(){
 
 // One lead row, used in both views. showRep puts the salesperson in the meta
 // line (the board and the upcoming list mix reps, so you want to see whose it is).
-function rowEl(l, showRep, ctx){
+function rowEl(l, showRep, ctx, showStage){
   const row=document.createElement("div");
   row.className="row"+(l.flagged?"":" calm");
-  const day=dayLabel(l.appointment && l.appointment.at, l.timezone);
+  const day=dayLabel(callAt(l), l.timezone);
   const meta=[
     '<span class="ctype '+typeClass(l.callType)+'">'+esc(l.callType)+'</span>',
     day?'<span class="day">'+esc(day)+'</span>':"",
     showRep?'<span class="src">'+esc(l.repName)+'</span>':'<span class="src">'+esc(l.source)+'</span>',
+    showStage?'<span class="src">Now: '+esc(cleanStage(l.stage))+'</span>':"",
   ].filter(Boolean).join('<span class="mdot">&middot;</span>');
   const badge=l.flagged?'<span class="badge red">'+esc(l.primaryFlag.label)+'</span>':"";
   const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking"||l.status==="lost")?"slate":"green";
@@ -398,20 +399,38 @@ function dayKey(iso, tz){
 // Daily Outreach: only the upcoming scheduled calls (intro, interview, review),
 // in one column, soonest first, grouped under a heading for each day so it reads
 // straight down. Everything else lives on the Pipeline board.
+// When a lead's call happened: the booked appointment, or for leads already moved
+// on (Baking, Lost, ...) the date the server read from their history.
+function callAt(l){ return (l.appointment && l.appointment.at) || l.callAt || null; }
+
 function renderDaily(){
   const box=el("upcoming"); if(!box) return;
   const startToday=new Date(); startToday.setHours(0,0,0,0);
   const past=DAILY_MODE==="past";
+  const h=el("callsheading"); if(h) h.textContent=past?"Past calls":"Upcoming calls";
+  const now=Date.now();
   const pastFrom=startToday.getTime()-14*86400000;
-  // Past: the call date has gone by and the lead is still in that call's Booked
-  // stage (not moved after the call yet), newest first.
-  let ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
-  ups=ups.filter(l=>{ const t=new Date(l.appointment.at).getTime(); return past ? (t<startToday.getTime() && t>=pastFrom) : t>=startToday.getTime(); });
+  let ups;
+  if(past){
+    // Every intro, interview or review in the last 14 days up to now, in whatever
+    // stage the lead is now. The card shows the current stage so a rep can see
+    // if it has already been moved.
+    ups=allLeads(DATA).filter(l=>{
+      const at=callAt(l); if(!at) return false;
+      const t=new Date(at).getTime();
+      if(!(t<=now && t>=pastFrom)) return false;
+      const title=(l.appointment&&l.appointment.title)||l.callTitle||"";
+      return !title || /intro|interview|review/i.test(title);
+    });
+  }else{
+    ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
+    ups=ups.filter(l=> new Date(l.appointment.at).getTime() >= startToday.getTime());
+  }
   if(REP!=="all") ups=ups.filter(l=>l.repName===REP);
-  ups.sort((a,b)=> past ? new Date(b.appointment.at)-new Date(a.appointment.at) : new Date(a.appointment.at)-new Date(b.appointment.at));
+  ups.sort((a,b)=> past ? new Date(callAt(b))-new Date(callAt(a)) : new Date(callAt(a))-new Date(callAt(b)));
   box.innerHTML="";
   if(!ups.length){
-    const what=past?"past calls waiting to be moved":"upcoming calls";
+    const what=past?"past calls in the last 14 days":"upcoming calls";
     box.innerHTML='<div class="empty-state">'+(REP!=="all"?esc(REP)+" has no "+what+" right now.":"No "+what+" right now.")+'</div>';
     return;
   }
@@ -420,18 +439,18 @@ function renderDaily(){
   const list=document.createElement("div"); list.className="daylist";
   let curKey=null;
   ups.forEach(l=>{
-    const k=dayKey(l.appointment.at, l.timezone);
+    const k=dayKey(callAt(l), l.timezone);
     if(k!==curKey){
       curKey=k;
-      let label=dayLabel(l.appointment.at, l.timezone);
+      let label=dayLabel(callAt(l), l.timezone);
       if(k===todayKey) label="Today";
       else if(k===tmrKey) label="Tomorrow";
-      const cnt=ups.filter(x=>dayKey(x.appointment.at, x.timezone)===k).length;
+      const cnt=ups.filter(x=>dayKey(callAt(x), x.timezone)===k).length;
       const head=document.createElement("div"); head.className="dayhead";
       head.innerHTML='<span class="dayhead-d">'+esc(label)+'</span><span class="dayhead-c">'+cnt+' call'+(cnt===1?"":"s")+'</span>';
       list.appendChild(head);
     }
-    list.appendChild(rowEl(l,true));
+    list.appendChild(rowEl(l,true,undefined,past));
   });
   box.appendChild(list);
 }

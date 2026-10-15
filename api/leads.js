@@ -36,6 +36,19 @@ const LINKS = {
 // The stages a rep works from a card, so only these get the heavy CRM reads.
 const NEEDS_PREP = new Set(["booked", "noshow", "rescheduling", "bookinginterview", "bookingreview", "cancelled"]);
 
+// Stages a lead can be moved to after a call. Their appointment date is read too
+// (only for leads touched in the last 15 days), so the Daily Outreach Past view
+// can show a call that has already been moved on.
+const DATED_AFTER_CALL = new Set(["baking", "notqualified", "lost", "clientwon", "neverrescheduled"]);
+const PAST_WINDOW_MS = 15 * 24 * 3600 * 1000;
+function touchedRecently(o) {
+  const ts = [o.lastStageChangeAt, o.lastStatusChangeAt, o.updatedAt]
+    .map((x) => (x ? Date.parse(x) : NaN))
+    .filter((x) => Number.isFinite(x));
+  if (!ts.length) return true; // no date to judge by, so read it to be safe
+  return Math.max(...ts) >= Date.now() - PAST_WINDOW_MS;
+}
+
 // Work out where the lead really came from, from the opportunity's own
 // attribution (the pages and referrers GoHighLevel recorded), not a guess.
 function sourceOf(attributions, contact, tags) {
@@ -184,7 +197,18 @@ module.exports = async (req, res) => {
       return buildLead(t, { contact, comms, commsOk });
     });
 
-    const lightLeads = light.map((t) => buildLead(t, null));
+    // Moved-on leads stay lightweight, but we read their appointment date so the
+    // Past list can show calls that were already moved. callAt is only used there.
+    const lightLeads = await mapLimit(light, 4, async (t) => {
+      const lead = buildLead(t, null);
+      if (!DATED_AFTER_CALL.has(t.status) || lead.appointment || !touchedRecently(t.o)) return lead;
+      try {
+        const c = await getComms(lead.contactId);
+        if (c.appointment && c.appointment.at) lead.callAt = c.appointment.at;
+        if (c.appointment && c.appointment.title) lead.callTitle = c.appointment.title;
+      } catch (_) {}
+      return lead;
+    });
     const leads = prepLeads.concat(lightLeads);
 
     // Counts per status, for anyone who wants a quick total.
