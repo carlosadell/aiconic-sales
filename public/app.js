@@ -222,7 +222,7 @@ function stageDetail(s){
   };
   if(st==="notqualified") return {
     what:"People who do not qualify. All messages to them stop.",
-    how:"They land here when someone taps Not Qualified on a call card, or Not Qualified or Cancel the call on a lead in the Pipeline tab.",
+    how:"They land here when someone taps Not Qualified on a call card, or Not Qualified on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
   if(st==="lost") return {
