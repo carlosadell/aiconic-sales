@@ -374,7 +374,7 @@ async function fillTimezones(){
 function rowEl(l, showRep, ctx, showStage){
   const row=document.createElement("div");
   row.className="row"+(l.flagged?"":" calm");
-  const day=dayLabel(callAt(l), l.timezone);
+  const day=dayLabel(l.appointment && l.appointment.at, l.timezone);
   const meta=[
     '<span class="ctype '+typeClass(l.callType)+'">'+esc(l.callType)+'</span>',
     day?'<span class="day">'+esc(day)+'</span>':"",
