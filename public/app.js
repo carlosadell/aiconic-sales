@@ -588,31 +588,33 @@ function actionPlan(l, ctx){
     noshowReview:{label:"No Show", tag:"noshow-review", tone:"noshow", icon:"👻", what:"They did not turn up to the review call. Starts the reminders asking them to rebook the review."},
     booklaterReview:{label:"Book Later", tag:"booklater-review", tone:"chase", icon:"🔁", what:"They asked to move the review call to another time. Starts the same reminders asking them to rebook the review."},
     baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
-    nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Moves them to Not Qualified and stops all messages."},
-    cancel:{label:"Cancel the call", tag:"not-qualified", tone:"dark", icon:"🚫", what:"The call is off. Moves them to Not Qualified and stops all messages."},
+    nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Not a fit or the call is off. Moves them to Not Qualified, cancels the call and stops all messages."},
     lost:{label:"Lost", tag:"lost", tone:"dark", icon:"😞", what:"Not a good fit or decided not to go ahead. Moves them to Lost, stops all messages, and they stay there."},
     won:{label:"Client Won", tag:"won", tone:"green", icon:"🔥", what:"They signed. Moves them to Client Won."},
   };
-  if(ctx==="pipeline"){
-    const list=[];
-    if(s==="booked") list.push(B.cancel);
-    if(s!=="notqualified") list.push(B.nq);
-    if(s!=="baking") list.push(B.baking);
-    if(s!=="lost") list.push(B.lost);
-    if(s!=="clientwon") list.push(B.won);
-    return {title:"Move this lead", auto:"Only for closing out a lead. The day to day call buttons are on the cards in Daily Outreach.", after:list};
-  }
-  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.lost,B.nq]};
-  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.lost,B.nq]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.lost,B.nq]};
-  return null; // other stages: the closing buttons live on the Pipeline tab
+  // The call type for No Show / Book Later on cards that are not a booked call:
+  // from the appointment title, then from the stage. Unknown means ask.
+  const kindOf=t=>/interview/i.test(t)?"interview":/review/i.test(t)?"review":/intro/i.test(t)?"intro":"";
+  const kind=kindOf((l.appointment&&l.appointment.title)||l.callTitle||"")||kindOf(st);
+  const any=(base,label,tone,icon,what)=>kind
+    ? {label,tag:base+"-"+kind,tone,icon,what:what+" Call type: "+kind+"."}
+    : {label,tag:"",needKind:base,tone,icon,what:what+" You pick the call type when you tap."};
+  const generic={title:"Move this lead", auto:"Move this lead to the right stage from here. Tap the same one again later to move it again.", after:[
+    any("noshow","No Show","noshow","👻","They did not turn up. Starts the reminders asking them to rebook."),
+    any("booklater","Book Later","chase","🔁","They asked to move the call. Starts the same rebook reminders."),
+    B.baking,B.lost,B.nq,B.won]};
+  if(ctx==="pipeline" || (s!=="booked")) return generic;
+  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.lost,B.nq,B.won]};
+  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.lost,B.nq,B.won]};
+  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.lost,B.nq,B.won]};
+  return generic;
 }
 
 function actionButtons(l, ctx){
   const p=actionPlan(l, ctx);
   if(!p) return "";
   const row=a=>'<div class="actrow">'+
-    '<button type="button" class="pbtn '+a.tone+'" data-act="tag" data-tag="'+esc(a.tag)+'" data-id="'+esc(l.contactId)+'" data-label="'+esc(a.label)+'">'+
+    '<button type="button" class="pbtn '+a.tone+'" data-act="tag" data-tag="'+esc(a.tag)+'"'+(a.needKind?' data-needkind="'+esc(a.needKind)+'"':"")+' data-id="'+esc(l.contactId)+'" data-label="'+esc(a.label)+'">'+
       '<span class="pbtn-ic">'+a.icon+'</span><span class="pbtn-l">'+esc(a.label)+'</span></button>'+
     '<div class="actwhat">'+esc(a.what)+'</div></div>';
   let h='<div class="dohead">'+esc(p.title)+'</div><div class="actpanel">';
@@ -1245,7 +1247,23 @@ el("sheet").addEventListener("click", async (e)=>{
     }catch(e){ b.disabled=false; b.textContent=b.dataset.label||"Book"; if(msg){ msg.textContent="That did not go through, try again."; msg.className="bookmsg bad"; } }
     return;
   }
+  if(act==="kindpick"){
+    const btn=b.closest(".actrow").querySelector('[data-act="tag"]');
+    btn.dataset.tag=btn.dataset.needkind+"-"+b.dataset.kind; btn.dataset.needkind="";
+    const pk=b.closest(".kindpick"); if(pk) pk.remove();
+    btn.click(); // arms it, tap again to confirm
+    return;
+  }
   if(act==="tag"){
+    if(b.dataset.needkind){
+      const row=b.closest(".actrow"); let pk=row.querySelector(".kindpick");
+      if(!pk){
+        pk=document.createElement("div"); pk.className="kindpick"; pk.style.cssText="display:flex;gap:6px;margin:8px 0 0;flex-wrap:wrap";
+        pk.innerHTML='<span class="hint" style="margin:0 4px 0 0;align-self:center">Which call?</span>'+["intro","interview","review"].map(k=>'<button type="button" class="btn tiny" data-act="kindpick" data-kind="'+k+'">'+k.charAt(0).toUpperCase()+k.slice(1)+'</button>').join("");
+        row.appendChild(pk);
+      }
+      return;
+    }
     const lbl=b.querySelector(".pbtn-l");
     const what=b.closest(".actrow") ? b.closest(".actrow").querySelector(".actwhat") : null;
     if(b.dataset.armed!=="1"){

@@ -5,7 +5,7 @@
 // fire the wrong sequence. The browser never sees the GHL token.
 
 const { requireUser } = require("../lib/auth");
-const { addTag, addNote } = require("../lib/ghl");
+const { addTag, removeTag, getContact, addNote } = require("../lib/ghl");
 
 module.exports = async (req, res) => {
   const who = await requireUser(req, res);
@@ -29,7 +29,24 @@ module.exports = async (req, res) => {
       res.status(400).json({ ok: false, error: "contactId and tag are required." });
       return;
     }
-    await addTag(contactId, tag);
+    // If the lead already has this tag, take it off first and add it again, so
+    // the workflow that listens for it fires again.
+    let had = false;
+    try {
+      const c = await getContact(contactId);
+      had = ((c && c.tags) || []).some((t) => String(t).toLowerCase() === String(tag).toLowerCase());
+    } catch (_) {}
+    if (had) await removeTag(contactId, tag);
+    try {
+      await addTag(contactId, tag);
+    } catch (e) {
+      // Never leave the lead without the tag: retry the add once.
+      try { await addTag(contactId, tag); }
+      catch (e2) {
+        res.status(502).json({ ok: false, error: `The tag was ${had ? "removed but could not be added back" : "not added"} (${String(e2.message || e2)}). Tap the button again.` });
+        return;
+      }
+    }
     try { await addNote(contactId, `Tagged "${tag}" from the sales toolkit by ${who.name} (${who.email}).`, who.ghlUserId); } catch (_) {}
     res.status(200).json({ ok: true });
   } catch (e) {
