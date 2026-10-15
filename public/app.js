@@ -416,6 +416,7 @@ function renderDaily(){
     // stage the lead is now. The card shows the current stage so a rep can see
     // if it has already been moved.
     ups=allLeads(DATA).filter(l=>{
+      if(/test/i.test(l.name||"")) return false;
       const at=callAt(l); if(!at) return false;
       const t=new Date(at).getTime();
       if(!(t<=now && t>=pastFrom)) return false;

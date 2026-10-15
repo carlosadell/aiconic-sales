@@ -17,6 +17,7 @@ const {
   getUsers,
   getContact,
   getComms,
+  getContactAppointment,
   mapLimit,
   LOCATION_ID,
 } = require("../lib/ghl");
@@ -202,11 +203,11 @@ module.exports = async (req, res) => {
     const lightLeads = await mapLimit(light, 4, async (t) => {
       const lead = buildLead(t, null);
       if (!DATED_AFTER_CALL.has(t.status) || lead.appointment || !touchedRecently(t.o)) return lead;
-      try {
-        const c = await getComms(lead.contactId);
-        if (c.appointment && c.appointment.at) lead.callAt = c.appointment.at;
-        if (c.appointment && c.appointment.title) lead.callTitle = c.appointment.title;
-      } catch (_) {}
+      let appt = null;
+      try { const c = await getComms(lead.contactId); appt = c.appointment; } catch (_) {}
+      // Fallback: the contact's own calendar events, when the history has none.
+      if (!(appt && appt.at)) { try { appt = await getContactAppointment(lead.contactId); } catch (_) {} }
+      if (appt && appt.at) { lead.callAt = appt.at; if (appt.title) lead.callTitle = appt.title; }
       return lead;
     });
     const leads = prepLeads.concat(lightLeads);
