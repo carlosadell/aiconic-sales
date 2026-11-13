@@ -35,7 +35,7 @@ function typeClass(t){
   if(k.includes("interview")) return "t-interview";
   if(k.includes("review")) return "t-review";
   if(k.includes("reschedul")) return "t-resched";
-  if(k.includes("cancel")||k.includes("never")) return "t-cancel";
+  if(k.includes("cancel")||k.includes("never")||k.includes("abandon")) return "t-cancel";
   if(k.includes("intro")) return "t-intro";
   return "t-intro";
 }
@@ -167,7 +167,7 @@ function cleanStage(name){
 const PIPE_BANDS = [
   { key:"path",  title:"The path to a client", sub:"The calls that move a deal forward, in order.", statuses:["survey","booked","clientwon"], arrows:true },
   { key:"chase", title:"Chase lanes", sub:"A missed, cancelled, or unbooked call waits here and gets reminders until they rebook.", statuses:["noshow","rescheduling","bookinginterview","bookingreview"], arrows:false },
-  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled","lost"], arrows:false },
+  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled","lost","abandoned"], arrows:false },
 ];
 
 // Pull the leading emoji out of a live stage name, if it has one.
@@ -229,6 +229,11 @@ function stageDetail(s){
     what:"People who are not a good fit or decided not to go ahead. Not cancelled, not qualified out, not a client. All messages to them stop and they stay here.",
     how:"They land here when someone taps Lost on a call card or on a lead in the Pipeline tab.",
     you:"Nothing.",
+  };
+  if(st==="abandoned") return {
+    what:"People who went quiet or were left behind. All messages to them stop and they stay here.",
+    how:"They land here when someone taps Abandoned on a call card, or Abandoned on a lead in the Pipeline tab.",
+    you:"Nothing, unless something has genuinely changed.",
   };
   if(st==="neverrescheduled") return {
     what:"People who went through all the reminders and never booked again.",
@@ -382,7 +387,7 @@ function rowEl(l, showRep, ctx, showStage){
     showStage?'<span class="src">Now: '+esc(cleanStage(l.stage))+'</span>':"",
   ].filter(Boolean).join('<span class="mdot">&middot;</span>');
   const badge=l.flagged?'<span class="badge red">'+esc(l.primaryFlag.label)+'</span>':"";
-  const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking"||l.status==="lost")?"slate":"green";
+  const dotCls=l.flagged?"red":l.status==="noshow"?"amber":l.status==="rescheduling"?"violet":l.status==="bookinginterview"?"teal":l.status==="bookingreview"?"indigo":l.status==="survey"?"teal":(l.status==="cancelled"||l.status==="notqualified"||l.status==="neverrescheduled"||l.status==="baking"||l.status==="lost"||l.status==="abandoned")?"slate":"green";
   row.innerHTML='<span class="dotmark '+dotCls+'"></span>'+
     '<div class="who"><div class="nm">'+esc(l.name)+'</div><div class="co">'+meta+'</div><div class="co tzm" style="margin-top:3px" data-tzcid="'+esc(l.contactId||"")+'">'+tzRowHtml(l)+'</div></div>'+
     badge+'<span class="go">&rsaquo;</span>';
@@ -563,51 +568,11 @@ function openStageSheet(s){
   el("scrim").classList.add("open");
 }
 
-// The action buttons that move a lead. Stages are automatic and cannot be moved
-// by hand from the toolkit. Each button adds one tag, and the tag triggers the
-// matching workflow in the CRM, which sets the stage and starts the right
-// messages. Which buttons show depends on where the lead is now, so a rep only
-// ever sees the two or three that make sense.
-// The action buttons that move a lead. Stages move automatically and cannot be
-// moved by hand from the toolkit. The next call is normally booked during the
-// call, and then the lead moves on its own. These buttons are only for when
-// something did not happen: a no show, the next call not booked, not qualified, or
-// an emergency. Each button adds one tag, and the tag triggers the matching
-// workflow in the CRM. Each card only shows the buttons for its own call.
+// Outcome buttons live in /actions.js so the same list is what the tests check.
+// Each button adds one tag. The CRM workflow moves the stage. Abandoned is
+// offered everywhere Not Qualified and Lost are offered.
 function actionPlan(l, ctx){
-  const s=l.status, st=l.stage||"";
-  const isInterview=/interview/i.test(st), isReview=/review/i.test(st);
-  // Button text matches the stage names in the pipeline.
-  const B={
-    noshowIntro:{label:"No Show", tag:"noshow-intro", tone:"noshow", icon:"👻", what:"They did not turn up to the intro call. Starts the reminders asking them to rebook the intro call."},
-    booklaterIntro:{label:"Book Later", tag:"booklater-intro", tone:"chase", icon:"🔁", what:"They asked to move the intro call to another time. Starts the same reminders asking them to rebook the intro call."},
-    noBookInterview:{label:"Qualified Next Call Not Booked", tag:"pending-interview", tone:"blue", icon:"✅", what:"They qualified but did not book the interview on the call. They will book it themselves. Starts the reminders with the interview booking link."},
-    noshowInterview:{label:"No Show", tag:"noshow-interview", tone:"noshow", icon:"👻", what:"They did not turn up to the interview. Starts the reminders asking them to rebook the interview."},
-    booklaterInterview:{label:"Book Later", tag:"booklater-interview", tone:"chase", icon:"🔁", what:"They asked to move the interview to another time. Starts the same reminders asking them to rebook the interview."},
-    noBookReview:{label:"Qualified Next Call Not Booked", tag:"pending-review", tone:"blue", icon:"✅", what:"The interview went well but they did not book the review on the call. They will book it themselves. Starts the reminders with the review booking link."},
-    noshowReview:{label:"No Show", tag:"noshow-review", tone:"noshow", icon:"👻", what:"They did not turn up to the review call. Starts the reminders asking them to rebook the review."},
-    booklaterReview:{label:"Book Later", tag:"booklater-review", tone:"chase", icon:"🔁", what:"They asked to move the review call to another time. Starts the same reminders asking them to rebook the review."},
-    baking:{label:"Baking/Nurturing", tag:"baking", tone:"gray", icon:"🍿", what:"Interested but not ready yet. Moves them to Baking/Nurturing."},
-    nq:{label:"Not Qualified", tag:"not-qualified", tone:"dark", icon:"⛔️", what:"Not a fit or the call is off. Moves them to Not Qualified, cancels the call and stops all messages."},
-    lost:{label:"Lost", tag:"lost", tone:"dark", icon:"😞", what:"Not a good fit or decided not to go ahead. Moves them to Lost, stops all messages, and they stay there."},
-    won:{label:"Client Won", tag:"won", tone:"green", icon:"🔥", what:"They signed. Moves them to Client Won."},
-  };
-  // The call type for No Show / Book Later on cards that are not a booked call:
-  // from the appointment title, then from the stage. Unknown means ask.
-  const kindOf=t=>/interview/i.test(t)?"interview":/review/i.test(t)?"review":/intro/i.test(t)?"intro":"";
-  const kind=kindOf((l.appointment&&l.appointment.title)||l.callTitle||"")||kindOf(st);
-  const any=(base,label,tone,icon,what)=>kind
-    ? {label,tag:base+"-"+kind,tone,icon,what:what+" Call type: "+kind+"."}
-    : {label,tag:"",needKind:base,tone,icon,what:what+" You pick the call type when you tap."};
-  const generic={title:"Move this lead", auto:"Move this lead to the right stage from here. Tap the same one again later to move it again.", after:[
-    any("noshow","No Show","noshow","👻","They did not turn up. Starts the reminders asking them to rebook."),
-    any("booklater","Book Later","chase","🔁","They asked to move the call. Starts the same rebook reminders."),
-    B.baking,B.lost,B.nq,B.won]};
-  if(ctx==="pipeline" || (s!=="booked")) return generic;
-  if(s==="booked" && isReview) return {title:"After the review call", auto:"Tap the one that matches what happened.", after:[B.noshowReview,B.booklaterReview,B.baking,B.lost,B.nq,B.won]};
-  if(s==="booked" && isInterview) return {title:"After the interview call", auto:"If they booked the review during the interview, do nothing. The lead moves to Review Booked on its own.", after:[B.noshowInterview,B.booklaterInterview,B.noBookReview,B.baking,B.lost,B.nq,B.won]};
-  if(s==="booked") return {title:"After the intro call", auto:"If they booked the interview during the call, do nothing. The lead moves to Interview Booked on its own.", after:[B.noshowIntro,B.booklaterIntro,B.noBookInterview,B.baking,B.lost,B.nq,B.won]};
-  return generic;
+  return window.SalesActions.actionPlan(l, ctx);
 }
 
 function actionButtons(l, ctx){
@@ -632,6 +597,7 @@ function referenceBlock(l){
     neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
     clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
     lost: "This lead was not a good fit or decided not to go ahead. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
+    abandoned: "This lead was marked abandoned. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
     notqualified: "This lead was taken out of the process as not qualified. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
   };
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
@@ -1071,7 +1037,7 @@ function openSheet(l, ctx){
     ? '<div class="verdict flag"><div class="why">Heads up before you reach out</div>'+l.flags.map(f=>esc(f.text)).join("<br>")+'</div>'
     : "";
   const doHead = (l.status==="noshow"||l.status==="cancelled") ? "Nudge them to rebook, everywhere you can" : "Reach out everywhere you can to lift the show-up rate";
-  const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled"||l.status==="lost");
+  const isRef = (l.status==="clientwon"||l.status==="notqualified"||l.status==="survey"||l.status==="baking"||l.status==="neverrescheduled"||l.status==="lost"||l.status==="abandoned");
   const showSent = (l.status==="booked"||l.status==="noshow"||l.status==="rescheduling"||l.status==="bookinginterview"||l.status==="bookingreview"||l.status==="cancelled");
   sheet.innerHTML =
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div><div class="role tzline" data-tzcid="'+esc(l.contactId||"")+'">'+esc(tzSheetText(l))+'</div></div>'+
@@ -1084,6 +1050,7 @@ function openSheet(l, ctx){
       (l.status==="survey"?'<div class="nshead book">Submitted the survey and qualified, but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
       (l.status==="lost"?'<div class="nshead cancel">Lost. Not a good fit or decided not to go ahead. Reference only.</div>':"")+
+      (l.status==="abandoned"?'<div class="nshead cancel">Abandoned. They went quiet. Reference only.</div>':"")+
       (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
       flagBox+
       prepBlock(l)+
