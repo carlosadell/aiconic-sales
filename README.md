@@ -34,6 +34,12 @@ The GoHighLevel token stays on the server. The browser never sees it.
    - `GHL_LOCATION_ID` already filled with the Aiconic location.
    - `GHL_PIPELINE_ID` already filled with Free Trial Funnels.
    - `REP_NAMES` optional, only if a salesperson shows blank.
+   - `GHL_USER_MAP` optional. Overrides the toolkit email to GoHighLevel user id list in `lib/user-map.js`. Example: `rj@aiconichub.ai:USERID`.
+   - `BLOCK_SHARED_LOGIN` optional. Leave unset until everyone has a personal login. Set it to `1` to stop `contact@aiconichub.ai` from using the toolkit.
+
+## Signing in
+
+Each person uses their own `@aiconichub.com` or `@aiconichub.ai` email. On the sign-in page, choose Create an account, pick a password only you know, and confirm the email that arrives. The shared `contact@aiconichub.ai` login is temporary. Turn it off with `BLOCK_SHARED_LOGIN` only after those personal accounts work. `scripts/invite-toolkit-users.js` can send the invites instead, if you have the toolkit Supabase service role key.
 4. Deploy. Vercel gives you a live link.
 5. Put that link in the portal.
 

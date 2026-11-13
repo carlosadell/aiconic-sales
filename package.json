@@ -5,5 +5,8 @@
   "description": "Daily reach-out list for booked leads GoHighLevel could not reach. Live pipeline, grouped by salesperson, with a send-SMS action.",
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
   }
 }

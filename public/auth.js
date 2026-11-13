@@ -8,7 +8,9 @@
   // A password reset link lands here with "type=recovery" in the address (or
   // our own "reset=1" marker). Read it before Supabase clears the address, so
   // the person always gets the "choose a new password" screen.
-  var RECOVERY = /type=recovery/.test(location.hash) || /[?&]reset=1/.test(location.search);
+  var RECOVERY = /type=(recovery|invite)/.test(location.hash) || /[?&]reset=1/.test(location.search);
+  var SHARED_LOGIN = "contact@aiconichub.ai";
+  var BLOCK_SHARED = false;
   var domReady = false;
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   window.SB = sb;
@@ -37,7 +39,9 @@
     }
     return rawFetch(input, init);
   };
-
+  rawFetch("/api/auth-policy", { cache: "no-store" }).then(function(r){ return r.json(); }).then(function(d){
+    BLOCK_SHARED = !!(d && d.blockSharedLogin);
+  }).catch(function(){});
   var mode = "signin"; // signin | signup | reset | newpass
   function setMode(m, msg, isErr){
     mode = m;
@@ -57,7 +61,7 @@
   }
   function msgOut(t, isErr){ var el=$("au-msg"); el.textContent=t; el.className="au-msg"+(t?(isErr?" err":" ok"):""); }
   function clearResetUrl(){
-    try{ if(/reset=1|type=recovery/.test(location.search+location.hash)) history.replaceState(null, "", location.pathname); }catch(_){}
+    try{ if(/reset=1|type=recovery|type=invite/.test(location.search+location.hash)) history.replaceState(null, "", location.pathname); }catch(_){}
   }
   function showNewPass(msg){
     $("au-form").classList.remove("au-wait");
@@ -117,6 +121,12 @@
       var email = $("au-email").value.trim().toLowerCase();
       var pass = $("au-pass").value;
       if(mode!=="newpass" && !allowed(email)){ msgOut("Use your Aiconic email (@aiconichub.com or @aiconichub.ai).", true); return; }
+      if(mode!=="newpass" && email===SHARED_LOGIN && (mode==="signup" || BLOCK_SHARED)){
+        msgOut(mode==="signup"
+          ? "Create an account with your own Aiconic email. The shared contact@ login cannot be used for a new account."
+          : "The shared contact@aiconichub.ai login is retired. Sign in with your own Aiconic email. If you do not have one yet, choose Create an account.", true);
+        return;
+      }
       var btn=$("au-go"); btn.disabled=true;
       try{
         if(mode==="signin"){
