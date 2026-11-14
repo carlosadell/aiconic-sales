@@ -9,6 +9,48 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   var ABANDONED_TAG = "abandoned";
 
+  // A diagnostic card is the Diagnostic Call stage, or a call titled like
+  // "Business Diagnostic Call". Those cards never take the intro outcome buttons.
+  function isDiagnosticCard(l) {
+    if (/diagnostic/i.test(l.stage || "")) return true;
+    var title = (l.appointment && l.appointment.title) || l.callTitle || "";
+    return /diagnostic/i.test(title);
+  }
+
+  // Which call the lead books next. Diagnostic sits between intro and
+  // interview, so the next booking is the interview.
+  function nextCallType(l) {
+    var st = String(l.stage || "").toLowerCase();
+    if (/diagnostic/.test(st)) return l.status === "booked" ? "interview" : "";
+    if (l.status === "bookingreview" || (l.status === "booked" && /interview/.test(st))) return "review";
+    if (l.status === "bookinginterview" || (l.status === "booked" && /intro/.test(st))) return "interview";
+    return "";
+  }
+
+  // Whether a lead belongs on Daily Outreach. Upcoming is any booked call with
+  // a time from the start of today onward, including a diagnostic. Past is any
+  // intro, diagnostic, interview or review in the last 14 days, matched on the
+  // appointment title (for example "Business Diagnostic Call").
+  function onDailyOutreach(l, mode, nowMs) {
+    var now = nowMs == null ? Date.now() : nowMs;
+    if (mode === "past") {
+      if (/test/i.test(l.name || "")) return false;
+      var at = (l.appointment && l.appointment.at) || l.callAt || null;
+      if (!at) return false;
+      var t = new Date(at).getTime();
+      var startToday = new Date(now);
+      startToday.setHours(0, 0, 0, 0);
+      var pastFrom = startToday.getTime() - 14 * 86400000;
+      if (!(t <= now && t >= pastFrom)) return false;
+      var title = (l.appointment && l.appointment.title) || l.callTitle || "";
+      return !title || /intro|interview|review|diagnostic/i.test(title);
+    }
+    if (!(l.status === "booked" && l.appointment && l.appointment.at)) return false;
+    var start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    return new Date(l.appointment.at).getTime() >= start.getTime();
+  }
+
   // Which buttons show depends on where the lead is now. Not Qualified, Lost
   // and Abandoned are on every one of these lists.
   function actionPlan(l, ctx) {
@@ -29,7 +71,12 @@
       abandoned: { label: "Abandoned", tag: ABANDONED_TAG, tone: "dark", icon: "🥱", what: "They went quiet or the deal was left. Moves them to Abandoned and stops the chase." },
       won: { label: "Client Won", tag: "won", tone: "green", icon: "🔥", what: "They signed. Moves them to Client Won." },
     };
-    var kindOf = function (t) { return /interview/i.test(t) ? "interview" : /review/i.test(t) ? "review" : /intro/i.test(t) ? "intro" : ""; };
+    // Diagnostic is checked first so a title like "Business Diagnostic Call"
+    // is never filed as an intro.
+    var kindOf = function (t) {
+      if (/diagnostic/i.test(t)) return "";
+      return /interview/i.test(t) ? "interview" : /review/i.test(t) ? "review" : /intro/i.test(t) ? "intro" : "";
+    };
     var kind = kindOf((l.appointment && l.appointment.title) || l.callTitle || "") || kindOf(st);
     var any = function (base, label, tone, icon, what) {
       return kind
@@ -37,6 +84,13 @@
         : { label: label, tag: "", needKind: base, tone: tone, icon: icon, what: what + " You pick the call type when you tap." };
     };
     var closed = [B.baking, B.lost, B.nq, B.abandoned, B.won];
+    // Carlos takes diagnostic calls himself. No no-show, book-later, or
+    // "next call not booked" button, and never the intro tags.
+    if (isDiagnosticCard(l)) return {
+      title: "After the diagnostic call",
+      auto: "Carlos takes this call himself and follows up or cancels personally. There is no reminder sequence.",
+      after: closed,
+    };
     var generic = { title: "Move this lead", auto: "Move this lead to the right stage from here. Tap the same one again later to move it again.", after: [
       any("noshow", "No Show", "noshow", "👻", "They did not turn up. Starts the reminders asking them to rebook."),
       any("booklater", "Book Later", "chase", "🔁", "They asked to move the call. Starts the same rebook reminders."),
@@ -48,5 +102,10 @@
     return generic;
   }
 
-  return { actionPlan: actionPlan, ABANDONED_TAG: ABANDONED_TAG };
+  return {
+    actionPlan: actionPlan,
+    ABANDONED_TAG: ABANDONED_TAG,
+    nextCallType: nextCallType,
+    onDailyOutreach: onDailyOutreach,
+  };
 });

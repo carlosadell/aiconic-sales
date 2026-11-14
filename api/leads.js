@@ -35,6 +35,8 @@ const LINKS = {
 };
 
 // The stages a rep works from a card, so only these get the heavy CRM reads.
+// Diagnostic Call classifies as "booked", so it gets the same contact, email
+// and SMS reads as intro, interview and review.
 const NEEDS_PREP = new Set(["booked", "noshow", "rescheduling", "bookinginterview", "bookingreview", "cancelled"]);
 
 // Stages a lead can be moved to after a call. Their appointment date is read too
@@ -233,3 +235,4 @@ module.exports = async (req, res) => {
 // Give Vercel room to read the pipeline plus the per-lead history under load.
 module.exports.config = { maxDuration: 60 };
 module.exports.DATED_AFTER_CALL = DATED_AFTER_CALL;
+module.exports.NEEDS_PREP = NEEDS_PREP;

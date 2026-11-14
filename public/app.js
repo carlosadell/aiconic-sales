@@ -29,6 +29,7 @@ function dayLabel(iso, tz){
 }
 function typeClass(t){
   const k=(t||"").toLowerCase();
+  if(k.includes("diagnostic")) return "t-diagnostic";
   if(k.includes("book interview")||k.includes("booking interview")) return "t-bookint";
   if(k.includes("book review")||k.includes("booking review")) return "t-bookrev";
   if(k.includes("rebook")||k.includes("no show")) return "t-noshow";
@@ -86,6 +87,28 @@ function messages(l){
           "Hi "+first+",\n\n"+
           "We were on the call today but did not see you come through, so I wanted to check in. Everything ok? No problem at all if the timing slipped.\n\n"+
           "If you would still like to talk, you can pick a new time here:\n"+link+"\n\n"+
+          "Looking forward to it.",
+      },
+    };
+  }
+  if(/diagnostic/i.test(l.stage||"")){
+    return {
+      sms: [
+        "Hi "+first+", "+from+" here.",
+        "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.",
+        "We will use the time to map the business and see where we can help. If anything comes up before then, just reply here.",
+      ].join("\n\n"),
+      note: [
+        "Hi "+first+", "+from+" here.",
+        "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.",
+        "We will use the time to map the business. Looking forward to it.",
+      ].join("\n\n"),
+      email: {
+        subject: "Looking forward to your diagnostic call",
+        body:
+          "Hi "+first+",\n\n"+
+          "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.\n\n"+
+          "We will use the time to map the business and see where we can help. Come as you are. If there is anything you want to make sure we cover, just tell me.\n\n"+
           "Looking forward to it.",
       },
     };
@@ -188,6 +211,11 @@ function stageDetail(s){
     you:"Reach out personally, send them the intro booking link, and find out why they did not book.",
   };
   if(st==="booked"){
+    if(/diagnostic/.test(t)) return {
+      what:"Diagnostic call booked with Carlos. Leads here are expected to be qualified.",
+      how:"They land here on their own when they book the Business Diagnostic Call. The booking workflow moves them into this stage.",
+      you:"Carlos takes this call himself. Reach out before it so they show up. After the call he follows up or cancels personally. If they are going ahead, book their interview from the card.",
+    };
     const call = /interview/.test(t) ? "interview" : /review/.test(t) ? "review call" : "intro call";
     return {
       what:"The lead has their "+call+" booked. The call shows in the Daily Outreach tab.",
@@ -401,7 +429,7 @@ function dayKey(iso, tz){
   catch(_){ try{ return new Date(iso).toISOString().slice(0,10); }catch(e){ return ""; } }
 }
 
-// Daily Outreach: only the upcoming scheduled calls (intro, interview, review),
+// Daily Outreach: upcoming booked calls (intro, diagnostic, interview, review)
 // in one column, soonest first, grouped under a heading for each day so it reads
 // straight down. Everything else lives on the Pipeline board.
 // When a lead's call happened: the booked appointment, or for leads already moved
@@ -410,28 +438,14 @@ function callAt(l){ return (l.appointment && l.appointment.at) || l.callAt || nu
 
 function renderDaily(){
   const box=el("upcoming"); if(!box) return;
-  const startToday=new Date(); startToday.setHours(0,0,0,0);
   const past=DAILY_MODE==="past";
   const h=el("callsheading"); if(h) h.textContent=past?"Past calls":"Upcoming calls";
   const now=Date.now();
-  const pastFrom=startToday.getTime()-14*86400000;
   let ups;
-  if(past){
-    // Every intro, interview or review in the last 14 days up to now, in whatever
-    // stage the lead is now. The card shows the current stage so a rep can see
-    // if it has already been moved.
-    ups=allLeads(DATA).filter(l=>{
-      if(/test/i.test(l.name||"")) return false;
-      const at=callAt(l); if(!at) return false;
-      const t=new Date(at).getTime();
-      if(!(t<=now && t>=pastFrom)) return false;
-      const title=(l.appointment&&l.appointment.title)||l.callTitle||"";
-      return !title || /intro|interview|review/i.test(title);
-    });
-  }else{
-    ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
-    ups=ups.filter(l=> new Date(l.appointment.at).getTime() >= startToday.getTime());
-  }
+  // Intro, diagnostic, interview and review. Past matches titles such as
+  // "Business Diagnostic Call". The card shows the current stage so a rep can
+  // see if a past call has already been moved.
+  ups=allLeads(DATA).filter(l=>window.SalesActions.onDailyOutreach(l, past?"past":"upcoming", now));
   if(REP!=="all") ups=ups.filter(l=>l.repName===REP);
   ups.sort((a,b)=> past ? new Date(callAt(b))-new Date(callAt(a)) : new Date(callAt(a))-new Date(callAt(b)));
   box.innerHTML="";
@@ -633,13 +647,10 @@ function slotLabel(iso, tz){
   try{ return new Date(iso).toLocaleTimeString([], { hour:"numeric", minute:"2-digit", timeZone: tz }); }
   catch(_){ return new Date(iso).toLocaleTimeString(); }
 }
-// The call to book next, from where the lead is now: after the intro comes the
-// interview, after the interview comes the review.
+// The call to book next, from where the lead is now: after the intro or the
+// diagnostic comes the interview, after the interview comes the review.
 function nextCallType(l){
-  const st=String(l.stage||"").toLowerCase();
-  if(l.status==="bookingreview" || (l.status==="booked" && /interview/.test(st))) return "review";
-  if(l.status==="bookinginterview" || (l.status==="booked" && /intro/.test(st))) return "interview";
-  return "";
+  return window.SalesActions.nextCallType(l);
 }
 function dayHead(dateStr){
   try{ return new Date(dateStr+"T12:00:00Z").toLocaleDateString([], { weekday:"long", month:"long", day:"numeric", timeZone:"UTC" }); }
@@ -1043,6 +1054,7 @@ function openSheet(l, ctx){
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div><div class="role tzline" data-tzcid="'+esc(l.contactId||"")+'">'+esc(tzSheetText(l))+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
+      (/diagnostic/i.test(l.stage||"") && l.status==="booked"?'<div class="nshead book">Diagnostic call booked with Carlos. Leads here are expected to be qualified.</div>':"")+
       (l.status==="noshow"?'<div class="nshead">In the rebooking lane. Give them an easy way back in.</div>':"")+
       (l.status==="cancelled"?'<div class="nshead cancel">Cancelled their call. Still in the system, reach out and give them an easy way to rebook.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
