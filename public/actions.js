@@ -67,8 +67,8 @@
       booklaterReview: { label: "Book Later", tag: "booklater-review", tone: "chase", icon: "🔁", what: "They asked to move the review call to another time. Starts the same reminders asking them to rebook the review." },
       baking: { label: "Baking/Nurturing", tag: "baking", tone: "gray", icon: "🍿", what: "Interested but not ready yet. Moves them to Baking/Nurturing." },
       nq: { label: "Not Qualified", tag: "not-qualified", tone: "dark", icon: "⛔️", what: "Not a fit or the call is off. Moves them to Not Qualified, cancels the call and stops all messages." },
-      lost: { label: "Lost", tag: "lost", tone: "dark", icon: "😞", what: "Not a good fit or decided not to go ahead. Moves them to Lost, stops all messages, and they stay there." },
-      abandoned: { label: "Abandoned", tag: ABANDONED_TAG, tone: "dark", icon: "🥱", what: "They went quiet or the deal was left. Moves them to Abandoned and stops the chase." },
+      lost: { label: "Lost", tag: "lost", tone: "dark", icon: "😞", what: "We actually worked with them. They went through the funnel and we lost them, because we did not do things right or for any other reason. You cannot lose something you never had the opportunity to win. Moves them to Lost, stops all messages, and they stay there." },
+      abandoned: { label: "Abandoned", tag: ABANDONED_TAG, tone: "dark", icon: "❌", what: "They kept getting the book-a-call reminders, or we never got them through the funnel properly. It is obviously never going to happen and we have tried everything. Moves them to Abandoned and stops the chase." },
       won: { label: "Client Won", tag: "won", tone: "green", icon: "🔥", what: "They signed. Moves them to Client Won." },
     };
     // Diagnostic is checked first so a title like "Business Diagnostic Call"

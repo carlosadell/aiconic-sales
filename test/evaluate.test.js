@@ -4,19 +4,26 @@ const { ALL_STAGES, statusFromStageName, callType, autoFromStageName } = require
 const { DATED_AFTER_CALL, NEEDS_PREP } = require("../api/leads");
 
 test("Abandoned is an end state, distinct from Lost and Not Qualified", () => {
-  assert.equal(statusFromStageName("🥱 Abandoned"), "abandoned");
+  assert.equal(statusFromStageName("❌ Abandoned"), "abandoned");
   assert.equal(statusFromStageName("Abandoned"), "abandoned");
-  assert.equal(callType("🥱 Abandoned"), "Abandoned");
-  assert.equal(autoFromStageName("🥱 Abandoned"), false);
+  assert.equal(statusFromStageName("❌ Never Rescheduled"), "abandoned");
+  assert.equal(statusFromStageName("Never Rescheduled"), "abandoned");
+  assert.notEqual(statusFromStageName("Never Rescheduled"), "rescheduling");
+  assert.equal(callType("❌ Abandoned"), "Abandoned");
+  assert.equal(callType("Never Rescheduled"), "Abandoned");
+  assert.equal(autoFromStageName("❌ Abandoned"), false);
+  assert.equal(autoFromStageName("Never Rescheduled"), false);
   assert.equal(statusFromStageName("😞 Lost"), "lost");
   assert.equal(statusFromStageName("⛔️ Not Qualified"), "notqualified");
   assert.equal(statusFromStageName("✅ Intro Booked"), "booked");
 });
 
-test("the stale fallback list includes the live Abandoned stage", () => {
+test("the fallback list uses the renamed Abandoned stage and drops the deleted one", () => {
   const stage = ALL_STAGES.find((s) => s.name.includes("Abandoned"));
   assert.ok(stage);
-  assert.equal(stage.id, "033fc8d1-19c5-4f20-9976-8f14292a996b");
+  assert.equal(stage.id, "957c27c1-4988-43a1-af17-042157fef72e");
+  assert.equal(ALL_STAGES.some((s) => s.id === "033fc8d1-19c5-4f20-9976-8f14292a996b"), false);
+  assert.equal(ALL_STAGES.some((s) => /never\s*reschedul/i.test(s.name)), false);
 });
 
 test("Diagnostic Call is a booked, automation-owned call with its own label", () => {
@@ -38,7 +45,7 @@ test("the fallback list follows the live pipeline order, including Diagnostic Ca
   assert.equal(lost.id, "ea5d1f80-4066-4a41-8c2c-e3bd78c768a6");
   assert.ok(at(/Intro Booked/) < at(/Diagnostic/));
   assert.ok(at(/Diagnostic/) < at(/Interview Booked/));
-  assert.equal(at(/\bLost\b/) + 1, at(/Abandoned/));
+  assert.equal(at(/Abandoned/) + 1, at(/\bLost\b/));
   assert.deepEqual(
     names,
     [
@@ -54,9 +61,8 @@ test("the fallback list follows the live pipeline order, including Diagnostic Ca
       "⛔️ Not Qualified",
       "🍿 Baking/Nurturing",
       "🔥 Client Won",
-      "❌ Never Rescheduled",
+      "❌ Abandoned",
       "😞 Lost",
-      "🥱 Abandoned",
     ],
   );
 });

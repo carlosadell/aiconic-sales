@@ -190,7 +190,7 @@ function cleanStage(name){
 const PIPE_BANDS = [
   { key:"path",  title:"The path to a client", sub:"The calls that move a deal forward, in order.", statuses:["survey","booked","clientwon"], arrows:true },
   { key:"chase", title:"Chase lanes", sub:"A missed, cancelled, or unbooked call waits here and gets reminders until they rebook.", statuses:["noshow","rescheduling","bookinginterview","bookingreview"], arrows:false },
-  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled","lost","abandoned"], arrows:false },
+  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","lost","abandoned"], arrows:false },
 ];
 
 // Pull the leading emoji out of a live stage name, if it has one.
@@ -254,19 +254,14 @@ function stageDetail(s){
     you:"Nothing.",
   };
   if(st==="lost") return {
-    what:"People who are not a good fit or decided not to go ahead. Not cancelled, not qualified out, not a client. All messages to them stop and they stay here.",
+    what:"Leads we actually worked with. They went through the funnel and we lost them, because we did not do things right or for any other reason. You cannot lose something you never had the opportunity to win.",
     how:"They land here when someone taps Lost on a call card or on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
-  if(st==="abandoned") return {
-    what:"People who went quiet or were left behind. All messages to them stop and they stay here.",
-    how:"They land here when someone taps Abandoned on a call card, or Abandoned on a lead in the Pipeline tab.",
-    you:"Nothing, unless something has genuinely changed.",
-  };
-  if(st==="neverrescheduled") return {
-    what:"People who went through all the reminders and never booked again.",
-    how:"They land here on their own when the reminders run out without a booking.",
-    you:"Reach out later on to see if they want to book a call again.",
+  if(st==="abandoned"||st==="neverrescheduled") return {
+    what:"Leads who kept getting the book-a-call reminders, or that we never got through the funnel properly. It is obviously never going to happen and we have tried everything. We abandon them.",
+    how:"They land here on their own when the reminders run out without a booking, or when someone taps Abandoned.",
+    you:"Nothing. We have already tried everything.",
   };
   return {
     what:"A stage in the pipeline.",
@@ -608,10 +603,10 @@ function referenceBlock(l){
   const map = {
     survey: "They qualified through the form but have not booked their intro call yet. Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
     baking: "This lead is being nurtured. Not a client yet, and no automation runs from here. Use this card to look back at their details and previous call notes, and reach out when the timing is right.",
-    neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
     clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
-    lost: "This lead was not a good fit or decided not to go ahead. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
-    abandoned: "This lead was marked abandoned. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
+    lost: "We actually worked with this lead. They went through the funnel and we lost them. You cannot lose something you never had the opportunity to win. There is nothing to send from here.",
+    abandoned: "They kept getting the book-a-call reminders, or we never got them through the funnel. It is obviously never going to happen and we have tried everything. There is nothing to send from here.",
+    neverrescheduled: "They kept getting the book-a-call reminders, or we never got them through the funnel. It is obviously never going to happen and we have tried everything. There is nothing to send from here.",
     notqualified: "This lead was taken out of the process as not qualified. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
   };
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
@@ -1061,9 +1056,8 @@ function openSheet(l, ctx){
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
       (l.status==="survey"?'<div class="nshead book">Submitted the survey and qualified, but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
-      (l.status==="lost"?'<div class="nshead cancel">Lost. Not a good fit or decided not to go ahead. Reference only.</div>':"")+
-      (l.status==="abandoned"?'<div class="nshead cancel">Abandoned. They went quiet. Reference only.</div>':"")+
-      (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
+      (l.status==="lost"?'<div class="nshead cancel">Lost. They went through the funnel and we lost them. You cannot lose something you never had the opportunity to win.</div>':"")+
+      (l.status==="abandoned"||l.status==="neverrescheduled"?'<div class="nshead cancel">Abandoned. The reminders ran out, or we never got them through the funnel. We have tried everything.</div>':"")+
       flagBox+
       prepBlock(l)+
       (showSent ? sentBlock(l) : "")+

@@ -42,6 +42,8 @@ const NEEDS_PREP = new Set(["booked", "noshow", "rescheduling", "bookingintervie
 // Stages a lead can be moved to after a call. Their appointment date is read too
 // (only for leads touched in the last 15 days), so the Daily Outreach Past view
 // can show a call that has already been moved on.
+// neverrescheduled is the old name of Abandoned. Live names now classify as
+// abandoned. The old status stays in this set so a past call date is still read.
 const DATED_AFTER_CALL = new Set(["baking", "notqualified", "lost", "abandoned", "clientwon", "neverrescheduled"]);
 const PAST_WINDOW_MS = 15 * 24 * 3600 * 1000;
 function touchedRecently(o) {

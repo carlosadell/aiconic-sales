@@ -21,7 +21,7 @@ test("Abandoned sits with Not Qualified and Lost on every card that offers them"
     [{ status: "booked", stage: "✅ Review Booked" }, "calls"],
     [{ status: "lost", stage: "😞 Lost" }, "pipeline"],
     [{ status: "noshow", stage: "⏳ Sending Intro Reminders" }, "calls"],
-    [{ status: "abandoned", stage: "🥱 Abandoned" }, "pipeline"],
+    [{ status: "abandoned", stage: "❌ Abandoned" }, "pipeline"],
   ];
   for (const [lead, ctx] of cards) {
     const plan = actionPlan(lead, ctx);
@@ -102,6 +102,18 @@ test("Daily Outreach includes a diagnostic call in upcoming and in the past 14 d
   assert.equal(onDailyOutreach(tooOld, "past", now), false);
   assert.equal(onDailyOutreach(other, "past", now), false);
   assert.equal(onDailyOutreach({ status: "other", name: "Maya Chen", appointment: upcoming.appointment }, "upcoming", now), false);
+});
+
+test("Abandoned and Lost buttons describe the two different endings", () => {
+  const plan = actionPlan({ status: "booked", stage: "✅ Intro Booked" }, "calls");
+  const abandoned = plan.after.find((a) => a.label === "Abandoned");
+  const lost = plan.after.find((a) => a.label === "Lost");
+  assert.equal(abandoned.tag, "abandoned");
+  assert.match(abandoned.what, /tried everything/i);
+  assert.match(abandoned.what, /funnel/i);
+  assert.equal(lost.tag, "lost");
+  assert.match(lost.what, /never had the opportunity to win/i);
+  assert.match(lost.what, /went through the funnel/i);
 });
 
 test("a booked intro still tags the intro-specific outcomes", () => {
