@@ -29,6 +29,7 @@ function dayLabel(iso, tz){
 }
 function typeClass(t){
   const k=(t||"").toLowerCase();
+  if(k.includes("diagnostic")) return "t-diagnostic";
   if(k.includes("book interview")||k.includes("booking interview")) return "t-bookint";
   if(k.includes("book review")||k.includes("booking review")) return "t-bookrev";
   if(k.includes("rebook")||k.includes("no show")) return "t-noshow";
@@ -86,6 +87,28 @@ function messages(l){
           "Hi "+first+",\n\n"+
           "We were on the call today but did not see you come through, so I wanted to check in. Everything ok? No problem at all if the timing slipped.\n\n"+
           "If you would still like to talk, you can pick a new time here:\n"+link+"\n\n"+
+          "Looking forward to it.",
+      },
+    };
+  }
+  if(/diagnostic/i.test(l.stage||"")){
+    return {
+      sms: [
+        "Hi "+first+", "+from+" here.",
+        "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.",
+        "We will use the time to map the business and see where we can help. If anything comes up before then, just reply here.",
+      ].join("\n\n"),
+      note: [
+        "Hi "+first+", "+from+" here.",
+        "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.",
+        "We will use the time to map the business. Looking forward to it.",
+      ].join("\n\n"),
+      email: {
+        subject: "Looking forward to your diagnostic call",
+        body:
+          "Hi "+first+",\n\n"+
+          "Saw you booked your diagnostic call with Carlos and wanted to say hello before we talk.\n\n"+
+          "We will use the time to map the business and see where we can help. Come as you are. If there is anything you want to make sure we cover, just tell me.\n\n"+
           "Looking forward to it.",
       },
     };
@@ -167,7 +190,7 @@ function cleanStage(name){
 const PIPE_BANDS = [
   { key:"path",  title:"The path to a client", sub:"The calls that move a deal forward, in order.", statuses:["survey","booked","clientwon"], arrows:true },
   { key:"chase", title:"Chase lanes", sub:"A missed, cancelled, or unbooked call waits here and gets reminders until they rebook.", statuses:["noshow","rescheduling","bookinginterview","bookingreview"], arrows:false },
-  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","neverrescheduled","lost","abandoned"], arrows:false },
+  { key:"out",   title:"Out of play", sub:"End states. Nothing automatic chases from here.", statuses:["baking","notqualified","lost","abandoned"], arrows:false },
 ];
 
 // Pull the leading emoji out of a live stage name, if it has one.
@@ -188,6 +211,11 @@ function stageDetail(s){
     you:"Reach out personally, send them the intro booking link, and find out why they did not book.",
   };
   if(st==="booked"){
+    if(/diagnostic/.test(t)) return {
+      what:"Diagnostic call booked with Carlos. Leads here are expected to be qualified.",
+      how:"They land here on their own when they book the Business Diagnostic Call. The booking workflow moves them into this stage.",
+      you:"Carlos takes this call himself. Reach out before it so they show up. After the call he follows up or cancels personally. If they are going ahead, book their interview from the card.",
+    };
     const call = /interview/.test(t) ? "interview" : /review/.test(t) ? "review call" : "intro call";
     return {
       what:"The lead has their "+call+" booked. The call shows in the Daily Outreach tab.",
@@ -226,19 +254,14 @@ function stageDetail(s){
     you:"Nothing.",
   };
   if(st==="lost") return {
-    what:"People who are not a good fit or decided not to go ahead. Not cancelled, not qualified out, not a client. All messages to them stop and they stay here.",
+    what:"Leads we actually worked with. They went through the funnel and we lost them, because we did not do things right or for any other reason. You cannot lose something you never had the opportunity to win.",
     how:"They land here when someone taps Lost on a call card or on a lead in the Pipeline tab.",
     you:"Nothing.",
   };
-  if(st==="abandoned") return {
-    what:"People who went quiet or were left behind. All messages to them stop and they stay here.",
-    how:"They land here when someone taps Abandoned on a call card, or Abandoned on a lead in the Pipeline tab.",
-    you:"Nothing, unless something has genuinely changed.",
-  };
-  if(st==="neverrescheduled") return {
-    what:"People who went through all the reminders and never booked again.",
-    how:"They land here on their own when the reminders run out without a booking.",
-    you:"Reach out later on to see if they want to book a call again.",
+  if(st==="abandoned"||st==="neverrescheduled") return {
+    what:"Leads who kept getting the book-a-call reminders, or that we never got through the funnel properly. It is obviously never going to happen and we have tried everything. We abandon them.",
+    how:"They land here on their own when the reminders run out without a booking, or when someone taps Abandoned.",
+    you:"Nothing. We have already tried everything.",
   };
   return {
     what:"A stage in the pipeline.",
@@ -401,7 +424,7 @@ function dayKey(iso, tz){
   catch(_){ try{ return new Date(iso).toISOString().slice(0,10); }catch(e){ return ""; } }
 }
 
-// Daily Outreach: only the upcoming scheduled calls (intro, interview, review),
+// Daily Outreach: upcoming booked calls (intro, diagnostic, interview, review)
 // in one column, soonest first, grouped under a heading for each day so it reads
 // straight down. Everything else lives on the Pipeline board.
 // When a lead's call happened: the booked appointment, or for leads already moved
@@ -410,28 +433,14 @@ function callAt(l){ return (l.appointment && l.appointment.at) || l.callAt || nu
 
 function renderDaily(){
   const box=el("upcoming"); if(!box) return;
-  const startToday=new Date(); startToday.setHours(0,0,0,0);
   const past=DAILY_MODE==="past";
   const h=el("callsheading"); if(h) h.textContent=past?"Past calls":"Upcoming calls";
   const now=Date.now();
-  const pastFrom=startToday.getTime()-14*86400000;
   let ups;
-  if(past){
-    // Every intro, interview or review in the last 14 days up to now, in whatever
-    // stage the lead is now. The card shows the current stage so a rep can see
-    // if it has already been moved.
-    ups=allLeads(DATA).filter(l=>{
-      if(/test/i.test(l.name||"")) return false;
-      const at=callAt(l); if(!at) return false;
-      const t=new Date(at).getTime();
-      if(!(t<=now && t>=pastFrom)) return false;
-      const title=(l.appointment&&l.appointment.title)||l.callTitle||"";
-      return !title || /intro|interview|review/i.test(title);
-    });
-  }else{
-    ups=allLeads(DATA).filter(l=>l.status==="booked" && l.appointment && l.appointment.at);
-    ups=ups.filter(l=> new Date(l.appointment.at).getTime() >= startToday.getTime());
-  }
+  // Intro, diagnostic, interview and review. Past matches titles such as
+  // "Business Diagnostic Call". The card shows the current stage so a rep can
+  // see if a past call has already been moved.
+  ups=allLeads(DATA).filter(l=>window.SalesActions.onDailyOutreach(l, past?"past":"upcoming", now));
   if(REP!=="all") ups=ups.filter(l=>l.repName===REP);
   ups.sort((a,b)=> past ? new Date(callAt(b))-new Date(callAt(a)) : new Date(callAt(a))-new Date(callAt(b)));
   box.innerHTML="";
@@ -594,10 +603,10 @@ function referenceBlock(l){
   const map = {
     survey: "They qualified through the form but have not booked their intro call yet. Reach out and send them the intro booking link so they book. The booking links are in the Links tab.",
     baking: "This lead is being nurtured. Not a client yet, and no automation runs from here. Use this card to look back at their details and previous call notes, and reach out when the timing is right.",
-    neverrescheduled: "This lead went through the rebooking reminders and never booked a new time. There is nothing automatic left. Use this card to review their history. Reach back only if something has genuinely changed.",
     clientwon: "This lead became a client. There is nothing to send from here. Use this card to look back at the account, its details, and the notes and Fathom links from its previous calls below.",
-    lost: "This lead was not a good fit or decided not to go ahead. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
-    abandoned: "This lead was marked abandoned. There is nothing to send from here. Use this card to look back at their details and previous call notes below. Reach back only if something has genuinely changed.",
+    lost: "We actually worked with this lead. They went through the funnel and we lost them. You cannot lose something you never had the opportunity to win. There is nothing to send from here.",
+    abandoned: "They kept getting the book-a-call reminders, or we never got them through the funnel. It is obviously never going to happen and we have tried everything. There is nothing to send from here.",
+    neverrescheduled: "They kept getting the book-a-call reminders, or we never got them through the funnel. It is obviously never going to happen and we have tried everything. There is nothing to send from here.",
     notqualified: "This lead was taken out of the process as not qualified. There is nothing to send from here. Use this card to review who was dropped and read their previous call notes below. Reach back only if something has genuinely changed.",
   };
   return '<div class="dohead">For reference</div><div class="srcnote">'+esc(map[l.status]||"Reference only.")+'</div>';
@@ -633,13 +642,10 @@ function slotLabel(iso, tz){
   try{ return new Date(iso).toLocaleTimeString([], { hour:"numeric", minute:"2-digit", timeZone: tz }); }
   catch(_){ return new Date(iso).toLocaleTimeString(); }
 }
-// The call to book next, from where the lead is now: after the intro comes the
-// interview, after the interview comes the review.
+// The call to book next, from where the lead is now: after the intro or the
+// diagnostic comes the interview, after the interview comes the review.
 function nextCallType(l){
-  const st=String(l.stage||"").toLowerCase();
-  if(l.status==="bookingreview" || (l.status==="booked" && /interview/.test(st))) return "review";
-  if(l.status==="bookinginterview" || (l.status==="booked" && /intro/.test(st))) return "interview";
-  return "";
+  return window.SalesActions.nextCallType(l);
 }
 function dayHead(dateStr){
   try{ return new Date(dateStr+"T12:00:00Z").toLocaleDateString([], { weekday:"long", month:"long", day:"numeric", timeZone:"UTC" }); }
@@ -1043,15 +1049,15 @@ function openSheet(l, ctx){
     '<div class="sh"><div><h2>'+esc(l.name)+'</h2><div class="role">'+esc(l.company||l.email)+' &middot; owned by '+esc(l.repName)+'</div><div class="role tzline" data-tzcid="'+esc(l.contactId||"")+'">'+esc(tzSheetText(l))+'</div></div>'+
       '<button class="x" data-act="close">&times;</button></div>'+
     '<div class="body">'+
+      (/diagnostic/i.test(l.stage||"") && l.status==="booked"?'<div class="nshead book">Diagnostic call booked with Carlos. Leads here are expected to be qualified.</div>':"")+
       (l.status==="noshow"?'<div class="nshead">In the rebooking lane. Give them an easy way back in.</div>':"")+
       (l.status==="cancelled"?'<div class="nshead cancel">Cancelled their call. Still in the system, reach out and give them an easy way to rebook.</div>':"")+
       (l.status==="bookinginterview"?'<div class="nshead book">They qualified but have not booked their interview yet. Follow up on every channel and send them the booking link.</div>':"")+
       (l.status==="bookingreview"?'<div class="nshead review">They had their interview but have not booked their review call yet. Follow up by hand and get it booked this week.</div>':"")+
       (l.status==="survey"?'<div class="nshead book">Submitted the survey and qualified, but has not booked the intro yet. Reach out and send the intro booking link.</div>':"")+
       (l.status==="baking"?'<div class="nshead">Being nurtured, not a client yet. No automation runs from here.</div>':"")+
-      (l.status==="lost"?'<div class="nshead cancel">Lost. Not a good fit or decided not to go ahead. Reference only.</div>':"")+
-      (l.status==="abandoned"?'<div class="nshead cancel">Abandoned. They went quiet. Reference only.</div>':"")+
-      (l.status==="neverrescheduled"?'<div class="nshead cancel">Went through the rebooking reminders and never booked. Reference only.</div>':"")+
+      (l.status==="lost"?'<div class="nshead cancel">Lost. They went through the funnel and we lost them. You cannot lose something you never had the opportunity to win.</div>':"")+
+      (l.status==="abandoned"||l.status==="neverrescheduled"?'<div class="nshead cancel">Abandoned. The reminders ran out, or we never got them through the funnel. We have tried everything.</div>':"")+
       flagBox+
       prepBlock(l)+
       (showSent ? sentBlock(l) : "")+

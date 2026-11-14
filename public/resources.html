@@ -163,7 +163,7 @@
       <div class="sec-num">2</div>
       <div class="sec-title">
         <h2>What the system sends</h2>
-        <p>There are three reminder workflows, one per call. Each one handles both a cancellation and a no show inside a single workflow, so the lead always gets the right message.</p>
+        <p>There are three reminder workflows, for the intro, the interview, and the review. Each one handles both a cancellation and a no show inside a single workflow, so the lead always gets the right message. The diagnostic call, between the intro and the interview, has no reminder workflow.</p>
       </div>
     </div>
 
@@ -181,7 +181,7 @@
           <dt>They get</dt><dd>Reminder emails and texts asking them to book a new intro.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The intro booking page.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> If they never rebook, they move to Never Rescheduled.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book a new time.</span> If they never rebook, they move to Abandoned.</dd>
         </dl>
       </div>
 
@@ -197,7 +197,7 @@
           <dt>They get</dt><dd>Reminder emails and texts asking them to book the interview.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The interview booking calendar.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Interview Booked on their own. If they never book, they move to Never Rescheduled.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Interview Booked on their own. If they never book, they move to Abandoned.</dd>
         </dl>
       </div>
 
@@ -213,8 +213,19 @@
           <dt>They get</dt><dd>Reminder emails and texts asking them to book the review call.</dd>
           <dt>Cadence</dt><dd><div class="flow"><span class="step first">Day 0</span><span class="arr">&rarr;</span><span class="step">Day 1</span><span class="arr">&rarr;</span><span class="step">Day 3</span><span class="arr">&rarr;</span><span class="step">Day 5</span><span class="arr">&rarr;</span><span class="step stop">Stops</span></div></dd>
           <dt>Link used</dt><dd>The review call booking page.</dd>
-          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Review Booked on their own. If they never book, they move to Never Rescheduled.</dd>
+          <dt>Stops when</dt><dd><span class="stops">They book.</span> They move to Review Booked on their own. If they never book, they move to Abandoned.</dd>
         </dl>
+      </div>
+
+      <div class="panel">
+        <h3>The diagnostic call</h3>
+        <p>The diagnostic call sits between the intro and the interview. When a lead books it, the CRM moves them to Diagnostic Call on its own. Carlos takes the call himself and follows up or cancels personally, so there is no reminder sequence and no no-show button on the card. After the call, book the interview from the lead card in Daily Outreach.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Abandoned and Lost</h3>
+        <p><b>Abandoned</b> is a lead who kept getting the book-a-call reminders, or that we never got through the funnel properly. It is obviously never going to happen and we have tried everything. We abandon them. When the reminders run out they land there on their own, and you can also tap Abandoned on a card.</p>
+        <p><b>Lost</b> is a lead we actually worked with. They went through the funnel and we lost them, because we did not do things right or for any other reason. You cannot lose something you never had the opportunity to win.</p>
       </div>
 
     </div>
